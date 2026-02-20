@@ -228,7 +228,7 @@ describe("eventAdapter", () => {
     expect(normalized.map((item) => item.id)).toEqual(["evt-a", "evt-b", "evt-c"]);
   });
 
-  test("snaps cashier-hole coordinates to walkable floor for known zone", () => {
+  test("keeps cashier-hole coordinates as-is for known zone", () => {
     const event = adaptRawEvent({
       eventId: "evt-cashier-hole-1",
       timestamp: "2026-02-18T10:00:00Z",
@@ -243,10 +243,12 @@ describe("eventAdapter", () => {
 
     const cashierRightHole = { minX: 377 / 800, maxX: 400 / 800, minY: 238 / 427, maxY: 320 / 427 };
     const padded = pointInRectWithPadding(e.x, e.y, cashierRightHole, 0.024);
-    expect(padded).toBe(false);
+    expect(padded).toBe(true);
+    expect(e.x).toBeCloseTo(0.48, 3);
+    expect(e.y).toBeCloseTo(0.61, 3);
   });
 
-  test("snaps hole coordinates even when zone id is unknown", () => {
+  test("keeps hole coordinates as-is even when zone id is unknown", () => {
     const event = adaptRawEvent({
       eventId: "evt-unknown-zone-hole-1",
       timestamp: "2026-02-18T10:00:00Z",
@@ -261,6 +263,8 @@ describe("eventAdapter", () => {
 
     const cashierRightHole = { minX: 377 / 800, maxX: 400 / 800, minY: 238 / 427, maxY: 320 / 427 };
     const padded = pointInRectWithPadding(e.x, e.y, cashierRightHole, 0.024);
-    expect(padded).toBe(false);
+    expect(padded).toBe(true);
+    expect(e.x).toBeCloseTo(0.48, 3);
+    expect(e.y).toBeCloseTo(0.61, 3);
   });
 });
