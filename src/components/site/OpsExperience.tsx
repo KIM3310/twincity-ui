@@ -707,6 +707,11 @@ export default function OpsExperience() {
             수동 태그 삭제
           </button>
         </div>
+        {manualMode === "world" ? (
+          <p style={{ margin: 0, fontSize: 11, opacity: 0.72 }}>
+            안내: world 입력에서 z값은 내부 동기화 시 `-z` 축 기준으로 변환되어 입체/평면에 함께 반영됩니다.
+          </p>
+        ) : null}
       </form>
 
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12 }}>
