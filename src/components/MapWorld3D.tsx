@@ -73,9 +73,10 @@ function markerBaseHeightM() {
 }
 
 function resolveScenePoint(event: EventItem, worldWidthM: number, worldDepthM: number, modelExtent: ModelExtent | null) {
+  const isPhotoSeed = event.id.startsWith("photo-log-") || event.object_label === "photo-ref";
   const worldX = Number(event.world_x_m);
   const worldZ = Number(event.world_z_m);
-  if (Number.isFinite(worldX) && Number.isFinite(worldZ)) {
+  if (!isPhotoSeed && Number.isFinite(worldX) && Number.isFinite(worldZ)) {
     return {
       x: worldX - WORLD_OFFSET_X_M,
       z: -(worldZ - WORLD_OFFSET_Z_M),
