@@ -68,10 +68,8 @@ function toStatusColor(event: EventItem, live: boolean) {
   return 0x59b0ff;
 }
 
-function markerBaseHeightM(event: EventItem) {
-  const worldY = Number(event.world_y_m);
-  if (!Number.isFinite(worldY)) return 0.14;
-  return 0.14 + Math.max(0, Math.min(3, worldY));
+function markerBaseHeightM() {
+  return 0.14;
 }
 
 function resolveScenePoint(event: EventItem, worldWidthM: number, worldDepthM: number, modelExtent: ModelExtent | null) {
@@ -408,7 +406,7 @@ export default function MapWorld3D({
       const live = isLive(event.detected_at, liveWindowMs);
       const colorHex = toStatusColor(event, live);
       const isAlert = event.raw_status?.toLowerCase() === "fall_down" || event.type === "fall";
-      const baseHeight = markerBaseHeightM(event);
+      const baseHeight = markerBaseHeightM();
 
       let mesh = markerMap.get(event.id);
       if (!mesh) {

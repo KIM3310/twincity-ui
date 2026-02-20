@@ -512,7 +512,6 @@ export function adaptRawEvent(value: unknown, options: Omit<NormalizeOptions, "m
     x: clampRange(coordinates.x, 0, 1),
     y: clampRange(coordinates.y, 0, 1),
     world_x_m: coordinates.worldX,
-    world_y_m: coordinates.worldY,
     world_z_m: coordinates.worldZ,
     note: extractNote(record),
   };
