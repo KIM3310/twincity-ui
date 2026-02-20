@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import MapView from "@/components/MapView";
 import zoneMap from "@/data/zone_map_s001.json";
 import { PHOTO_REFERENCE_POINTS as photoReferencePointsRaw } from "@/data/photo_reference_points.js";
+import { MODEL_REF_DEPTH_M, MODEL_REF_WIDTH_M, worldToMapNorm } from "@/lib/coordinateTransform";
 import { adaptRawEvent, normalizeEventFeed } from "@/lib/eventAdapter";
 import { getEventTypeLabel, getZoneLabel } from "@/lib/labels";
 import type { EventItem, ZoneMap } from "@/lib/types";
@@ -12,21 +13,12 @@ const MAX_EVENTS = 600;
 const MANUAL_TAG_PREFIX = "manual-tag";
 
 const zm = zoneMap as ZoneMap;
-const WORLD_WIDTH_M = Number.isFinite(Number(zm.map.world?.width_m))
-  ? Math.max(0.001, Number(zm.map.world?.width_m))
-  : 9.0;
-const WORLD_DEPTH_M = Number.isFinite(Number(zm.map.world?.depth_m))
-  ? Math.max(0.001, Number(zm.map.world?.depth_m))
-  : 4.8;
 const WORLD_OFFSET_X_M = Number.isFinite(Number(zm.map.world?.offset_x_m))
   ? Number(zm.map.world?.offset_x_m)
   : 0;
 const WORLD_OFFSET_Z_M = Number.isFinite(Number(zm.map.world?.offset_z_m))
   ? Number(zm.map.world?.offset_z_m)
   : 0;
-const MODEL_REF_WIDTH_M = 13.0;
-const MODEL_REF_DEPTH_M = 15.12058;
-const MODEL_NORM_PADDING = 0.06;
 
 type IncomingSyncMode = "merge" | "replace";
 
@@ -88,18 +80,6 @@ function parseInputNumber(value: string) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function worldToModelNorm(worldX: number, worldZ: number) {
-  const sceneX = worldX - WORLD_OFFSET_X_M;
-  const sceneZ = -(worldZ - WORLD_OFFSET_Z_M);
-  const rawX = clamp01(sceneX / MODEL_REF_WIDTH_M + 0.5);
-  const rawY = clamp01(sceneZ / MODEL_REF_DEPTH_M + 0.5);
-  const interiorScale = 1 - MODEL_NORM_PADDING * 2;
-  return {
-    x: clamp01(MODEL_NORM_PADDING + rawX * interiorScale),
-    y: clamp01(MODEL_NORM_PADDING + rawY * interiorScale),
-  };
-}
-
 function toPair(value: unknown): readonly [number, number] | null {
   if (!Array.isArray(value) || value.length < 2) return null;
   const x = Number(value[0]);
@@ -132,7 +112,7 @@ const PHOTO_REFERENCE_LOGS: readonly PhotoReferencePoint[] = (Array.isArray(phot
 function buildPhotoReferenceEvents(now: number) {
   const events: EventItem[] = [];
   PHOTO_REFERENCE_LOGS.forEach((point, idx) => {
-    const norm = worldToModelNorm(point.worldX, point.worldZ);
+    const norm = worldToMapNorm(point.worldX - WORLD_OFFSET_X_M, point.worldZ - WORLD_OFFSET_Z_M);
     const payload = {
       eventId: `photo-log-${point.trackId}`,
       timestamp: now - idx * 120,
@@ -540,8 +520,9 @@ export default function OpsExperience() {
     if (manualMode === "world") {
       worldX = xRaw;
       worldZ = yRaw;
-      normX = clamp01((worldX - WORLD_OFFSET_X_M) / WORLD_WIDTH_M);
-      normY = clamp01((worldZ - WORLD_OFFSET_Z_M) / WORLD_DEPTH_M);
+      const mapped = worldToMapNorm(worldX - WORLD_OFFSET_X_M, worldZ - WORLD_OFFSET_Z_M);
+      normX = mapped.x;
+      normY = mapped.y;
     } else {
       normX = xRaw >= 0 && xRaw <= 1 ? xRaw : xRaw >= 0 && xRaw <= 100 ? xRaw / 100 : NaN;
       normY = yRaw >= 0 && yRaw <= 1 ? yRaw : yRaw >= 0 && yRaw <= 100 ? yRaw / 100 : NaN;
@@ -551,8 +532,8 @@ export default function OpsExperience() {
       }
       normX = clamp01(normX);
       normY = clamp01(normY);
-      worldX = WORLD_OFFSET_X_M + normX * WORLD_WIDTH_M;
-      worldZ = WORLD_OFFSET_Z_M + normY * WORLD_DEPTH_M;
+      worldX = WORLD_OFFSET_X_M + (normX - 0.5) * MODEL_REF_WIDTH_M;
+      worldZ = WORLD_OFFSET_Z_M - (normY - 0.5) * MODEL_REF_DEPTH_M;
     }
 
     const payload = {
