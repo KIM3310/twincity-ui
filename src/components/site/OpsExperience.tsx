@@ -26,6 +26,7 @@ const WORLD_OFFSET_Z_M = Number.isFinite(Number(zm.map.world?.offset_z_m))
   : 0;
 const MODEL_REF_WIDTH_M = 13.0;
 const MODEL_REF_DEPTH_M = 15.12058;
+const MODEL_NORM_PADDING = 0.06;
 
 type IncomingSyncMode = "merge" | "replace";
 
@@ -87,6 +88,18 @@ function parseInputNumber(value: string) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function worldToModelNorm(worldX: number, worldZ: number) {
+  const sceneX = worldX - WORLD_OFFSET_X_M;
+  const sceneZ = -(worldZ - WORLD_OFFSET_Z_M);
+  const rawX = clamp01(sceneX / MODEL_REF_WIDTH_M + 0.5);
+  const rawY = clamp01(sceneZ / MODEL_REF_DEPTH_M + 0.5);
+  const interiorScale = 1 - MODEL_NORM_PADDING * 2;
+  return {
+    x: clamp01(MODEL_NORM_PADDING + rawX * interiorScale),
+    y: clamp01(MODEL_NORM_PADDING + rawY * interiorScale),
+  };
+}
+
 function toPair(value: unknown): readonly [number, number] | null {
   if (!Array.isArray(value) || value.length < 2) return null;
   const x = Number(value[0]);
@@ -119,6 +132,7 @@ const PHOTO_REFERENCE_LOGS: readonly PhotoReferencePoint[] = (Array.isArray(phot
 function buildPhotoReferenceEvents(now: number) {
   const events: EventItem[] = [];
   PHOTO_REFERENCE_LOGS.forEach((point, idx) => {
+    const norm = worldToModelNorm(point.worldX, point.worldZ);
     const payload = {
       eventId: `photo-log-${point.trackId}`,
       timestamp: now - idx * 120,
@@ -129,6 +143,8 @@ function buildPhotoReferenceEvents(now: number) {
       eventType: "crowd",
       severity: 2,
       confidence: 0.97,
+      x_norm: norm.x,
+      y_norm: norm.y,
       world: {
         x: point.worldX,
         z: point.worldZ,
@@ -146,8 +162,11 @@ function buildPhotoReferenceEvents(now: number) {
       source: "camera",
       object_label: "photo-ref",
       raw_status: "photo_ref",
+      x: norm.x,
+      y: norm.y,
       world_x_m: point.worldX,
       world_z_m: point.worldZ,
+      note: [normalized.note, `model-norm(${norm.x.toFixed(3)},${norm.y.toFixed(3)})`].filter(Boolean).join(" | "),
     });
   });
   return events;
