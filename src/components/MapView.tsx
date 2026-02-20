@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import zoneMap from "@/data/zone_map_s001.json";
 import MapWorld3D from "@/components/MapWorld3D";
+import { MODEL_REF_DEPTH_M, MODEL_REF_WIDTH_M } from "@/lib/coordinateTransform";
 import { clamp01, isLive } from "@/lib/geo";
 import { getEventTypeLabel, getTrackLabel, getZoneLabel } from "@/lib/labels";
 import type { EventItem, ZoneMap } from "@/lib/types";
@@ -35,12 +36,8 @@ export default function MapView({
 }: Props) {
   const zm = zoneMap as ZoneMap;
 
-  const worldWidthM = Number.isFinite(Number(zm.map.world?.width_m))
-    ? Math.max(0.001, Number(zm.map.world?.width_m))
-    : 9.0;
-  const worldDepthM = Number.isFinite(Number(zm.map.world?.depth_m))
-    ? Math.max(0.001, Number(zm.map.world?.depth_m))
-    : 4.8;
+  const worldWidthM = MODEL_REF_WIDTH_M;
+  const worldDepthM = MODEL_REF_DEPTH_M;
 
   const mapImageSrc2d = useMemo(() => {
     const imageName = zm.map.image_name?.trim();
