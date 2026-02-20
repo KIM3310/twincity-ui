@@ -67,6 +67,36 @@ function markerBaseHeightM() {
   return 0.14;
 }
 
+function pickFloorMesh(root: THREE.Object3D) {
+  let namedCandidate: THREE.Mesh | null = null;
+  let namedFootprint = -1;
+  let flatCandidate: THREE.Mesh | null = null;
+  let flatFootprint = -1;
+  const box = new THREE.Box3();
+  const size = new THREE.Vector3();
+
+  root.traverse((child) => {
+    if (!(child instanceof THREE.Mesh)) return;
+    box.setFromObject(child);
+    box.getSize(size);
+    if (size.x <= 0.001 || size.z <= 0.001) return;
+
+    const footprint = size.x * size.z;
+    const name = child.name.toLowerCase();
+    if ((name.includes("floor") || name.includes("plane") || name.includes("평면")) && footprint > namedFootprint) {
+      namedCandidate = child;
+      namedFootprint = footprint;
+    }
+
+    if (size.y <= 0.26 && footprint > flatFootprint) {
+      flatCandidate = child;
+      flatFootprint = footprint;
+    }
+  });
+
+  return namedCandidate ?? flatCandidate;
+}
+
 function resolveScenePoint(event: EventItem, worldWidthM: number, worldDepthM: number, modelExtent: ModelExtent | null) {
   const width = modelExtent?.width ?? worldWidthM;
   const depth = modelExtent?.depth ?? worldDepthM;
@@ -229,17 +259,17 @@ export default function MapWorld3D({
               child.receiveShadow = true;
             });
 
-            const rawBox = new THREE.Box3().setFromObject(modelRoot);
-            const rawSize = new THREE.Vector3();
-            const rawCenter = new THREE.Vector3();
-            rawBox.getSize(rawSize);
-            rawBox.getCenter(rawCenter);
+            const anchorObject = pickFloorMesh(modelRoot) ?? modelRoot;
+            const anchorBox = new THREE.Box3().setFromObject(anchorObject);
+            const anchorCenter = new THREE.Vector3();
+            anchorBox.getCenter(anchorCenter);
 
-            modelRoot.position.x -= rawCenter.x;
-            modelRoot.position.z -= rawCenter.z;
-            modelRoot.position.y -= rawBox.min.y;
+            modelRoot.position.x -= anchorCenter.x;
+            modelRoot.position.z -= anchorCenter.z;
+            modelRoot.position.y -= anchorBox.min.y;
 
-            const alignedBox = new THREE.Box3().setFromObject(modelRoot);
+            const extentObject = pickFloorMesh(modelRoot) ?? modelRoot;
+            const alignedBox = new THREE.Box3().setFromObject(extentObject);
             const alignedSize = new THREE.Vector3();
             alignedBox.getSize(alignedSize);
             modelExtentRef.current = {
