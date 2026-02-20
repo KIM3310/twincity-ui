@@ -424,6 +424,28 @@ function formatMeters(value?: number) {
   return Number.isFinite(value) ? Number(value).toFixed(2) : "-";
 }
 
+function getTemperatureTone(valueC: number) {
+  if (valueC < 19) {
+    return {
+      label: "다소 낮음",
+      accent: "rgba(121, 177, 255, 0.92)",
+      chipBg: "rgba(69, 112, 190, 0.26)",
+    };
+  }
+  if (valueC > 25) {
+    return {
+      label: "다소 높음",
+      accent: "rgba(255, 171, 95, 0.95)",
+      chipBg: "rgba(174, 102, 41, 0.26)",
+    };
+  }
+  return {
+    label: "정상 범위",
+    accent: "rgba(125, 227, 170, 0.95)",
+    chipBg: "rgba(45, 138, 94, 0.24)",
+  };
+}
+
 export default function OpsExperience() {
   const [events, setEvents] = useState<EventItem[]>(() => INITIAL_PHOTO_EVENTS);
   const [selectedId, setSelectedId] = useState<string | undefined>(() => INITIAL_PHOTO_EVENTS[0]?.id);
@@ -433,6 +455,8 @@ export default function OpsExperience() {
   const [manualX, setManualX] = useState("");
   const [manualY, setManualY] = useState("");
   const [manualZoneId, setManualZoneId] = useState(zm.zones[0]?.zone_id ?? "zone-s001-center");
+  const storeTemperatureC = 23.4;
+  const temperatureTone = getTemperatureTone(storeTemperatureC);
 
   const selectedEvent = useMemo(
     () => events.find((event) => event.id === selectedId),
@@ -699,6 +723,40 @@ export default function OpsExperience() {
             alignContent: "start",
           }}
         >
+          <div
+            style={{
+              border: "1px solid rgba(170, 199, 247, 0.26)",
+              borderRadius: 10,
+              padding: "0.62rem 0.66rem",
+              background: "rgba(5, 14, 28, 0.66)",
+              display: "grid",
+              gap: 8,
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+              <strong>현재 매장 온도</strong>
+              <span
+                style={{
+                  fontSize: 11,
+                  padding: "0.16rem 0.42rem",
+                  borderRadius: 999,
+                  background: temperatureTone.chipBg,
+                  color: temperatureTone.accent,
+                  border: "1px solid rgba(255,255,255,0.14)",
+                }}
+              >
+                {temperatureTone.label}
+              </span>
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+              <span style={{ fontSize: 32, lineHeight: 1, fontWeight: 800, color: temperatureTone.accent }}>
+                {storeTemperatureC.toFixed(1)}
+              </span>
+              <span style={{ fontSize: 14, opacity: 0.9 }}>°C</span>
+            </div>
+            <p style={{ fontSize: 11, opacity: 0.72 }}>UI 샘플 (실시간 센서 연동 전)</p>
+          </div>
+
           <strong>선택 정보</strong>
           {selectedEvent ? (
             <>
