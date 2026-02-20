@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import zoneMap from "@/data/zone_map_s001.json";
+import { mapNormToScene } from "@/lib/coordinateTransform";
 import { clamp01, isLive } from "@/lib/geo";
 import type { EventItem, ZoneMap } from "@/lib/types";
 
@@ -51,12 +52,6 @@ const DEFAULT_WORLD_WIDTH_M = Number.isFinite(Number(STORE_MAP.map.world?.width_
 const DEFAULT_WORLD_DEPTH_M = Number.isFinite(Number(STORE_MAP.map.world?.depth_m))
   ? Math.max(0.001, Number(STORE_MAP.map.world?.depth_m))
   : 4.8;
-const WORLD_OFFSET_X_M = Number.isFinite(Number(STORE_MAP.map.world?.offset_x_m))
-  ? Number(STORE_MAP.map.world?.offset_x_m)
-  : 0;
-const WORLD_OFFSET_Z_M = Number.isFinite(Number(STORE_MAP.map.world?.offset_z_m))
-  ? Number(STORE_MAP.map.world?.offset_z_m)
-  : 0;
 
 const MARKER_RADIUS_M = 0.12;
 
@@ -73,22 +68,9 @@ function markerBaseHeightM() {
 }
 
 function resolveScenePoint(event: EventItem, worldWidthM: number, worldDepthM: number, modelExtent: ModelExtent | null) {
-  const isPhotoSeed = event.id.startsWith("photo-log-") || event.object_label === "photo-ref";
-  const worldX = Number(event.world_x_m);
-  const worldZ = Number(event.world_z_m);
-  if (!isPhotoSeed && Number.isFinite(worldX) && Number.isFinite(worldZ)) {
-    return {
-      x: worldX - WORLD_OFFSET_X_M,
-      z: -(worldZ - WORLD_OFFSET_Z_M),
-    };
-  }
-
   const width = modelExtent?.width ?? worldWidthM;
   const depth = modelExtent?.depth ?? worldDepthM;
-  return {
-    x: (clamp01(event.x) - 0.5) * width,
-    z: (clamp01(event.y) - 0.5) * depth,
-  };
+  return mapNormToScene(clamp01(event.x), clamp01(event.y), width, depth);
 }
 
 function disposeMaterial(material: THREE.Material) {
@@ -510,7 +492,7 @@ export default function MapWorld3D({
       >
         입체 지도 보기
         <span className="mono" style={{ opacity: 0.78, fontSize: 10, textTransform: "none", letterSpacing: 0 }}>
-          marker source: world(x,z) first
+          marker source: normalized(x,y) unified
         </span>
         {mapImageSrc.startsWith("/api/3d-test/") ? (
           <>
