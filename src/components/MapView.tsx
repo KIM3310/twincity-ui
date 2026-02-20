@@ -16,7 +16,7 @@ type Props = {
   debugOverlay?: boolean;
 };
 
-const FALLBACK_FLOOR_IMAGE = "/floorplan_wireframe_20241027.png";
+const FALLBACK_FLOOR_IMAGE = "/floorplan_wireframe_20241027_clean.png";
 const EXTERNAL_FLOORPLAN_IMAGE = "/api/3d-test/floorplan";
 const EXTERNAL_3D_TEST_MODEL = "/api/3d-test/model";
 
