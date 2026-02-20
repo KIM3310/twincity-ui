@@ -1,5 +1,8 @@
 import zoneMap from "@/data/zone_map_s001.json";
+import cameraCalibration from "@/data/camera_calibration_s001.json";
+import { PHOTO_REFERENCE_POINTS as photoReferencePointsRaw } from "@/data/photo_reference_points.js";
 import { pointInPolygon } from "./geo";
+import { applyHomography, computeHomography } from "./homography";
 import type { EventItem, EventSource, EventType, IncidentStatus, Point, ZoneMap } from "./types";
 
 const EVENT_TYPES = new Set<EventType>(["crowd", "fall", "fight", "loitering", "unknown"]);
@@ -62,8 +65,129 @@ const ZONE_CENTROIDS = new Map(
   })
 );
 
+type Pair = readonly [number, number];
+type PhotoReferencePoint = {
+  trackId: number;
+  predX: number;
+  predY: number;
+  worldX: number;
+  worldZ: number;
+};
+
+function toPair(value: unknown): Pair | null {
+  if (!Array.isArray(value) || value.length < 2) return null;
+  const x = parseNumber(value[0]);
+  const y = parseNumber(value[1]);
+  if (x === null || y === null) return null;
+  return [x, y];
+}
+
+const CALIBRATION_PIX_TO_NORM_H = (() => {
+  const payload = cameraCalibration as { cameras?: unknown };
+  const cameras = Array.isArray(payload.cameras) ? payload.cameras : [];
+
+  for (const row of cameras) {
+    const record = asRecord(row);
+    if (!record || record.enabled === false) continue;
+    const imagePoints = Array.isArray(record.image_points) ? record.image_points : [];
+    const mapNormPoints = Array.isArray(record.map_norm_points) ? record.map_norm_points : [];
+    const src = imagePoints.map((point) => toPair(point)).filter((point): point is Pair => point !== null);
+    const dst = mapNormPoints.map((point) => toPair(point)).filter((point): point is Pair => point !== null);
+    if (src.length < 4 || dst.length < 4) continue;
+    const matrix = computeHomography(src.slice(0, 4), dst.slice(0, 4));
+    if (matrix) return matrix;
+  }
+
+  return null;
+})();
+
+const PHOTO_REFERENCE_POINTS: readonly PhotoReferencePoint[] = (Array.isArray(photoReferencePointsRaw)
+  ? photoReferencePointsRaw
+  : []
+)
+  .map((row) => {
+    const record = asRecord(row);
+    if (!record) return null;
+    const pred = toPair(record.pred);
+    const world = toPair(record.world);
+    const trackId = parseNumber(record.trackId);
+    if (!pred || !world || trackId === null) return null;
+    return {
+      trackId: Math.trunc(trackId),
+      predX: pred[0],
+      predY: pred[1],
+      worldX: world[0],
+      worldZ: world[1],
+    } satisfies PhotoReferencePoint;
+  })
+  .filter((point): point is PhotoReferencePoint => point !== null);
+
+const PHOTO_WORLD_BOUNDS = (() => {
+  if (PHOTO_REFERENCE_POINTS.length === 0) return null;
+  const xs = PHOTO_REFERENCE_POINTS.map((point) => point.worldX);
+  const zs = PHOTO_REFERENCE_POINTS.map((point) => point.worldZ);
+  return {
+    minX: Math.min(...xs),
+    maxX: Math.max(...xs),
+    minZ: Math.min(...zs),
+    maxZ: Math.max(...zs),
+  };
+})();
+
+const PHOTO_WORLD_TO_NORM_H = (() => {
+  if (!CALIBRATION_PIX_TO_NORM_H) return null;
+  if (PHOTO_REFERENCE_POINTS.length < 4) return null;
+
+  const byTrackId = new Map(PHOTO_REFERENCE_POINTS.map((point) => [point.trackId, point] as const));
+  const preferredAnchors = [2, 6, 5, 1]
+    .map((trackId) => byTrackId.get(trackId))
+    .filter((point): point is PhotoReferencePoint => point !== undefined);
+  const anchors = preferredAnchors.length >= 4 ? preferredAnchors : PHOTO_REFERENCE_POINTS;
+
+  const srcWorld: Pair[] = [];
+  const dstNorm: Pair[] = [];
+  for (const point of anchors) {
+    const mappedNorm = applyHomography(CALIBRATION_PIX_TO_NORM_H, point.predX, point.predY);
+    if (!mappedNorm) continue;
+    srcWorld.push([point.worldX, point.worldZ]);
+    dstNorm.push([clampRange(mappedNorm.x, 0, 1), clampRange(mappedNorm.y, 0, 1)]);
+  }
+  if (srcWorld.length < 4 || dstNorm.length < 4) return null;
+  return computeHomography(srcWorld.slice(0, 4), dstNorm.slice(0, 4));
+})();
+
 function clampRange(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
+}
+
+function isOutsideConfiguredWorldRange(worldX: number, worldZ: number) {
+  return !(
+    worldX >= WORLD_OFFSET_X_M &&
+    worldX <= WORLD_OFFSET_X_M + WORLD_WIDTH_M &&
+    worldZ >= WORLD_OFFSET_Z_M &&
+    worldZ <= WORLD_OFFSET_Z_M + WORLD_DEPTH_M
+  );
+}
+
+function isInPhotoWorldBounds(worldX: number, worldZ: number) {
+  if (!PHOTO_WORLD_BOUNDS) return false;
+  const margin = 2.0;
+  return (
+    worldX >= PHOTO_WORLD_BOUNDS.minX - margin &&
+    worldX <= PHOTO_WORLD_BOUNDS.maxX + margin &&
+    worldZ >= PHOTO_WORLD_BOUNDS.minZ - margin &&
+    worldZ <= PHOTO_WORLD_BOUNDS.maxZ + margin
+  );
+}
+
+function mapPhotoWorldToNorm(worldX: number, worldZ: number) {
+  if (!PHOTO_WORLD_TO_NORM_H) return null;
+  const mapped = applyHomography(PHOTO_WORLD_TO_NORM_H, worldX, worldZ);
+  if (!mapped) return null;
+  return {
+    x: clampRange(mapped.x, 0, 1),
+    y: clampRange(mapped.y, 0, 1),
+  };
 }
 
 function asRecord(value: unknown): RawRecord | null {
@@ -291,6 +415,19 @@ function extractWorldCoordinates(record: RawRecord) {
       worldY: worldY ?? undefined,
       worldZ: world.worldZ,
     } satisfies NormalizedCoordinates;
+  }
+
+  if (isOutsideConfiguredWorldRange(worldX, worldZ) && isInPhotoWorldBounds(worldX, worldZ)) {
+    const mappedFromPhotoWorld = mapPhotoWorldToNorm(worldX, worldZ);
+    if (mappedFromPhotoWorld) {
+      return {
+        x: mappedFromPhotoWorld.x,
+        y: mappedFromPhotoWorld.y,
+        worldX,
+        worldY: worldY ?? undefined,
+        worldZ,
+      } satisfies NormalizedCoordinates;
+    }
   }
 
   const norm = worldToNorm(worldX, worldZ);

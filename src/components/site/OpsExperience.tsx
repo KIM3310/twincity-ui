@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import MapView from "@/components/MapView";
 import zoneMap from "@/data/zone_map_s001.json";
+import { PHOTO_REFERENCE_POINTS as photoReferencePointsRaw } from "@/data/photo_reference_points.js";
 import { adaptRawEvent, normalizeEventFeed } from "@/lib/eventAdapter";
 import { getEventTypeLabel, getZoneLabel } from "@/lib/labels";
 import type { EventItem, ZoneMap } from "@/lib/types";
@@ -30,6 +31,13 @@ type IncomingSyncBatch = {
   mode: IncomingSyncMode;
   upsert: EventItem[];
   removeIds: string[];
+};
+type PhotoReferencePoint = {
+  trackId: number;
+  predX: number;
+  predY: number;
+  worldX: number;
+  worldZ: number;
 };
 
 function clamp01(value: number) {
@@ -76,6 +84,74 @@ function parseInputNumber(value: string) {
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : null;
 }
+
+function toPair(value: unknown): readonly [number, number] | null {
+  if (!Array.isArray(value) || value.length < 2) return null;
+  const x = Number(value[0]);
+  const y = Number(value[1]);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+  return [x, y];
+}
+
+const PHOTO_REFERENCE_LOGS: readonly PhotoReferencePoint[] = (Array.isArray(photoReferencePointsRaw)
+  ? photoReferencePointsRaw
+  : []
+)
+  .map((row) => {
+    const record = asRecord(row);
+    if (!record) return null;
+    const pred = toPair(record.pred);
+    const world = toPair(record.world);
+    const trackId = Number(record.trackId);
+    if (!pred || !world || !Number.isFinite(trackId)) return null;
+    return {
+      trackId: Math.trunc(trackId),
+      predX: pred[0],
+      predY: pred[1],
+      worldX: world[0],
+      worldZ: world[1],
+    } satisfies PhotoReferencePoint;
+  })
+  .filter((point): point is PhotoReferencePoint => point !== null);
+
+function buildPhotoReferenceEvents(now: number) {
+  const events: EventItem[] = [];
+  PHOTO_REFERENCE_LOGS.forEach((point, idx) => {
+    const payload = {
+      eventId: `photo-log-${point.trackId}`,
+      timestamp: now - idx * 120,
+      camera_id: "camera-edge-01",
+      track_id: String(point.trackId),
+      label: "person",
+      status: "walking",
+      eventType: "crowd",
+      severity: 2,
+      confidence: 0.97,
+      world: {
+        x: point.worldX,
+        z: point.worldZ,
+      },
+      note: `photo ref pred(${point.predX},${point.predY}) -> world(${point.worldX.toFixed(2)},${point.worldZ.toFixed(2)})`,
+    };
+    const normalized = adaptRawEvent(payload, {
+      fallbackStoreId: "s001",
+      defaultSource: "camera",
+    });
+    if (!normalized) return;
+    events.push({
+      ...normalized,
+      id: `photo-log-${point.trackId}`,
+      source: "camera",
+      object_label: "photo-ref",
+      raw_status: "photo_ref",
+      world_x_m: point.worldX,
+      world_z_m: point.worldZ,
+    });
+  });
+  return events;
+}
+
+const INITIAL_PHOTO_EVENTS = buildPhotoReferenceEvents(Date.now());
 
 function toIdString(value: unknown) {
   if (typeof value === "string") {
@@ -349,8 +425,8 @@ function formatMeters(value?: number) {
 }
 
 export default function OpsExperience() {
-  const [events, setEvents] = useState<EventItem[]>([]);
-  const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
+  const [events, setEvents] = useState<EventItem[]>(() => INITIAL_PHOTO_EVENTS);
+  const [selectedId, setSelectedId] = useState<string | undefined>(() => INITIAL_PHOTO_EVENTS[0]?.id);
   const [jsonInput, setJsonInput] = useState("");
   const [toast, setToast] = useState<string | null>(null);
   const [manualMode, setManualMode] = useState<"world" | "norm">("world");
@@ -486,6 +562,17 @@ export default function OpsExperience() {
     setToast("수동 태그를 삭제했습니다.");
   };
 
+  const onSeedPhotoLogs = () => {
+    if (PHOTO_REFERENCE_LOGS.length === 0) {
+      setToast("이미지 기준 기준점 데이터가 없습니다.");
+      return;
+    }
+    const seeded = buildPhotoReferenceEvents(Date.now());
+    setEvents((prev) => mergeEvents(prev, seeded));
+    setSelectedId((prev) => seeded[0]?.id ?? prev);
+    setToast(`이미지 기준 로그 ${seeded.length}건을 찍었습니다.`);
+  };
+
   return (
     <section style={{ display: "grid", gap: 14 }}>
       <div style={{ display: "grid", gap: 8 }}>
@@ -513,6 +600,9 @@ export default function OpsExperience() {
           />
           <button type="button" className="opsPill" onClick={onSyncText}>
             텍스트 JSON 동기화
+          </button>
+          <button type="button" className="opsPill" onClick={onSeedPhotoLogs}>
+            이미지 로그 찍기
           </button>
           <button
             type="button"
