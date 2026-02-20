@@ -26,6 +26,31 @@ function formatMeters(value?: number) {
   return Number.isFinite(value) ? Number(value).toFixed(2) : "-";
 }
 
+function resolvePhotoLabelPosition(id: string, cx: number, cy: number, vbW: number, vbH: number) {
+  const hash = Array.from(id).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  const staggerY = ((hash % 3) - 1) * 14;
+  let textAnchor: "start" | "end" = cx < vbW * 0.74 ? "start" : "end";
+  let x = textAnchor === "start" ? cx + 12 : cx - 12;
+  let y = cy > vbH * 0.18 ? cy - 10 + staggerY : cy + 20 + staggerY;
+
+  if (y < 18) y = cy + 20 + Math.abs(staggerY);
+  if (y > vbH - 8) y = cy - 10 - Math.abs(staggerY);
+  if (x < 8) {
+    x = cx + 12;
+    textAnchor = "start";
+  }
+  if (x > vbW - 8) {
+    x = cx - 12;
+    textAnchor = "end";
+  }
+
+  return {
+    x: Math.max(8, Math.min(vbW - 8, x)),
+    y: Math.max(18, Math.min(vbH - 8, y)),
+    textAnchor,
+  };
+}
+
 export default function MapView({
   events,
   selectedId,
@@ -129,6 +154,7 @@ export default function MapView({
                 const cx = x * vbW;
                 const cy = y * vbH;
                 const selected = event.id === selectedId;
+                const labelPos = isPhotoLog ? resolvePhotoLabelPosition(event.id, cx, cy, vbW, vbH) : null;
 
                 return (
                   <g
@@ -170,12 +196,21 @@ export default function MapView({
                     />
                     {isPhotoLog ? (
                       <text
-                        x={Math.min(vbW - 8, cx + 10)}
-                        y={Math.max(18, cy - 10)}
+                        x={labelPos?.x}
+                        y={labelPos?.y}
+                        textAnchor={labelPos?.textAnchor}
                         fill="rgba(255, 230, 118, 0.98)"
                         fontSize={13}
                         fontWeight={700}
-                        style={{ pointerEvents: "none", userSelect: "none" }}
+                        style={{
+                          pointerEvents: "none",
+                          userSelect: "none",
+                          paintOrder: "stroke",
+                          stroke: "rgba(12, 19, 35, 0.88)",
+                          strokeWidth: 3.2,
+                          strokeLinecap: "round",
+                          strokeLinejoin: "round",
+                        }}
                       >
                         {`${event.id} -> w(${formatMeters(event.world_x_m)}, ${formatMeters(event.world_z_m)})`}
                       </text>
