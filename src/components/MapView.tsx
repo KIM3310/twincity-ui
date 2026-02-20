@@ -14,6 +14,7 @@ type Props = {
   onSelect: (id?: string) => void;
   liveWindowMs?: number;
   debugOverlay?: boolean;
+  mapAspectRatioOverride?: number;
 };
 
 const FALLBACK_FLOOR_IMAGE = "/floorplan_wireframe_20241027_clean.png";
@@ -30,6 +31,7 @@ export default function MapView({
   onSelect,
   liveWindowMs = 60 * 60 * 1000,
   debugOverlay = false,
+  mapAspectRatioOverride,
 }: Props) {
   const zm = zoneMap as ZoneMap;
 
@@ -53,7 +55,10 @@ export default function MapView({
   const model3dSrc = `${EXTERNAL_3D_TEST_MODEL}?v=${threeCacheBust}`;
 
   const vbW = 1000;
-  const vbH = Math.round(vbW * (zm.map.height / zm.map.width));
+  const mapAspect = Number.isFinite(mapAspectRatioOverride) && Number(mapAspectRatioOverride) > 0
+    ? Number(mapAspectRatioOverride)
+    : zm.map.width / zm.map.height;
+  const vbH = Math.round(vbW / mapAspect);
 
   const selectedEvent = events.find((event) => event.id === selectedId);
 
@@ -63,7 +68,7 @@ export default function MapView({
         style={{
           position: "relative",
           width: "100%",
-          aspectRatio: `${zm.map.width}/${zm.map.height}`,
+          aspectRatio: `${mapAspect}`,
           borderRadius: "14px 14px 0 0",
           overflow: "hidden",
           border: "1px solid rgba(120,150,210,0.18)",
@@ -76,7 +81,10 @@ export default function MapView({
               src={mapImageSrc2d}
               alt="floorplan"
               fill
-              style={{ objectFit: "cover", opacity: 0.97 }}
+              style={{
+                objectFit: mapAspectRatioOverride ? "fill" : "cover",
+                opacity: 0.97,
+              }}
               priority
             />
 
@@ -117,6 +125,7 @@ export default function MapView({
               {events.map((event) => {
                 const live = isLive(event.detected_at, liveWindowMs);
                 const isAlert = event.raw_status?.toLowerCase() === "fall_down" || event.type === "fall";
+                const isPhotoLog = event.id.startsWith("photo-log-");
                 const radius = isAlert ? 11 : event.severity === 2 ? 8 : 7;
                 const x = clamp01(event.x);
                 const y = clamp01(event.y);
@@ -162,6 +171,18 @@ export default function MapView({
                       stroke={selected ? "white" : "rgba(0,0,0,0.26)"}
                       strokeWidth={selected ? 3 : 1}
                     />
+                    {isPhotoLog ? (
+                      <text
+                        x={Math.min(vbW - 8, cx + 10)}
+                        y={Math.max(18, cy - 10)}
+                        fill="rgba(255, 230, 118, 0.98)"
+                        fontSize={13}
+                        fontWeight={700}
+                        style={{ pointerEvents: "none", userSelect: "none" }}
+                      >
+                        {`${event.id} -> w(${formatMeters(event.world_x_m)}, ${formatMeters(event.world_z_m)})`}
+                      </text>
+                    ) : null}
                   </g>
                 );
               })}

@@ -24,6 +24,8 @@ const WORLD_OFFSET_X_M = Number.isFinite(Number(zm.map.world?.offset_x_m))
 const WORLD_OFFSET_Z_M = Number.isFinite(Number(zm.map.world?.offset_z_m))
   ? Number(zm.map.world?.offset_z_m)
   : 0;
+const MODEL_REF_WIDTH_M = 13.0;
+const MODEL_REF_DEPTH_M = 15.12058;
 
 type IncomingSyncMode = "merge" | "replace";
 
@@ -85,6 +87,15 @@ function parseInputNumber(value: string) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function worldToThreeNorm(worldX: number, worldZ: number) {
+  const sceneX = worldX - WORLD_OFFSET_X_M;
+  const sceneZ = -(worldZ - WORLD_OFFSET_Z_M);
+  return {
+    x: clamp01(sceneX / MODEL_REF_WIDTH_M + 0.5),
+    y: clamp01(sceneZ / MODEL_REF_DEPTH_M + 0.5),
+  };
+}
+
 function toPair(value: unknown): readonly [number, number] | null {
   if (!Array.isArray(value) || value.length < 2) return null;
   const x = Number(value[0]);
@@ -117,6 +128,7 @@ const PHOTO_REFERENCE_LOGS: readonly PhotoReferencePoint[] = (Array.isArray(phot
 function buildPhotoReferenceEvents(now: number) {
   const events: EventItem[] = [];
   PHOTO_REFERENCE_LOGS.forEach((point, idx) => {
+    const norm = worldToThreeNorm(point.worldX, point.worldZ);
     const payload = {
       eventId: `photo-log-${point.trackId}`,
       timestamp: now - idx * 120,
@@ -127,6 +139,8 @@ function buildPhotoReferenceEvents(now: number) {
       eventType: "crowd",
       severity: 2,
       confidence: 0.97,
+      x_norm: norm.x,
+      y_norm: norm.y,
       world: {
         x: point.worldX,
         z: point.worldZ,
@@ -144,8 +158,11 @@ function buildPhotoReferenceEvents(now: number) {
       source: "camera",
       object_label: "photo-ref",
       raw_status: "photo_ref",
+      x: norm.x,
+      y: norm.y,
       world_x_m: point.worldX,
       world_z_m: point.worldZ,
+      note: [normalized.note, `3d-norm(${norm.x.toFixed(3)},${norm.y.toFixed(3)})`].filter(Boolean).join(" | "),
     });
   });
   return events;
@@ -709,7 +726,12 @@ export default function OpsExperience() {
 
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12 }}>
         <article style={{ minWidth: 0 }}>
-          <MapView events={events} selectedId={selectedId} onSelect={setSelectedId} />
+          <MapView
+            events={events}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            mapAspectRatioOverride={MODEL_REF_WIDTH_M / MODEL_REF_DEPTH_M}
+          />
         </article>
 
         <aside
