@@ -7,6 +7,14 @@ import { PHOTO_REFERENCE_POINTS as photoReferencePointsRaw } from "@/data/photo_
 import { MODEL_REF_DEPTH_M, MODEL_REF_WIDTH_M, worldToMapNorm } from "@/lib/coordinateTransform";
 import { adaptRawEvent, normalizeEventFeed } from "@/lib/eventAdapter";
 import { getEventTypeLabel, getZoneLabel } from "@/lib/labels";
+import {
+  INITIAL_SIGNAL_CHECKS,
+  mergeSignalChecks,
+  parseSignalPayload,
+  type SignalChecksPatch,
+  type SignalChecksState,
+  type SignalTone,
+} from "@/lib/signalChecks";
 import type { EventItem, ZoneMap } from "@/lib/types";
 
 const MAX_EVENTS = 600;
@@ -26,6 +34,8 @@ type IncomingSyncBatch = {
   mode: IncomingSyncMode;
   upsert: EventItem[];
   removeIds: string[];
+  signalPatch: SignalChecksPatch;
+  signalLabels: string[];
 };
 type PhotoReferencePoint = {
   trackId: number;
@@ -321,17 +331,27 @@ function normalizeRecordsForSync(rows: unknown[]) {
 }
 
 function emptySyncBatch(mode: IncomingSyncMode = "merge"): IncomingSyncBatch {
-  return { mode, upsert: [], removeIds: [] };
+  return { mode, upsert: [], removeIds: [], signalPatch: {}, signalLabels: [] };
 }
 
 function normalizeIncomingPayload(payload: unknown): IncomingSyncBatch {
   const parsed = parseMaybeJson(payload);
   if (typeof parsed === "string") return emptySyncBatch();
   if (parsed === null || parsed === undefined) return emptySyncBatch();
+  const signal = parseSignalPayload(parsed, {
+    fallbackStoreId: "s001",
+    defaultSource: "api",
+  });
 
   if (Array.isArray(parsed)) {
     const rows = normalizeRecordsForSync(parsed);
-    return { mode: "merge", upsert: rows.upsert, removeIds: rows.removeIds };
+    return {
+      mode: "merge",
+      upsert: mergeEvents(rows.upsert, signal.generatedEvents),
+      removeIds: rows.removeIds,
+      signalPatch: signal.patch,
+      signalLabels: signal.labels,
+    };
   }
 
   const row = asRecord(parsed);
@@ -361,8 +381,10 @@ function normalizeIncomingPayload(payload: unknown): IncomingSyncBatch {
     const rows = normalizeRecordsForSync(arrayCandidate);
     return {
       mode,
-      upsert: rows.upsert,
+      upsert: mergeEvents(rows.upsert, signal.generatedEvents),
       removeIds: dedupeIds([...rootRemoveIds, ...rows.removeIds]),
+      signalPatch: signal.patch,
+      signalLabels: signal.labels,
     };
   }
 
@@ -376,6 +398,8 @@ function normalizeIncomingPayload(payload: unknown): IncomingSyncBatch {
       mode,
       upsert: [],
       removeIds: dedupeIds(removeId ? [...rootRemoveIds, removeId] : rootRemoveIds),
+      signalPatch: signal.patch,
+      signalLabels: signal.labels,
     };
   }
 
@@ -386,8 +410,10 @@ function normalizeIncomingPayload(payload: unknown): IncomingSyncBatch {
 
   return {
     mode,
-    upsert: single ? [single] : [],
+    upsert: single ? mergeEvents([single], signal.generatedEvents) : signal.generatedEvents,
     removeIds: rootRemoveIds,
+    signalPatch: signal.patch,
+    signalLabels: signal.labels,
   };
 }
 
@@ -447,8 +473,49 @@ function getTemperatureTone(valueC: number) {
   };
 }
 
+function formatSignalUpdatedAt(value: number | null) {
+  if (!Number.isFinite(value) || value === null) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleTimeString("ko-KR", { hour12: false });
+}
+
+function getSignalToneDisplay(tone: SignalTone) {
+  if (tone === "critical") {
+    return {
+      label: "긴급",
+      color: "rgba(255, 115, 126, 0.96)",
+      chipBg: "rgba(149, 45, 63, 0.24)",
+      border: "1px solid rgba(255, 122, 132, 0.34)",
+    };
+  }
+  if (tone === "watch") {
+    return {
+      label: "주의",
+      color: "rgba(255, 197, 105, 0.96)",
+      chipBg: "rgba(148, 97, 35, 0.24)",
+      border: "1px solid rgba(255, 196, 103, 0.32)",
+    };
+  }
+  if (tone === "ok") {
+    return {
+      label: "정상",
+      color: "rgba(136, 226, 170, 0.95)",
+      chipBg: "rgba(47, 135, 89, 0.23)",
+      border: "1px solid rgba(133, 220, 166, 0.3)",
+    };
+  }
+  return {
+    label: "대기",
+    color: "rgba(182, 198, 223, 0.93)",
+    chipBg: "rgba(85, 102, 128, 0.22)",
+    border: "1px solid rgba(176, 194, 223, 0.26)",
+  };
+}
+
 export default function OpsExperience() {
   const [events, setEvents] = useState<EventItem[]>(() => INITIAL_PHOTO_EVENTS);
+  const [signalChecks, setSignalChecks] = useState<SignalChecksState>(() => INITIAL_SIGNAL_CHECKS);
   const [selectedId, setSelectedId] = useState<string | undefined>(() => INITIAL_PHOTO_EVENTS[0]?.id);
   const [jsonInput, setJsonInput] = useState("");
   const [toast, setToast] = useState<string | null>(null);
@@ -463,10 +530,15 @@ export default function OpsExperience() {
     () => events.find((event) => event.id === selectedId),
     [events, selectedId]
   );
+  const crowdTone = getSignalToneDisplay(signalChecks.crowd.tone);
+  const safetyTone = getSignalToneDisplay(signalChecks.safety.tone);
+  const trashTone = getSignalToneDisplay(signalChecks.trash.tone);
 
   const applySync = (payload: unknown, source: "file" | "text") => {
     const incoming = normalizeIncomingPayload(payload);
-    const hasMutation = incoming.mode === "replace" || incoming.upsert.length > 0 || incoming.removeIds.length > 0;
+    const hasSignalMutation = Boolean(incoming.signalPatch.crowd || incoming.signalPatch.safety || incoming.signalPatch.trash);
+    const hasMutation =
+      incoming.mode === "replace" || incoming.upsert.length > 0 || incoming.removeIds.length > 0 || hasSignalMutation;
     if (!hasMutation) {
       setToast(`${source === "file" ? "파일" : "텍스트"}에서 반영할 이벤트가 없습니다.`);
       return;
@@ -477,9 +549,13 @@ export default function OpsExperience() {
       if (!selectedId && next.length > 0) setSelectedId(next[0].id);
       return next;
     });
+    if (hasSignalMutation) {
+      setSignalChecks((prev) => mergeSignalChecks(prev, incoming.signalPatch));
+    }
 
+    const checkSummary = incoming.signalLabels.length > 0 ? ` · checks=${incoming.signalLabels.join(", ")}` : "";
     setToast(
-      `동기화 완료 · mode=${incoming.mode} · upsert=${incoming.upsert.length} · remove=${incoming.removeIds.length}`
+      `동기화 완료 · mode=${incoming.mode} · upsert=${incoming.upsert.length} · remove=${incoming.removeIds.length}${checkSummary}`
     );
   };
 
@@ -635,8 +711,9 @@ export default function OpsExperience() {
             className="opsPill"
             onClick={() => {
               setEvents([]);
+              setSignalChecks(INITIAL_SIGNAL_CHECKS);
               setSelectedId(undefined);
-              setToast("이벤트를 모두 비웠습니다.");
+              setToast("이벤트와 체크 상태를 모두 비웠습니다.");
             }}
           >
             전체 비우기
@@ -677,7 +754,7 @@ export default function OpsExperience() {
       >
         <strong>수동 태그 추가</strong>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          <select value={manualMode} onChange={(event) => setManualMode(event.target.value as "world" | "norm")}> 
+          <select value={manualMode} onChange={(event) => setManualMode(event.target.value as "world" | "norm")}>
             <option value="world">world(x,z)</option>
             <option value="norm">norm(x,y)</option>
           </select>
@@ -767,6 +844,109 @@ export default function OpsExperience() {
               <span style={{ fontSize: 14, opacity: 0.9 }}>°C</span>
             </div>
             <p style={{ fontSize: 11, opacity: 0.72 }}>UI 샘플 (실시간 센서 연동 전)</p>
+          </div>
+
+          <div style={{ display: "grid", gap: 8 }}>
+            <strong>실시간 체크</strong>
+
+            <div
+              style={{
+                border: crowdTone.border,
+                borderRadius: 10,
+                padding: "0.52rem 0.6rem",
+                background: "rgba(6, 14, 27, 0.62)",
+                display: "grid",
+                gap: 6,
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                <span style={{ fontWeight: 700 }}>혼잡도</span>
+                <span
+                  style={{
+                    fontSize: 11,
+                    borderRadius: 999,
+                    padding: "0.14rem 0.4rem",
+                    background: crowdTone.chipBg,
+                    color: crowdTone.color,
+                  }}
+                >
+                  {crowdTone.label}
+                </span>
+              </div>
+              <div style={{ fontSize: 13 }}>
+                수준 <strong>{signalChecks.crowd.congestionLevel}</strong> · 인원 <strong>{signalChecks.crowd.count}</strong>
+              </div>
+              <div style={{ fontSize: 11, opacity: 0.78 }}>
+                zone {signalChecks.crowd.zoneId} · {formatSignalUpdatedAt(signalChecks.crowd.updatedAt)}
+              </div>
+            </div>
+
+            <div
+              style={{
+                border: safetyTone.border,
+                borderRadius: 10,
+                padding: "0.52rem 0.6rem",
+                background: "rgba(6, 14, 27, 0.62)",
+                display: "grid",
+                gap: 6,
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                <span style={{ fontWeight: 700 }}>이상행동</span>
+                <span
+                  style={{
+                    fontSize: 11,
+                    borderRadius: 999,
+                    padding: "0.14rem 0.4rem",
+                    background: safetyTone.chipBg,
+                    color: safetyTone.color,
+                  }}
+                >
+                  {safetyTone.label}
+                </span>
+              </div>
+              <div style={{ fontSize: 13 }}>
+                심각도 <strong>{signalChecks.safety.severity}</strong> · 낙상 <strong>{signalChecks.safety.fallCount}</strong>
+              </div>
+              <div style={{ fontSize: 11, opacity: 0.78 }}>
+                {signalChecks.safety.summary} · 조치 {signalChecks.safety.action}
+              </div>
+              <div style={{ fontSize: 11, opacity: 0.78 }}>
+                zone {signalChecks.safety.zoneId} · {formatSignalUpdatedAt(signalChecks.safety.updatedAt)}
+              </div>
+            </div>
+
+            <div
+              style={{
+                border: trashTone.border,
+                borderRadius: 10,
+                padding: "0.52rem 0.6rem",
+                background: "rgba(6, 14, 27, 0.62)",
+                display: "grid",
+                gap: 6,
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                <span style={{ fontWeight: 700 }}>쓰레기</span>
+                <span
+                  style={{
+                    fontSize: 11,
+                    borderRadius: 999,
+                    padding: "0.14rem 0.4rem",
+                    background: trashTone.chipBg,
+                    color: trashTone.color,
+                  }}
+                >
+                  {trashTone.label}
+                </span>
+              </div>
+              <div style={{ fontSize: 13 }}>
+                심각도 <strong>{signalChecks.trash.severity}</strong> · 감지 <strong>{signalChecks.trash.trashCount}</strong>
+              </div>
+              <div style={{ fontSize: 11, opacity: 0.78 }}>
+                zone {signalChecks.trash.zoneId} · {formatSignalUpdatedAt(signalChecks.trash.updatedAt)}
+              </div>
+            </div>
           </div>
 
           <strong>선택 정보</strong>
