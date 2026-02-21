@@ -15,6 +15,7 @@ import {
   generateDummyEvent,
   generateDummyEvents,
 } from "@/lib/dummy";
+import { worldToMapNorm } from "@/lib/coordinateTransform";
 import { adaptRawEvent, normalizeEventFeed } from "@/lib/eventAdapter";
 import { applyHomography, computeHomography } from "@/lib/homography";
 import { getEventIdLabel, getEventTypeLabel, getZoneLabel } from "@/lib/labels";
@@ -34,6 +35,12 @@ const OPERATOR_ID = "ops-01";
 const EVENT_TYPE_FILTERS = new Set<EventTypeFilter>(["all", ...EVENT_TYPES]);
 
 const zm = zoneMap as ZoneMap;
+const WORLD_OFFSET_X_M = Number.isFinite(Number(zm.map.world?.offset_x_m))
+  ? Number(zm.map.world?.offset_x_m)
+  : 0;
+const WORLD_OFFSET_Z_M = Number.isFinite(Number(zm.map.world?.offset_z_m))
+  ? Number(zm.map.world?.offset_z_m)
+  : 0;
 
 const LIVE_WS_URL = process.env.NEXT_PUBLIC_EVENT_WS_URL?.trim() ?? "";
 const LIVE_SSE_URL = process.env.NEXT_PUBLIC_EVENT_STREAM_URL?.trim() ?? "";
@@ -54,12 +61,15 @@ const DEFAULT_MANUAL_CAMERA_ID = "camera-edge-01";
 const DEFAULT_MANUAL_FRAME_WIDTH = 1280;
 const DEFAULT_MANUAL_FRAME_HEIGHT = 720;
 const PHOTO_SEED_EVENT_PREFIX = "photo-log";
-const PHOTO_SEED_LOG_TRACK_IDS = [2, 5, 6] as const;
-const PHOTO_WORLD_ANCHOR_TRACK_IDS = [2, 6, 5, 1] as const;
-const FIXED_3D_WORLD_LOGS = [
-  { id: "track-2-fixed", x: -6.24, z: -0.94, note: "fixed 3d world log (photo #2)" },
-  { id: "track-2-fixed-near", x: -6.14, z: -0.94, note: "fixed 3d world log near photo #2" },
-] as const;
+const PHOTO_SEED_LOG_TRACK_IDS: readonly number[] = [0, 1, 2, 3, 5, 6];
+const PHOTO_WORLD_ANCHOR_TRACK_IDS: readonly number[] = [2, 6, 5, 1];
+type Fixed3DWorldLog = {
+  id: string;
+  x: number;
+  z: number;
+  note: string;
+};
+const FIXED_3D_WORLD_LOGS: readonly Fixed3DWorldLog[] = [];
 
 type Speed = 1 | 2 | 4;
 type FeedMode = "live" | "demo";
@@ -290,27 +300,22 @@ function buildPhotoSeedEvents(now: number) {
 
   PHOTO_SEED_POINTS.forEach((point, idx) => {
     if (!enabledTrackIds.has(point.trackId)) return;
-    const severity = point.status.toLowerCase() === "fall_down" ? 3 : 2;
+    const norm = worldToMapNorm(point.worldX - WORLD_OFFSET_X_M, point.worldZ - WORLD_OFFSET_Z_M);
     const record = {
       eventId: `${PHOTO_SEED_EVENT_PREFIX}-${point.trackId}`,
-      timestamp: now - idx * 1_500,
+      timestamp: now - idx * 120,
       camera_id: DEFAULT_MANUAL_CAMERA_ID,
-      track_id: point.trackId,
+      track_id: String(point.trackId),
       label: "person",
-      status: point.status,
-      eventType: severity === 3 ? "fall" : "crowd",
-      severity,
-      confidence: 0.92,
-      frame: {
-        width: DEFAULT_MANUAL_FRAME_WIDTH,
-        height: DEFAULT_MANUAL_FRAME_HEIGHT,
-      },
-      location: {
-        bbox: [point.predX, point.predY, point.predX, point.predY],
-        frame: {
-          width: DEFAULT_MANUAL_FRAME_WIDTH,
-          height: DEFAULT_MANUAL_FRAME_HEIGHT,
-        },
+      status: "walking",
+      eventType: "crowd",
+      severity: 2,
+      confidence: 0.97,
+      x_norm: norm.x,
+      y_norm: norm.y,
+      world: {
+        x: point.worldX,
+        z: point.worldZ,
       },
       note: `${point.note} pred(${point.predX},${point.predY}) -> w(${point.worldX.toFixed(2)},${point.worldZ.toFixed(2)})`,
     };
@@ -325,10 +330,15 @@ function buildPhotoSeedEvents(now: number) {
       ...normalized,
       id: `${PHOTO_SEED_EVENT_PREFIX}-${point.trackId}`,
       source: "camera",
+      object_label: "photo-ref",
+      raw_status: "photo_ref",
+      x: norm.x,
+      y: norm.y,
       incident_status: "new",
       world_x_m: point.worldX,
       world_z_m: point.worldZ,
-      severity,
+      severity: 2,
+      note: [normalized.note, `model-norm(${norm.x.toFixed(3)},${norm.y.toFixed(3)})`].filter(Boolean).join(" | "),
     });
   });
 
