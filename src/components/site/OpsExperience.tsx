@@ -1,52 +1,135 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTheme } from "@/components/site/theme";
+import EventDetail from "@/components/EventDetail";
+import IncidentTimeline from "@/components/IncidentTimeline";
 import MapView from "@/components/MapView";
+import SlaAlertPanel, { type ZoneSlaAlert } from "@/components/SlaAlertPanel";
 import zoneMap from "@/data/zone_map_s001.json";
+import cameraCalibration from "@/data/camera_calibration_s001.json";
 import { PHOTO_REFERENCE_POINTS as photoReferencePointsRaw } from "@/data/photo_reference_points.js";
-import { MODEL_REF_DEPTH_M, MODEL_REF_WIDTH_M, worldToMapNorm } from "@/lib/coordinateTransform";
-import { adaptRawEvent, normalizeEventFeed } from "@/lib/eventAdapter";
-import { getEventTypeLabel, getZoneLabel } from "@/lib/labels";
 import {
-  INITIAL_SIGNAL_CHECKS,
-  mergeSignalChecks,
-  parseSignalPayload,
-  type SignalChecksPatch,
-  type SignalChecksState,
-  type SignalTone,
-} from "@/lib/signalChecks";
-import type { EventItem, ZoneMap } from "@/lib/types";
+  DEFAULT_LIVE_WINDOW_MS,
+  EVENT_TYPES,
+  generateDummyEvent,
+  generateDummyEvents,
+} from "@/lib/dummy";
+import { adaptRawEvent, normalizeEventFeed } from "@/lib/eventAdapter";
+import { applyHomography, computeHomography } from "@/lib/homography";
+import { getEventIdLabel, getEventTypeLabel, getZoneLabel } from "@/lib/labels";
+import type {
+  EventItem,
+  EventTypeFilter,
+  IncidentAction,
+  IncidentStatus,
+  IncidentTimelineEntry,
+  ZoneMap,
+} from "@/lib/types";
 
-const MAX_EVENTS = 600;
-const MANUAL_TAG_PREFIX = "manual-tag";
+const STORAGE_KEY = "twincity-ops-experience-v3";
+const TIMELINE_MAX = 240;
+const MAX_VISIBLE = 140;
+const OPERATOR_ID = "ops-01";
+const EVENT_TYPE_FILTERS = new Set<EventTypeFilter>(["all", ...EVENT_TYPES]);
 
 const zm = zoneMap as ZoneMap;
-const WORLD_OFFSET_X_M = Number.isFinite(Number(zm.map.world?.offset_x_m))
-  ? Number(zm.map.world?.offset_x_m)
-  : 0;
-const WORLD_OFFSET_Z_M = Number.isFinite(Number(zm.map.world?.offset_z_m))
-  ? Number(zm.map.world?.offset_z_m)
-  : 0;
 
-type IncomingSyncMode = "merge" | "replace";
+const LIVE_WS_URL = process.env.NEXT_PUBLIC_EVENT_WS_URL?.trim() ?? "";
+const LIVE_SSE_URL = process.env.NEXT_PUBLIC_EVENT_STREAM_URL?.trim() ?? "";
+const LIVE_API_URL = process.env.NEXT_PUBLIC_EVENT_API_URL?.trim() ?? "";
+const LIVE_POLL_MS_RAW = Number(process.env.NEXT_PUBLIC_EVENT_POLL_MS ?? "5000");
+const LIVE_POLL_MS = Number.isFinite(LIVE_POLL_MS_RAW)
+  ? Math.max(1200, Math.min(30000, Math.round(LIVE_POLL_MS_RAW)))
+  : 5000;
+const HAS_LIVE_SOURCE = Boolean(LIVE_WS_URL || LIVE_SSE_URL || LIVE_API_URL);
 
-type IncomingSyncBatch = {
-  mode: IncomingSyncMode;
-  upsert: EventItem[];
-  removeIds: string[];
-  signalPatch: SignalChecksPatch;
-  signalLabels: string[];
-};
-type PhotoReferencePoint = {
+const DEFAULT_MAX_EVENTS = 520;
+const LOW_SIGNAL_CONFIDENCE_CUTOFF = 0.2;
+const TIMELINE_DEDUPE_WINDOW_MS = 30_000;
+const ACK_SLA_MS = 2 * 60 * 1000;
+const RESOLVE_SLA_MS = 10 * 60 * 1000;
+const MANUAL_MAP_EVENT_PREFIX = "manual-map";
+const DEFAULT_MANUAL_CAMERA_ID = "camera-edge-01";
+const DEFAULT_MANUAL_FRAME_WIDTH = 1280;
+const DEFAULT_MANUAL_FRAME_HEIGHT = 720;
+const PHOTO_SEED_EVENT_PREFIX = "photo-log";
+const PHOTO_SEED_LOG_TRACK_IDS = [2, 5, 6] as const;
+const PHOTO_WORLD_ANCHOR_TRACK_IDS = [2, 6, 5, 1] as const;
+const FIXED_3D_WORLD_LOGS = [
+  { id: "track-2-fixed", x: -6.24, z: -0.94, note: "fixed 3d world log (photo #2)" },
+  { id: "track-2-fixed-near", x: -6.14, z: -0.94, note: "fixed 3d world log near photo #2" },
+] as const;
+
+type Speed = 1 | 2 | 4;
+type FeedMode = "live" | "demo";
+type FeedTransport = "ws" | "sse" | "poll" | "demo" | "none";
+type FeedConnection = "idle" | "connecting" | "live" | "error";
+type ManualCoordinateMode = "world" | "pixel";
+
+type PhotoSeedPoint = {
   trackId: number;
   predX: number;
   predY: number;
   worldX: number;
   worldZ: number;
+  status: string;
+  note: string;
 };
 
-function clamp01(value: number) {
-  return Math.max(0, Math.min(1, value));
+type UserRole = "viewer" | "operator" | "admin";
+const ROLE_LABEL: Record<UserRole, string> = {
+  viewer: "보기",
+  operator: "운영",
+  admin: "관리",
+};
+
+type PersistedState = {
+  events?: unknown;
+  timeline?: unknown;
+  playing?: boolean;
+  speed?: Speed;
+  liveWindowMin?: number;
+  typeFilter?: EventTypeFilter;
+  zoneFilter?: string;
+  minSeverity?: 1 | 2 | 3;
+  openOnly?: boolean;
+  debugOverlay?: boolean;
+  showDiagnostics?: boolean;
+  maxEvents?: number;
+  feedMode?: FeedMode;
+  role?: UserRole;
+};
+
+function uid() {
+  return Math.random().toString(16).slice(2, 10) + "-" + Date.now().toString(16);
+}
+
+function clampRange(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function sortByDetectedAtDesc(a: EventItem, b: EventItem) {
+  return b.detected_at - a.detected_at;
+}
+
+function isManualMapEventId(eventId: string | undefined) {
+  return typeof eventId === "string" && eventId.startsWith(`${MANUAL_MAP_EVENT_PREFIX}-`);
+}
+
+function isPhotoSeedEventId(eventId: string | undefined) {
+  return typeof eventId === "string" && eventId.startsWith(`${PHOTO_SEED_EVENT_PREFIX}-`);
+}
+
+function parseMaybeJson(payload: unknown) {
+  if (typeof payload !== "string") return payload;
+  const trimmed = payload.trim();
+  if (!trimmed) return null;
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return payload;
+  }
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -72,15 +155,10 @@ function pickValue(record: Record<string, unknown>, paths: string[]): unknown {
   return undefined;
 }
 
-function parseMaybeJson(payload: unknown) {
-  if (typeof payload !== "string") return payload;
-  const trimmed = payload.trim();
-  if (!trimmed) return null;
-  try {
-    return JSON.parse(trimmed);
-  } catch {
-    return payload;
-  }
+function asText(value: unknown) {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
 }
 
 function parseInputNumber(value: string) {
@@ -98,83 +176,345 @@ function toPair(value: unknown): readonly [number, number] | null {
   return [x, y];
 }
 
-const PHOTO_REFERENCE_LOGS: readonly PhotoReferencePoint[] = (Array.isArray(photoReferencePointsRaw)
+const PHOTO_SEED_POINTS: readonly PhotoSeedPoint[] = (Array.isArray(photoReferencePointsRaw)
   ? photoReferencePointsRaw
   : []
 )
   .map((row) => {
     const record = asRecord(row);
     if (!record) return null;
+
     const pred = toPair(record.pred);
     const world = toPair(record.world);
     const trackId = Number(record.trackId);
     if (!pred || !world || !Number.isFinite(trackId)) return null;
+
+    const status = typeof record.status === "string" ? record.status : "walking";
+    const note = typeof record.note === "string" ? record.note : `photo seed ${trackId}`;
+
     return {
       trackId: Math.trunc(trackId),
       predX: pred[0],
       predY: pred[1],
       worldX: world[0],
       worldZ: world[1],
-    } satisfies PhotoReferencePoint;
+      status,
+      note,
+    } satisfies PhotoSeedPoint;
   })
-  .filter((point): point is PhotoReferencePoint => point !== null);
+  .filter((row): row is PhotoSeedPoint => row !== null);
 
-function buildPhotoReferenceEvents(now: number) {
+type CameraCalibrationRow = {
+  camera_id?: string;
+  enabled?: boolean;
+  image_points?: unknown;
+  map_norm_points?: unknown;
+};
+
+const CALIBRATION_ROWS = (() => {
+  const payload = cameraCalibration as { cameras?: unknown };
+  if (!Array.isArray(payload.cameras)) return [] as CameraCalibrationRow[];
+  return payload.cameras as CameraCalibrationRow[];
+})();
+
+function getCalibrationRow(cameraId: string) {
+  const key = cameraId.trim().toLowerCase();
+  return (
+    CALIBRATION_ROWS.find(
+      (row) =>
+        row.enabled !== false &&
+        typeof row.camera_id === "string" &&
+        row.camera_id.trim().toLowerCase() === key
+    ) ??
+    CALIBRATION_ROWS.find((row) => row.enabled !== false) ??
+    null
+  );
+}
+
+const PIXEL_TO_NORM_H = (() => {
+  const row = getCalibrationRow(DEFAULT_MANUAL_CAMERA_ID);
+  if (!row) return null;
+  if (!Array.isArray(row.image_points) || !Array.isArray(row.map_norm_points)) return null;
+
+  const src = row.image_points.map((point) => toPair(point)).filter((point): point is readonly [number, number] => point !== null);
+  const dst = row.map_norm_points.map((point) => toPair(point)).filter((point): point is readonly [number, number] => point !== null);
+  if (src.length < 4 || dst.length < 4) return null;
+  return computeHomography(src.slice(0, 4), dst.slice(0, 4));
+})();
+
+function mapPredPixelToNorm(predX: number, predY: number) {
+  if (!PIXEL_TO_NORM_H) return null;
+  const mapped = applyHomography(PIXEL_TO_NORM_H, predX, predY);
+  if (!mapped) return null;
+  return {
+    x: clampRange(mapped.x, 0, 1),
+    y: clampRange(mapped.y, 0, 1),
+  };
+}
+
+const PHOTO_WORLD_TO_NORM_H = (() => {
+  if (PHOTO_SEED_POINTS.length < 4) return null;
+
+  const pointByTrackId = new Map(PHOTO_SEED_POINTS.map((point) => [point.trackId, point] as const));
+  const anchorPoints = PHOTO_WORLD_ANCHOR_TRACK_IDS.map((trackId) => pointByTrackId.get(trackId)).filter(
+    (point): point is PhotoSeedPoint => point !== undefined
+  );
+  const calibrationPoints = anchorPoints.length >= 4 ? anchorPoints : PHOTO_SEED_POINTS;
+
+  const srcWorld: (readonly [number, number])[] = [];
+  const dstNorm: (readonly [number, number])[] = [];
+  for (const point of calibrationPoints) {
+    const mappedNorm = mapPredPixelToNorm(point.predX, point.predY);
+    if (!mappedNorm) continue;
+    srcWorld.push([point.worldX, point.worldZ]);
+    dstNorm.push([mappedNorm.x, mappedNorm.y]);
+  }
+  if (srcWorld.length < 4 || dstNorm.length < 4) return null;
+
+  return computeHomography(srcWorld.slice(0, 4), dstNorm.slice(0, 4));
+})();
+
+function mapPhotoWorldToNorm(worldX: number, worldZ: number) {
+  if (!PHOTO_WORLD_TO_NORM_H) return null;
+  const mapped = applyHomography(PHOTO_WORLD_TO_NORM_H, worldX, worldZ);
+  if (!mapped) return null;
+  return {
+    x: clampRange(mapped.x, 0, 1),
+    y: clampRange(mapped.y, 0, 1),
+  };
+}
+
+function buildPhotoSeedEvents(now: number) {
   const events: EventItem[] = [];
-  PHOTO_REFERENCE_LOGS.forEach((point, idx) => {
-    const norm = worldToMapNorm(point.worldX - WORLD_OFFSET_X_M, point.worldZ - WORLD_OFFSET_Z_M);
-    const payload = {
-      eventId: `photo-log-${point.trackId}`,
-      timestamp: now - idx * 120,
-      camera_id: "camera-edge-01",
-      track_id: String(point.trackId),
+  const enabledTrackIds = new Set<number>(PHOTO_SEED_LOG_TRACK_IDS);
+
+  PHOTO_SEED_POINTS.forEach((point, idx) => {
+    if (!enabledTrackIds.has(point.trackId)) return;
+    const severity = point.status.toLowerCase() === "fall_down" ? 3 : 2;
+    const record = {
+      eventId: `${PHOTO_SEED_EVENT_PREFIX}-${point.trackId}`,
+      timestamp: now - idx * 1_500,
+      camera_id: DEFAULT_MANUAL_CAMERA_ID,
+      track_id: point.trackId,
+      label: "person",
+      status: point.status,
+      eventType: severity === 3 ? "fall" : "crowd",
+      severity,
+      confidence: 0.92,
+      frame: {
+        width: DEFAULT_MANUAL_FRAME_WIDTH,
+        height: DEFAULT_MANUAL_FRAME_HEIGHT,
+      },
+      location: {
+        bbox: [point.predX, point.predY, point.predX, point.predY],
+        frame: {
+          width: DEFAULT_MANUAL_FRAME_WIDTH,
+          height: DEFAULT_MANUAL_FRAME_HEIGHT,
+        },
+      },
+      note: `${point.note} pred(${point.predX},${point.predY}) -> w(${point.worldX.toFixed(2)},${point.worldZ.toFixed(2)})`,
+    };
+
+    const normalized = adaptRawEvent(record, {
+      fallbackStoreId: "s001",
+      defaultSource: "camera",
+    });
+    if (!normalized) return;
+
+    events.push({
+      ...normalized,
+      id: `${PHOTO_SEED_EVENT_PREFIX}-${point.trackId}`,
+      source: "camera",
+      incident_status: "new",
+      world_x_m: point.worldX,
+      world_z_m: point.worldZ,
+      severity,
+    });
+  });
+
+  FIXED_3D_WORLD_LOGS.forEach((fixed, idx) => {
+    const fixed3dNorm = mapPhotoWorldToNorm(fixed.x, fixed.z);
+    const fixed3dPayload: Record<string, unknown> = {
+      eventId: `${PHOTO_SEED_EVENT_PREFIX}-${fixed.id}`,
+      timestamp: now + 300 + idx * 80,
+      camera_id: DEFAULT_MANUAL_CAMERA_ID,
+      track_id: fixed.id,
       label: "person",
       status: "walking",
       eventType: "crowd",
       severity: 2,
       confidence: 0.97,
-      x_norm: norm.x,
-      y_norm: norm.y,
-      world: {
-        x: point.worldX,
-        z: point.worldZ,
-      },
-      note: `photo ref pred(${point.predX},${point.predY}) -> world(${point.worldX.toFixed(2)},${point.worldZ.toFixed(2)})`,
+      note: `${fixed.note} xz(${fixed.x}, ${fixed.z})`,
     };
-    const normalized = adaptRawEvent(payload, {
+    if (fixed3dNorm) {
+      fixed3dPayload.x_norm = fixed3dNorm.x;
+      fixed3dPayload.y_norm = fixed3dNorm.y;
+    } else {
+      // Fallback when homography cannot be computed.
+      fixed3dPayload.world = {
+        x: fixed.x,
+        z: fixed.z,
+      };
+    }
+
+    const fixed3dEvent = adaptRawEvent(fixed3dPayload, {
       fallbackStoreId: "s001",
       defaultSource: "camera",
     });
-    if (!normalized) return;
+    if (!fixed3dEvent) return;
+
     events.push({
-      ...normalized,
-      id: `photo-log-${point.trackId}`,
+      ...fixed3dEvent,
+      id: String(fixed3dPayload.eventId),
       source: "camera",
-      object_label: "photo-ref",
-      raw_status: "photo_ref",
-      x: norm.x,
-      y: norm.y,
-      world_x_m: point.worldX,
-      world_z_m: point.worldZ,
-      note: [normalized.note, `model-norm(${norm.x.toFixed(3)},${norm.y.toFixed(3)})`].filter(Boolean).join(" | "),
+      incident_status: "new",
+      severity: 2,
+      world_x_m: fixed.x,
+      world_z_m: fixed.z,
     });
   });
+
   return events;
 }
 
-const INITIAL_PHOTO_EVENTS = buildPhotoReferenceEvents(Date.now());
+function composeVlmNote(record: Record<string, unknown>) {
+  const vlm = asRecord(record.vlm_analysis);
+  if (!vlm) return undefined;
+
+  const summary = asText(vlm.summary);
+  const cause = asText(vlm.cause);
+  const action = asText(vlm.action);
+
+  const chunks = [
+    summary,
+    cause ? `cause:${cause}` : undefined,
+    action ? `action:${action}` : undefined,
+  ].filter((chunk): chunk is string => Boolean(chunk));
+
+  return chunks.length > 0 ? chunks.join(" | ") : undefined;
+}
+
+function normalizeEdgeObjectPayload(parent: Record<string, unknown>, value: unknown) {
+  const objectRecord = asRecord(value);
+  if (!objectRecord) return null;
+
+  const merged: Record<string, unknown> = {
+    ...objectRecord,
+    timestamp:
+      pickValue(objectRecord, ["timestamp", "detected_at", "detectedAt", "ts", "time"]) ??
+      pickValue(parent, ["timestamp", "detected_at", "detectedAt", "ts", "time"]),
+    deviceId:
+      pickValue(objectRecord, ["deviceId", "device_id", "cameraId", "camera_id", "camera.id"]) ??
+      pickValue(parent, ["deviceId", "device_id", "cameraId", "camera_id", "camera.id"]),
+    eventType:
+      pickValue(objectRecord, ["eventType", "event_type", "type", "category", "event_name"]) ??
+      pickValue(parent, ["eventType", "event_type", "type", "category", "event_name"]),
+    severity:
+      pickValue(objectRecord, ["severity", "priority", "level", "risk", "risk_level"]) ??
+      pickValue(parent, ["severity", "priority", "level", "risk", "risk_level"]),
+    source:
+      pickValue(objectRecord, ["source", "provider", "channel", "origin"]) ??
+      pickValue(parent, ["source", "provider", "channel", "origin"]),
+    frame:
+      pickValue(objectRecord, ["frame", "location.frame"]) ??
+      pickValue(parent, ["frame", "data.frame", "meta.frame"]),
+  };
+
+  const storeId =
+    pickValue(objectRecord, ["store_id", "storeId", "store.id", "site_id", "siteId", "shop_id", "shopId"]) ??
+    pickValue(parent, ["store_id", "storeId", "store.id", "site_id", "siteId", "shop_id", "shopId"]);
+  if (storeId !== undefined) {
+    merged.store_id = storeId;
+  }
+
+  const existingNote = asText(
+    pickValue(objectRecord, ["note", "message", "description", "reason", "summary"])
+  );
+  const vlmNote = composeVlmNote(objectRecord);
+  if (existingNote) {
+    merged.note = existingNote;
+  } else if (vlmNote) {
+    merged.note = vlmNote;
+  }
+
+  return merged;
+}
+
+function dropLowSignalEvents(events: EventItem[]) {
+  return events.filter(
+    (event) =>
+      !(
+        event.type === "unknown" &&
+        event.severity === 1 &&
+        event.confidence < LOW_SIGNAL_CONFIDENCE_CUTOFF
+      )
+  );
+}
+
+function parseTimeline(raw: unknown): IncidentTimelineEntry[] {
+  if (!Array.isArray(raw)) return [];
+  const rows: IncidentTimelineEntry[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== "object") continue;
+    const row = entry as Record<string, unknown>;
+    const action = row.action;
+    if (action !== "detected" && action !== "ack" && action !== "dispatch" && action !== "resolved") {
+      continue;
+    }
+
+    const id = typeof row.id === "string" ? row.id : null;
+    const eventId = typeof row.event_id === "string" ? row.event_id : null;
+    const zoneId = typeof row.zone_id === "string" ? row.zone_id : null;
+    const actor = typeof row.actor === "string" ? row.actor : null;
+    const at = typeof row.at === "number" && Number.isFinite(row.at) ? row.at : null;
+    if (!id || !eventId || !zoneId || !actor || at === null) continue;
+
+    const fromStatus = row.from_status;
+    const toStatus = row.to_status;
+
+    const safeFromStatus =
+      fromStatus === "new" || fromStatus === "ack" || fromStatus === "resolved"
+        ? fromStatus
+        : undefined;
+    const safeToStatus = toStatus === "new" || toStatus === "ack" || toStatus === "resolved" ? toStatus : undefined;
+
+    rows.push({
+      id,
+      event_id: eventId,
+      zone_id: zoneId,
+      action,
+      actor,
+      at,
+      from_status: safeFromStatus,
+      to_status: safeToStatus,
+      note: typeof row.note === "string" ? row.note : undefined,
+    });
+  }
+
+  return rows.sort((a, b) => b.at - a.at).slice(0, TIMELINE_MAX);
+}
+
+type IncomingSyncMode = "merge" | "replace";
+
+type IncomingSyncBatch = {
+  mode: IncomingSyncMode;
+  upsert: EventItem[];
+  removeIds: string[];
+};
+
+function dedupeIds(ids: string[]) {
+  return Array.from(new Set(ids));
+}
 
 function toIdString(value: unknown) {
   if (typeof value === "string") {
     const trimmed = value.trim();
     return trimmed.length > 0 ? trimmed : null;
   }
-  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
   return null;
-}
-
-function dedupeIds(ids: string[]) {
-  return Array.from(new Set(ids));
 }
 
 function parseEventIdFromRecord(record: Record<string, unknown>) {
@@ -196,17 +536,35 @@ function parseEventIdFromRecord(record: Record<string, unknown>) {
 }
 
 function parseSyncModeValue(value: unknown): IncomingSyncMode | null {
-  if (typeof value === "boolean") return value ? "replace" : "merge";
-  if (typeof value !== "string") return null;
-  const text = value.trim().toLowerCase();
+  if (typeof value === "boolean") {
+    return value ? "replace" : "merge";
+  }
+  const text = asText(value)?.toLowerCase();
   if (!text) return null;
-  if (text.includes("replace") || text.includes("snapshot") || text.includes("full")) return "replace";
-  if (text.includes("merge") || text.includes("upsert") || text.includes("delta")) return "merge";
+  if (
+    text.includes("replace") ||
+    text.includes("snapshot") ||
+    text.includes("full_sync") ||
+    text.includes("full-sync") ||
+    text.includes("fullsync") ||
+    text.includes("resync")
+  ) {
+    return "replace";
+  }
+  if (
+    text.includes("merge") ||
+    text.includes("upsert") ||
+    text.includes("delta") ||
+    text.includes("incremental") ||
+    text.includes("patch")
+  ) {
+    return "merge";
+  }
   return null;
 }
 
 function parseSyncMode(record: Record<string, unknown>): IncomingSyncMode | null {
-  return parseSyncModeValue(
+  const modeFromField = parseSyncModeValue(
     pickValue(record, [
       "sync_mode",
       "syncMode",
@@ -218,26 +576,56 @@ function parseSyncMode(record: Record<string, unknown>): IncomingSyncMode | null
       "meta.sync.mode",
       "payload.mode",
       "mode",
-      "snapshot",
-      "full_sync",
-      "fullSync",
     ])
+  );
+  if (modeFromField) return modeFromField;
+
+  const boolMode = parseSyncModeValue(
+    pickValue(record, ["snapshot", "full_sync", "fullSync", "sync.snapshot", "sync.full_sync"])
+  );
+  if (boolMode) return boolMode;
+
+  return parseSyncModeValue(
+    pickValue(record, ["type", "event_type", "eventType", "kind", "topic", "message_type"])
   );
 }
 
 function parseRecordOperation(record: Record<string, unknown>): "upsert" | "remove" | null {
-  const opRaw = pickValue(record, [
-    "op",
-    "operation",
-    "event_op",
-    "event_operation",
-    "sync.op",
-    "sync.operation",
-  ]);
-  if (typeof opRaw !== "string") return null;
-  const op = opRaw.trim().toLowerCase();
-  if (["delete", "deleted", "remove", "removed", "clear", "cleared"].includes(op)) return "remove";
-  if (["upsert", "create", "created", "insert", "update", "updated", "patch", "add"].includes(op)) {
+  const op = asText(
+    pickValue(record, [
+      "op",
+      "operation",
+      "event_op",
+      "event_operation",
+      "sync.op",
+      "sync.operation",
+      "meta.op",
+      "meta.operation",
+    ])
+  )?.toLowerCase();
+  if (!op) return null;
+  if (
+    op === "delete" ||
+    op === "deleted" ||
+    op === "remove" ||
+    op === "removed" ||
+    op === "clear" ||
+    op === "cleared" ||
+    op === "dismiss" ||
+    op === "dismissed"
+  ) {
+    return "remove";
+  }
+  if (
+    op === "upsert" ||
+    op === "create" ||
+    op === "created" ||
+    op === "insert" ||
+    op === "update" ||
+    op === "updated" ||
+    op === "patch" ||
+    op === "add"
+  ) {
     return "upsert";
   }
   return null;
@@ -258,6 +646,39 @@ function parseIdList(value: unknown) {
     if (id) ids.push(id);
   }
   return ids;
+}
+
+function parseDeleteTypeEventId(record: Record<string, unknown>) {
+  const typeText = asText(
+    pickValue(record, ["type", "event_type", "eventType", "kind", "topic", "message_type"])
+  )?.toLowerCase();
+  if (!typeText) return null;
+
+  const impliesDelete =
+    typeText.includes("deleted") ||
+    typeText.includes("delete") ||
+    typeText.includes("removed") ||
+    typeText.includes("remove") ||
+    typeText.includes("cleared") ||
+    typeText.includes("clear");
+  if (!impliesDelete) return null;
+
+  const idDirect = parseEventIdFromRecord(record);
+  if (idDirect) return idDirect;
+
+  const nested = asRecord(
+    pickValue(record, [
+      "event",
+      "alert",
+      "payload.event",
+      "payload.alert",
+      "payload.data.event",
+      "message.event",
+      "message.alert",
+    ])
+  );
+  if (!nested) return null;
+  return parseEventIdFromRecord(nested);
 }
 
 function collectRemoveIds(record: Record<string, unknown>) {
@@ -298,10 +719,13 @@ function collectRemoveIds(record: Record<string, unknown>) {
     if (id) ids.push(id);
   }
 
+  const typeDeleteId = parseDeleteTypeEventId(record);
+  if (typeDeleteId) ids.push(typeDeleteId);
+
   return dedupeIds(ids);
 }
 
-function normalizeRecordsForSync(rows: unknown[]) {
+function normalizeRecordsForSync(rows: unknown[], maxEvents: number) {
   const upsertCandidates: unknown[] = [];
   const removeIds: string[] = [];
 
@@ -318,11 +742,13 @@ function normalizeRecordsForSync(rows: unknown[]) {
   const upsert =
     upsertCandidates.length === 0
       ? ([] as EventItem[])
-      : normalizeEventFeed(upsertCandidates, {
-          maxEvents: MAX_EVENTS,
-          fallbackStoreId: "s001",
-          defaultSource: "api",
-        });
+      : dropLowSignalEvents(
+          normalizeEventFeed(upsertCandidates, {
+            maxEvents,
+            fallbackStoreId: "s001",
+            defaultSource: "api",
+          })
+        );
 
   return {
     upsert,
@@ -331,34 +757,51 @@ function normalizeRecordsForSync(rows: unknown[]) {
 }
 
 function emptySyncBatch(mode: IncomingSyncMode = "merge"): IncomingSyncBatch {
-  return { mode, upsert: [], removeIds: [], signalPatch: {}, signalLabels: [] };
+  return {
+    mode,
+    upsert: [],
+    removeIds: [],
+  };
 }
 
-function normalizeIncomingPayload(payload: unknown): IncomingSyncBatch {
+function normalizeIncomingPayload(payload: unknown, maxEvents: number): IncomingSyncBatch {
   const parsed = parseMaybeJson(payload);
   if (typeof parsed === "string") return emptySyncBatch();
   if (parsed === null || parsed === undefined) return emptySyncBatch();
-  const signal = parseSignalPayload(parsed, {
-    fallbackStoreId: "s001",
-    defaultSource: "api",
-  });
 
   if (Array.isArray(parsed)) {
-    const rows = normalizeRecordsForSync(parsed);
-    return {
-      mode: "merge",
-      upsert: mergeEvents(rows.upsert, signal.generatedEvents),
-      removeIds: rows.removeIds,
-      signalPatch: signal.patch,
-      signalLabels: signal.labels,
-    };
+    const rows = normalizeRecordsForSync(parsed, maxEvents);
+    return { mode: "merge", upsert: rows.upsert, removeIds: rows.removeIds };
   }
 
   const row = asRecord(parsed);
   if (!row) return emptySyncBatch();
-
   const mode = parseSyncMode(row) ?? "merge";
   const rootRemoveIds = collectRemoveIds(row);
+
+  if (row.type === "ping" || row.type === "heartbeat") {
+    return { mode, upsert: [], removeIds: rootRemoveIds };
+  }
+
+  const objectRows = pickValue(row, [
+    "data.objects",
+    "payload.data.objects",
+    "payload.objects",
+    "message.data.objects",
+    "message.objects",
+  ]);
+  if (Array.isArray(objectRows)) {
+    const normalizedRows = objectRows
+      .map((objectRow) => normalizeEdgeObjectPayload(row, objectRow))
+      .filter((objectRow): objectRow is Record<string, unknown> => objectRow !== null);
+
+    const rows = normalizeRecordsForSync(normalizedRows, maxEvents);
+    return {
+      mode,
+      upsert: rows.upsert,
+      removeIds: dedupeIds([...rootRemoveIds, ...rows.removeIds]),
+    };
+  }
 
   const arrayCandidate = pickValue(row, [
     "events",
@@ -373,23 +816,30 @@ function normalizeIncomingPayload(payload: unknown): IncomingSyncBatch {
     "payload.alerts",
     "message.events",
     "message.items",
+    "stream.events",
     "sync.events",
     "payload.sync.events",
   ]);
 
   if (Array.isArray(arrayCandidate)) {
-    const rows = normalizeRecordsForSync(arrayCandidate);
+    const rows = normalizeRecordsForSync(arrayCandidate, maxEvents);
     return {
       mode,
-      upsert: mergeEvents(rows.upsert, signal.generatedEvents),
+      upsert: rows.upsert,
       removeIds: dedupeIds([...rootRemoveIds, ...rows.removeIds]),
-      signalPatch: signal.patch,
-      signalLabels: signal.labels,
     };
   }
 
   const singleCandidate =
-    pickValue(row, ["event", "alert", "payload.event", "payload.alert", "payload.data", "message.event"]) ?? row;
+    pickValue(row, [
+      "event",
+      "alert",
+      "payload.event",
+      "payload.alert",
+      "payload.data",
+      "message.event",
+      "message.alert",
+    ]) ?? row;
 
   const singleRecord = asRecord(singleCandidate);
   if (singleRecord && parseRecordOperation(singleRecord) === "remove") {
@@ -398,8 +848,6 @@ function normalizeIncomingPayload(payload: unknown): IncomingSyncBatch {
       mode,
       upsert: [],
       removeIds: dedupeIds(removeId ? [...rootRemoveIds, removeId] : rootRemoveIds),
-      signalPatch: signal.patch,
-      signalLabels: signal.labels,
     };
   }
 
@@ -410,610 +858,1424 @@ function normalizeIncomingPayload(payload: unknown): IncomingSyncBatch {
 
   return {
     mode,
-    upsert: single ? mergeEvents([single], signal.generatedEvents) : signal.generatedEvents,
+    upsert: single ? dropLowSignalEvents([single]) : [],
     removeIds: rootRemoveIds,
-    signalPatch: signal.patch,
-    signalLabels: signal.labels,
   };
 }
 
-function mergeEvents(existing: EventItem[], incoming: EventItem[]) {
+function mergeEvents(existing: EventItem[], incoming: EventItem[], maxEvents?: number) {
   const map = new Map<string, EventItem>(existing.map((event) => [event.id, event]));
   for (const event of incoming) {
     const prev = map.get(event.id);
     map.set(event.id, prev ? { ...prev, ...event } : event);
   }
-  return Array.from(map.values())
-    .sort((a, b) => {
-      if (b.detected_at !== a.detected_at) return b.detected_at - a.detected_at;
-      if (b.ingested_at !== a.ingested_at) return b.ingested_at - a.ingested_at;
-      return a.id.localeCompare(b.id);
-    })
-    .slice(0, MAX_EVENTS);
+  const merged = Array.from(map.values()).sort(sortByDetectedAtDesc);
+  if (typeof maxEvents !== "number" || !Number.isFinite(maxEvents)) {
+    return merged;
+  }
+  const safeMaxEvents = Math.max(1, Math.floor(maxEvents));
+  return merged.slice(0, safeMaxEvents);
 }
 
-function applyIncomingSyncBatch(existing: EventItem[], incoming: IncomingSyncBatch) {
-  let next = incoming.mode === "replace" ? [...incoming.upsert] : mergeEvents(existing, incoming.upsert);
+function applyIncomingSyncBatch(existing: EventItem[], incoming: IncomingSyncBatch, maxEvents: number) {
+  const preservedForReplace =
+    incoming.mode === "replace"
+      ? existing.filter((event) => isManualMapEventId(event.id) || isPhotoSeedEventId(event.id))
+      : existing;
+
+  let next = mergeEvents(preservedForReplace, incoming.upsert);
+
   if (incoming.removeIds.length > 0) {
     const removeSet = new Set(incoming.removeIds);
     next = next.filter((event) => !removeSet.has(event.id));
   }
-  return next
-    .sort((a, b) => {
-      if (b.detected_at !== a.detected_at) return b.detected_at - a.detected_at;
-      if (b.ingested_at !== a.ingested_at) return b.ingested_at - a.ingested_at;
-      return a.id.localeCompare(b.id);
-    })
-    .slice(0, MAX_EVENTS);
+
+  return next.sort(sortByDetectedAtDesc).slice(0, maxEvents);
 }
 
-function formatMeters(value?: number) {
-  return Number.isFinite(value) ? Number(value).toFixed(2) : "-";
-}
-
-function getTemperatureTone(valueC: number) {
-  if (valueC < 19) {
-    return {
-      label: "다소 낮음",
-      accent: "rgba(121, 177, 255, 0.92)",
-      chipBg: "rgba(69, 112, 190, 0.26)",
-    };
-  }
-  if (valueC > 25) {
-    return {
-      label: "다소 높음",
-      accent: "rgba(255, 171, 95, 0.95)",
-      chipBg: "rgba(174, 102, 41, 0.26)",
-    };
-  }
-  return {
-    label: "정상 범위",
-    accent: "rgba(125, 227, 170, 0.95)",
-    chipBg: "rgba(45, 138, 94, 0.24)",
-  };
-}
-
-function formatSignalUpdatedAt(value: number | null) {
-  if (!Number.isFinite(value) || value === null) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleTimeString("ko-KR", { hour12: false });
-}
-
-function getSignalToneDisplay(tone: SignalTone) {
-  if (tone === "critical") {
-    return {
-      label: "긴급",
-      color: "rgba(255, 115, 126, 0.96)",
-      chipBg: "rgba(149, 45, 63, 0.24)",
-      border: "1px solid rgba(255, 122, 132, 0.34)",
-    };
-  }
-  if (tone === "watch") {
-    return {
-      label: "주의",
-      color: "rgba(255, 197, 105, 0.96)",
-      chipBg: "rgba(148, 97, 35, 0.24)",
-      border: "1px solid rgba(255, 196, 103, 0.32)",
-    };
-  }
-  if (tone === "ok") {
-    return {
-      label: "정상",
-      color: "rgba(136, 226, 170, 0.95)",
-      chipBg: "rgba(47, 135, 89, 0.23)",
-      border: "1px solid rgba(133, 220, 166, 0.3)",
-    };
-  }
-  return {
-    label: "대기",
-    color: "rgba(182, 198, 223, 0.93)",
-    chipBg: "rgba(85, 102, 128, 0.22)",
-    border: "1px solid rgba(176, 194, 223, 0.26)",
-  };
+function transportLabel(transport: FeedTransport) {
+  if (transport === "ws") return "실시간 연결(웹소켓)";
+  if (transport === "sse") return "실시간 연결(스트림)";
+  if (transport === "poll") return "주기 조회";
+  if (transport === "demo") return "연습 데이터";
+  return "연결 없음";
 }
 
 export default function OpsExperience() {
-  const [events, setEvents] = useState<EventItem[]>(() => INITIAL_PHOTO_EVENTS);
-  const [signalChecks, setSignalChecks] = useState<SignalChecksState>(() => INITIAL_SIGNAL_CHECKS);
-  const [selectedId, setSelectedId] = useState<string | undefined>(() => INITIAL_PHOTO_EVENTS[0]?.id);
-  const [jsonInput, setJsonInput] = useState("");
-  const [toast, setToast] = useState<string | null>(null);
-  const [manualMode, setManualMode] = useState<"world" | "norm">("world");
-  const [manualX, setManualX] = useState("");
-  const [manualY, setManualY] = useState("");
-  const [manualZoneId, setManualZoneId] = useState(zm.zones[0]?.zone_id ?? "zone-s001-center");
-  const storeTemperatureC = 23.4;
-  const temperatureTone = getTemperatureTone(storeTemperatureC);
+  const { meta } = useTheme();
+  const reconnectAttemptRef = useRef(0);
+  const photoSeedAppliedRef = useRef(false);
 
-  const selectedEvent = useMemo(
-    () => events.find((event) => event.id === selectedId),
-    [events, selectedId]
+  const [hydrated, setHydrated] = useState(false);
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [timeline, setTimeline] = useState<IncidentTimelineEntry[]>([]);
+  const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
+
+  const [playing, setPlaying] = useState(true);
+  const [speed, setSpeed] = useState<Speed>(1);
+  const [liveWindowMin, setLiveWindowMin] = useState(60);
+  const [typeFilter, setTypeFilter] = useState<EventTypeFilter>("all");
+  const [zoneFilter, setZoneFilter] = useState<string>("all");
+  const [minSeverity, setMinSeverity] = useState<1 | 2 | 3>(1);
+  const [openOnly, setOpenOnly] = useState(false);
+  const [debugOverlay, setDebugOverlay] = useState(false);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [maxEvents, setMaxEvents] = useState(DEFAULT_MAX_EVENTS);
+  const [feedMode, setFeedMode] = useState<FeedMode>(HAS_LIVE_SOURCE ? "live" : "demo");
+  const [role, setRole] = useState<UserRole>("operator");
+  const [manualCoordMode, setManualCoordMode] = useState<ManualCoordinateMode>("world");
+  const [manualCoordX, setManualCoordX] = useState("");
+  const [manualCoordY, setManualCoordY] = useState("");
+  const [manualCameraId, setManualCameraId] = useState(DEFAULT_MANUAL_CAMERA_ID);
+  const [manualFrameWidth, setManualFrameWidth] = useState(String(DEFAULT_MANUAL_FRAME_WIDTH));
+  const [manualFrameHeight, setManualFrameHeight] = useState(String(DEFAULT_MANUAL_FRAME_HEIGHT));
+
+  const [connection, setConnection] = useState<FeedConnection>("idle");
+  const [transport, setTransport] = useState<FeedTransport>(HAS_LIVE_SOURCE ? "none" : "demo");
+  const [connectionNote, setConnectionNote] = useState(
+    HAS_LIVE_SOURCE
+      ? "실시간 소스 연결을 준비 중입니다."
+      : "연습 데이터로 화면을 보여주고 있습니다."
   );
-  const crowdTone = getSignalToneDisplay(signalChecks.crowd.tone);
-  const safetyTone = getSignalToneDisplay(signalChecks.safety.tone);
-  const trashTone = getSignalToneDisplay(signalChecks.trash.tone);
+  const [lastSyncAt, setLastSyncAt] = useState<number | undefined>(undefined);
+  const [now, setNow] = useState(() => Date.now());
+  const [toast, setToast] = useState<string | null>(null);
 
-  const applySync = (payload: unknown, source: "file" | "text") => {
-    const incoming = normalizeIncomingPayload(payload);
-    const hasSignalMutation = Boolean(incoming.signalPatch.crowd || incoming.signalPatch.safety || incoming.signalPatch.trash);
-    const hasMutation =
-      incoming.mode === "replace" || incoming.upsert.length > 0 || incoming.removeIds.length > 0 || hasSignalMutation;
-    if (!hasMutation) {
-      setToast(`${source === "file" ? "파일" : "텍스트"}에서 반영할 이벤트가 없습니다.`);
-      return;
-    }
+  const liveWindowMs = liveWindowMin * 60 * 1000;
+  const canOperate = role !== "viewer";
+  const isAdmin = role === "admin";
 
-    setEvents((prev) => {
-      const next = applyIncomingSyncBatch(prev, incoming);
-      if (!selectedId && next.length > 0) setSelectedId(next[0].id);
-      return next;
-    });
-    if (hasSignalMutation) {
-      setSignalChecks((prev) => mergeSignalChecks(prev, incoming.signalPatch));
-    }
+  useEffect(() => {
+    const seededFromPhoto = buildPhotoSeedEvents(Date.now());
+    const fallback =
+      seededFromPhoto.length > 0
+        ? seededFromPhoto
+        : generateDummyEvents(72, {
+            liveWindowMs: DEFAULT_LIVE_WINDOW_MS,
+            historyRatio: 0.32,
+          });
 
-    const checkSummary = incoming.signalLabels.length > 0 ? ` · checks=${incoming.signalLabels.join(", ")}` : "";
-    setToast(
-      `동기화 완료 · mode=${incoming.mode} · upsert=${incoming.upsert.length} · remove=${incoming.removeIds.length}${checkSummary}`
-    );
-  };
-
-  const onUploadFile = async (file: File | null) => {
-    if (!file) return;
     try {
-      const text = await file.text();
-      applySync(text, "file");
-    } catch {
-      setToast("파일을 읽지 못했습니다.");
-    }
-  };
-
-  const onSyncText = () => {
-    if (!jsonInput.trim()) {
-      setToast("동기화할 JSON 텍스트를 입력해 주세요.");
-      return;
-    }
-    applySync(jsonInput, "text");
-  };
-
-  const onAddManualTag = () => {
-    const xRaw = parseInputNumber(manualX);
-    const yRaw = parseInputNumber(manualY);
-    if (xRaw === null || yRaw === null) {
-      setToast("태그 좌표 X/Y를 숫자로 입력해 주세요.");
-      return;
-    }
-
-    const now = Date.now();
-    const tagId = `${MANUAL_TAG_PREFIX}-${now.toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-
-    let normX: number;
-    let normY: number;
-    let worldX: number;
-    let worldZ: number;
-
-    if (manualMode === "world") {
-      worldX = xRaw;
-      worldZ = yRaw;
-      const mapped = worldToMapNorm(worldX - WORLD_OFFSET_X_M, worldZ - WORLD_OFFSET_Z_M);
-      normX = mapped.x;
-      normY = mapped.y;
-    } else {
-      normX = xRaw >= 0 && xRaw <= 1 ? xRaw : xRaw >= 0 && xRaw <= 100 ? xRaw / 100 : NaN;
-      normY = yRaw >= 0 && yRaw <= 1 ? yRaw : yRaw >= 0 && yRaw <= 100 ? yRaw / 100 : NaN;
-      if (!Number.isFinite(normX) || !Number.isFinite(normY)) {
-        setToast("정규화 좌표는 0..1 또는 0..100 범위로 입력해 주세요.");
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        setEvents(fallback);
+        setHydrated(true);
         return;
       }
-      normX = clamp01(normX);
-      normY = clamp01(normY);
-      worldX = WORLD_OFFSET_X_M + (normX - 0.5) * MODEL_REF_WIDTH_M;
-      worldZ = WORLD_OFFSET_Z_M - (normY - 0.5) * MODEL_REF_DEPTH_M;
+
+      const parsed = JSON.parse(raw) as PersistedState;
+      if (parsed.playing === true || parsed.playing === false) setPlaying(parsed.playing);
+      if (parsed.speed === 1 || parsed.speed === 2 || parsed.speed === 4) setSpeed(parsed.speed);
+
+      if (typeof parsed.liveWindowMin === "number") {
+        setLiveWindowMin(clampRange(Math.round(parsed.liveWindowMin), 10, 240));
+      }
+      if (EVENT_TYPE_FILTERS.has(parsed.typeFilter as EventTypeFilter)) {
+        setTypeFilter(parsed.typeFilter as EventTypeFilter);
+      }
+      if (typeof parsed.zoneFilter === "string") {
+        const trimmed = parsed.zoneFilter.trim();
+        if (trimmed.length > 0) setZoneFilter(trimmed);
+      }
+      if (parsed.minSeverity === 1 || parsed.minSeverity === 2 || parsed.minSeverity === 3) {
+        setMinSeverity(parsed.minSeverity);
+      }
+      if (parsed.openOnly === true || parsed.openOnly === false) {
+        setOpenOnly(parsed.openOnly);
+      }
+      if (parsed.debugOverlay === true || parsed.debugOverlay === false) {
+        setDebugOverlay(parsed.debugOverlay);
+      }
+      if (parsed.showDiagnostics === true || parsed.showDiagnostics === false) {
+        setShowDiagnostics(parsed.showDiagnostics);
+      }
+
+      const restoredMaxEvents =
+        typeof parsed.maxEvents === "number"
+          ? clampRange(Math.round(parsed.maxEvents), 120, 800)
+          : DEFAULT_MAX_EVENTS;
+      setMaxEvents(restoredMaxEvents);
+
+      if (parsed.feedMode === "live" || parsed.feedMode === "demo") {
+        setFeedMode(HAS_LIVE_SOURCE ? parsed.feedMode : "demo");
+      }
+      if (parsed.role === "viewer" || parsed.role === "operator" || parsed.role === "admin") {
+        setRole(parsed.role);
+      }
+
+      const restoredEvents = normalizeEventFeed(parsed.events, {
+        maxEvents: restoredMaxEvents,
+        fallbackStoreId: "s001",
+        defaultSource: "demo",
+      });
+      setEvents(restoredEvents.length > 0 ? restoredEvents : fallback);
+      setTimeline(parseTimeline(parsed.timeline));
+    } catch {
+      setEvents(fallback);
+    } finally {
+      setHydrated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [hydrated]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => setToast(null), 2400);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (photoSeedAppliedRef.current) return;
+    photoSeedAppliedRef.current = true;
+
+    const seeded = buildPhotoSeedEvents(Date.now());
+    if (seeded.length === 0) return;
+
+    setEvents((prev) => {
+      const manualOnly = prev.filter((event) => isManualMapEventId(event.id));
+      return mergeEvents(seeded, manualOnly, maxEvents);
+    });
+    setSelectedId((prev) => (prev && isManualMapEventId(prev) ? prev : seeded[0]?.id));
+  }, [hydrated, maxEvents]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        events: events.slice(0, maxEvents),
+        timeline: timeline.slice(0, TIMELINE_MAX),
+        playing,
+        speed,
+        liveWindowMin,
+        typeFilter,
+        zoneFilter,
+        minSeverity,
+        openOnly,
+        debugOverlay,
+        showDiagnostics,
+        maxEvents,
+        feedMode,
+        role,
+      } satisfies PersistedState)
+    );
+  }, [
+    debugOverlay,
+    events,
+    feedMode,
+    hydrated,
+    liveWindowMin,
+    maxEvents,
+    minSeverity,
+    openOnly,
+    playing,
+    role,
+    showDiagnostics,
+    speed,
+    timeline,
+    typeFilter,
+    zoneFilter,
+  ]);
+
+  useEffect(() => {
+    setEvents((prev) => prev.slice(0, maxEvents));
+  }, [maxEvents]);
+
+  useEffect(() => {
+    if (feedMode !== "demo") return;
+    if (PHOTO_SEED_POINTS.length > 0) return;
+    if (!playing) return;
+
+    const interval = Math.max(220, Math.floor(980 / speed));
+    const timer = window.setInterval(() => {
+      const burst =
+        1 +
+        (Math.random() < 0.45 ? 1 : 0) +
+        (Math.random() < (speed === 4 ? 0.35 : speed === 2 ? 0.24 : 0.12) ? 1 : 0);
+      const incoming = Array.from({ length: burst }, () =>
+        generateDummyEvent({ liveWindowMs, historyRatio: 0.08 })
+      );
+      setEvents((prev) => mergeEvents(prev, incoming, maxEvents));
+    }, interval);
+
+    return () => window.clearInterval(timer);
+  }, [feedMode, liveWindowMs, maxEvents, playing, speed]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+
+    if (feedMode !== "live") {
+      reconnectAttemptRef.current = 0;
+      setConnection("idle");
+      setTransport("demo");
+      setConnectionNote("연습 데이터로 화면을 보여주고 있습니다.");
+      return;
     }
 
-    const payload = {
-      eventId: tagId,
-      timestamp: now,
-      eventType: "unknown",
-      severity: 2,
-      confidence: 0.99,
-      zone_id: manualZoneId,
-      source: "camera",
-      label: "manual-tag",
-      status: "manual_tag",
-      x_norm: normX,
-      y_norm: normY,
-      world: { x: worldX, z: worldZ },
-      note:
-        manualMode === "world"
-          ? `manual world (${worldX.toFixed(2)}, ${worldZ.toFixed(2)})`
-          : `manual norm (${normX.toFixed(3)}, ${normY.toFixed(3)})`,
+    if (!HAS_LIVE_SOURCE) {
+      setConnection("error");
+      setTransport("none");
+      setConnectionNote("실시간 연결 주소가 없어 연습 모드만 사용할 수 있습니다.");
+      return;
+    }
+
+    if (!playing) {
+      setConnection("idle");
+      setConnectionNote("실시간 연결을 잠시 멈췄습니다.");
+      return;
+    }
+
+    let cancelled = false;
+    let reconnectTimer: number | null = null;
+    let pollTimer: number | null = null;
+    let ws: WebSocket | null = null;
+    let es: EventSource | null = null;
+    let inFlightController: AbortController | null = null;
+
+    const closeAll = () => {
+      if (reconnectTimer !== null) {
+        window.clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+      if (pollTimer !== null) {
+        window.clearInterval(pollTimer);
+        pollTimer = null;
+      }
+      if (inFlightController) {
+        inFlightController.abort();
+        inFlightController = null;
+      }
+      if (ws) {
+        ws.onopen = null;
+        ws.onclose = null;
+        ws.onerror = null;
+        ws.onmessage = null;
+        ws.close();
+        ws = null;
+      }
+      if (es) {
+        es.onopen = null;
+        es.onerror = null;
+        es.onmessage = null;
+        es.close();
+        es = null;
+      }
     };
 
-    const normalized = adaptRawEvent(payload, {
+    const pushIncoming = (payload: unknown) => {
+      const incoming = normalizeIncomingPayload(payload, maxEvents);
+      const hasMutation =
+        incoming.mode === "replace" || incoming.upsert.length > 0 || incoming.removeIds.length > 0;
+      if (!hasMutation) return;
+      setEvents((prev) => applyIncomingSyncBatch(prev, incoming, maxEvents));
+      setLastSyncAt(Date.now());
+    };
+
+    const markLive = (via: FeedTransport, note: string) => {
+      reconnectAttemptRef.current = 0;
+      setTransport(via);
+      setConnection("live");
+      setConnectionNote(note);
+    };
+
+    const scheduleReconnect = (via: FeedTransport, reason: string) => {
+      if (cancelled) return;
+      reconnectAttemptRef.current += 1;
+      const delay = Math.min(12000, 800 * 2 ** Math.min(reconnectAttemptRef.current, 4));
+      setTransport(via);
+      setConnection("connecting");
+      setConnectionNote(`${reason} · ${Math.round(delay / 1000)}초 후 재시도`);
+
+      if (reconnectTimer !== null) {
+        window.clearTimeout(reconnectTimer);
+      }
+      reconnectTimer = window.setTimeout(() => {
+        start();
+      }, delay);
+    };
+
+    const connectWebSocket = () => {
+      setTransport("ws");
+      setConnection("connecting");
+      setConnectionNote("웹소켓 연결을 시도하고 있습니다...");
+
+      try {
+        ws = new WebSocket(LIVE_WS_URL);
+      } catch {
+        scheduleReconnect("ws", "실시간 연결 시작 실패");
+        return;
+      }
+
+      ws.onopen = () => {
+        if (cancelled) return;
+        markLive("ws", "웹소켓 실시간 연결됨");
+      };
+
+      ws.onmessage = (event) => {
+        if (cancelled) return;
+        pushIncoming(event.data);
+      };
+
+      ws.onerror = () => {
+        if (cancelled) return;
+        setConnection("error");
+        setConnectionNote("웹소켓 연결 오류가 발생했습니다.");
+      };
+
+      ws.onclose = (event) => {
+        if (cancelled) return;
+        scheduleReconnect("ws", `웹소켓 연결 종료 (${event.code})`);
+      };
+    };
+
+    const connectSse = () => {
+      setTransport("sse");
+      setConnection("connecting");
+      setConnectionNote("스트림 연결을 시도하고 있습니다...");
+
+      es = new EventSource(LIVE_SSE_URL);
+
+      es.onopen = () => {
+        if (cancelled) return;
+        markLive("sse", "스트림 연결됨");
+      };
+
+      es.onmessage = (event) => {
+        if (cancelled) return;
+        pushIncoming(event.data);
+      };
+
+      es.onerror = () => {
+        if (cancelled) return;
+        if (es) {
+          es.close();
+          es = null;
+        }
+        scheduleReconnect("sse", "스트림 연결 오류");
+      };
+    };
+
+    const connectPolling = () => {
+      setTransport("poll");
+      setConnection("connecting");
+      setConnectionNote(`주기 조회 중 (${LIVE_POLL_MS}ms)`);
+
+      const poll = async () => {
+        if (cancelled) return;
+        try {
+          inFlightController = new AbortController();
+          const res = await fetch(LIVE_API_URL, {
+            method: "GET",
+            cache: "no-store",
+            signal: inFlightController.signal,
+          });
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+          }
+          const payload = (await res.json()) as unknown;
+          pushIncoming(payload);
+          if (!cancelled) {
+            markLive("poll", `주기 조회 중 (${LIVE_POLL_MS}ms)`);
+          }
+        } catch (error) {
+          if (cancelled) return;
+          const note = error instanceof Error ? error.message : "알 수 없는 오류";
+          setConnection("error");
+          setConnectionNote(`주기 조회 오류: ${note}`);
+        }
+      };
+
+      void poll();
+      pollTimer = window.setInterval(() => {
+        void poll();
+      }, LIVE_POLL_MS);
+    };
+
+    const start = () => {
+      if (cancelled) return;
+      closeAll();
+      if (LIVE_WS_URL) {
+        connectWebSocket();
+        return;
+      }
+      if (LIVE_SSE_URL) {
+        connectSse();
+        return;
+      }
+      connectPolling();
+    };
+
+    start();
+
+    return () => {
+      cancelled = true;
+      closeAll();
+    };
+  }, [feedMode, hydrated, maxEvents, playing]);
+
+  const filteredEvents = useMemo(
+    () =>
+      events.filter(
+        (event) =>
+          (typeFilter === "all" || event.type === typeFilter) &&
+          (zoneFilter === "all" || event.zone_id === zoneFilter) &&
+          event.severity >= minSeverity &&
+          (!openOnly || event.incident_status !== "resolved")
+      ),
+    [events, minSeverity, openOnly, typeFilter, zoneFilter]
+  );
+
+  const liveEvents = useMemo(
+    () => filteredEvents.filter((event) => now - event.detected_at <= liveWindowMs),
+    [filteredEvents, liveWindowMs, now]
+  );
+
+  const zoneOptions = useMemo(() => {
+    const zones = new Set<string>();
+    zm.zones.forEach((zone) => zones.add(zone.zone_id));
+    events.forEach((event) => zones.add(event.zone_id));
+    return Array.from(zones).sort((a, b) =>
+      getZoneLabel(a).localeCompare(getZoneLabel(b), "ko")
+    );
+  }, [events]);
+
+  const visibleEvents = useMemo(() => filteredEvents.slice(0, MAX_VISIBLE), [filteredEvents]);
+
+  useEffect(() => {
+    if (visibleEvents.length === 0) {
+      setSelectedId(undefined);
+      return;
+    }
+    if (selectedId && !visibleEvents.some((event) => event.id === selectedId)) {
+      setSelectedId(visibleEvents[0].id);
+    }
+  }, [selectedId, visibleEvents]);
+
+  const selectedEvent = useMemo(
+    () => visibleEvents.find((event) => event.id === selectedId),
+    [selectedId, visibleEvents]
+  );
+
+  const selectedTimeline = useMemo(
+    () =>
+      selectedEvent
+        ? timeline
+            .filter((entry) => entry.event_id === selectedEvent.id)
+            .sort((a, b) => b.at - a.at)
+            .slice(0, 12)
+        : [],
+    [selectedEvent, timeline]
+  );
+
+  const moveSelection = useCallback(
+    (step: -1 | 1) => {
+      if (visibleEvents.length === 0) {
+        setSelectedId(undefined);
+        return;
+      }
+      if (!selectedId) {
+        setSelectedId(step > 0 ? visibleEvents[0].id : visibleEvents[visibleEvents.length - 1].id);
+        return;
+      }
+      const currentIndex = visibleEvents.findIndex((event) => event.id === selectedId);
+      if (currentIndex < 0) {
+        setSelectedId(step > 0 ? visibleEvents[0].id : visibleEvents[visibleEvents.length - 1].id);
+        return;
+      }
+      const nextIndex = (currentIndex + step + visibleEvents.length) % visibleEvents.length;
+      setSelectedId(visibleEvents[nextIndex].id);
+    },
+    [selectedId, visibleEvents]
+  );
+
+  const clearSelection = useCallback(() => {
+    setSelectedId(undefined);
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName?.toLowerCase();
+      if (
+        target &&
+        (target.isContentEditable || tag === "input" || tag === "textarea" || tag === "select")
+      ) {
+        return;
+      }
+      if (event.key === "Escape") {
+        clearSelection();
+        return;
+      }
+      if (event.key === "[" || event.key === "ArrowUp") {
+        event.preventDefault();
+        moveSelection(-1);
+        return;
+      }
+      if (event.key === "]" || event.key === "ArrowDown") {
+        event.preventDefault();
+        moveSelection(1);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [clearSelection, moveSelection]);
+
+  const appendTimelineEntry = (
+    item: Omit<IncidentTimelineEntry, "id" | "at"> & { at?: number }
+  ) => {
+    setTimeline((prev) => {
+      const at = item.at ?? Date.now();
+      const duplicate = prev.find(
+        (entry) =>
+          entry.event_id === item.event_id &&
+          entry.action === item.action &&
+          entry.actor === item.actor &&
+          entry.from_status === item.from_status &&
+          entry.to_status === item.to_status &&
+          entry.note === item.note
+      );
+      if (duplicate && Math.abs(at - duplicate.at) <= TIMELINE_DEDUPE_WINDOW_MS) {
+        return prev;
+      }
+
+      return [
+        {
+          id: uid(),
+          at,
+          event_id: item.event_id,
+          zone_id: item.zone_id,
+          action: item.action,
+          actor: item.actor,
+          from_status: item.from_status,
+          to_status: item.to_status,
+          note: item.note,
+        },
+        ...prev,
+      ]
+        .sort((a, b) => b.at - a.at)
+        .slice(0, TIMELINE_MAX);
+    });
+  };
+
+  const applyStatusChange = (
+    targetEvent: EventItem,
+    toStatus: IncidentStatus,
+    action: IncidentAction,
+    note: string
+  ) => {
+    if (!canOperate) {
+      setToast("보기 권한에서는 상태를 변경할 수 없어요.");
+      return;
+    }
+    if (targetEvent.incident_status === toStatus) return;
+
+    setEvents((prev) =>
+      prev.map((event) => {
+        if (event.id !== targetEvent.id) return event;
+        return { ...event, incident_status: toStatus };
+      })
+    );
+
+    appendTimelineEntry({
+      event_id: targetEvent.id,
+      zone_id: targetEvent.zone_id,
+      action,
+      actor: OPERATOR_ID,
+      from_status: targetEvent.incident_status,
+      to_status: toStatus,
+      note,
+    });
+  };
+
+  const markAcknowledged = (event: EventItem) => {
+    applyStatusChange(event, "ack", "ack", "담당자가 현장 확인을 시작했어요.");
+    if (canOperate) setToast("확인 처리했습니다.");
+  };
+
+  const markResolved = (event: EventItem) => {
+    applyStatusChange(event, "resolved", "resolved", "처리를 마치고 기록을 닫았습니다.");
+    if (canOperate) setToast("처리 완료로 기록했습니다.");
+  };
+
+  const dispatchOperator = (event: EventItem) => {
+    if (!canOperate) {
+      setToast("보기 권한에서는 직원 호출을 할 수 없어요.");
+      return;
+    }
+    if (event.incident_status === "resolved") return;
+    const toStatus = event.incident_status === "new" ? "ack" : event.incident_status;
+
+    appendTimelineEntry({
+      event_id: event.id,
+      zone_id: event.zone_id,
+      action: "dispatch",
+      actor: OPERATOR_ID,
+      from_status: event.incident_status,
+      to_status: toStatus,
+      note: "현장 인력을 호출했습니다.",
+    });
+    setToast("직원 호출을 기록했습니다.");
+
+    if (toStatus === "ack") {
+      setEvents((prev) =>
+        prev.map((entry) =>
+          entry.id === event.id ? { ...entry, incident_status: "ack" } : entry
+        )
+      );
+    }
+  };
+
+  const injectOne = () => {
+    if (!isAdmin) {
+      setToast("관리 권한에서만 샘플을 주입할 수 있어요.");
+      return;
+    }
+    const incoming = generateDummyEvent({ liveWindowMs, historyRatio: 0.15 });
+    setEvents((prev) => mergeEvents(prev, [incoming], maxEvents));
+    setToast("샘플 알림을 1건 추가했습니다.");
+  };
+
+  const injectWorldSample = () => {
+    if (!isAdmin) {
+      setToast("관리 권한에서만 샘플을 주입할 수 있어요.");
+      return;
+    }
+    const nowSec = Date.now() / 1000;
+    const samplePayload = {
+      camera_id: "cam01",
+      ts: nowSec,
+      track_id: 1,
+      label: "person",
+      status: Math.random() < 0.28 ? "fall_down" : "walking",
+      confidence: 0.85,
+      world: {
+        x: Number((2.1 + Math.random() * 4.8).toFixed(2)),
+        z: Number((0.6 + Math.random() * 3.4).toFixed(2)),
+      },
+    };
+
+    const normalized = adaptRawEvent(samplePayload, {
       fallbackStoreId: "s001",
       defaultSource: "camera",
     });
+    if (!normalized) return;
+    setEvents((prev) => mergeEvents(prev, [normalized], maxEvents));
+    setToast("위치 샘플을 1건 추가했습니다.");
+  };
 
+  const injectPhotoBasedLogs = () => {
+    if (!isAdmin) {
+      setToast("관리 권한에서만 이미지 기준 로그를 주입할 수 있어요.");
+      return;
+    }
+    const seeded = buildPhotoSeedEvents(Date.now());
+    if (seeded.length === 0) {
+      setToast("이미지 기준 로그를 만들지 못했습니다.");
+      return;
+    }
+    setEvents((prev) => mergeEvents(prev, seeded, maxEvents));
+    setSelectedId(seeded[0]?.id);
+    setTypeFilter("all");
+    setZoneFilter("all");
+    setOpenOnly(false);
+    setToast(`이미지 기준 로그 ${seeded.length}건을 반영했습니다.`);
+  };
+
+  const applyManualCoordinateTarget = () => {
+    if (!canOperate) {
+      setToast("보기 권한에서는 좌표 이동을 실행할 수 없어요.");
+      return;
+    }
+
+    const x = parseInputNumber(manualCoordX);
+    const y = parseInputNumber(manualCoordY);
+    if (x === null || y === null) {
+      setToast("좌표 X/Y를 숫자로 입력해 주세요.");
+      return;
+    }
+
+    const manualEventId = `${MANUAL_MAP_EVENT_PREFIX}-${Date.now().toString(36)}-${Math.random()
+      .toString(36)
+      .slice(2, 8)}`;
+    const manualTrackId = `manual-${manualEventId.slice(-6)}`;
+
+    const basePayload: Record<string, unknown> = {
+      eventId: manualEventId,
+      timestamp: Date.now(),
+      eventType: "unknown",
+      severity: 2,
+      confidence: 0.99,
+      track_id: manualTrackId,
+      label: "manual-target",
+      status: "manual_target",
+    };
+
+    let payload: Record<string, unknown>;
+    let defaultSource: "api" | "camera" = "camera";
+    if (manualCoordMode === "world") {
+      const mappedNorm = mapPhotoWorldToNorm(x, y);
+      if (!mappedNorm) {
+        setToast("이미지 기준 world(x,z)를 평면 좌표로 변환하지 못했습니다.");
+        return;
+      }
+      payload = {
+        ...basePayload,
+        source: "camera",
+        camera_id: manualCameraId.trim() || DEFAULT_MANUAL_CAMERA_ID,
+        x_norm: mappedNorm.x,
+        y_norm: mappedNorm.y,
+      };
+    } else {
+      const cameraId = manualCameraId.trim() || DEFAULT_MANUAL_CAMERA_ID;
+      const frameWidth = parseInputNumber(manualFrameWidth);
+      const frameHeight = parseInputNumber(manualFrameHeight);
+      if (frameWidth === null || frameHeight === null || frameWidth <= 0 || frameHeight <= 0) {
+        setToast("픽셀 입력에서는 프레임 크기를 양수로 입력해 주세요.");
+        return;
+      }
+
+      payload = {
+        ...basePayload,
+        source: "camera",
+        camera_id: cameraId,
+        frame: { width: frameWidth, height: frameHeight },
+        location: {
+          bbox: [x, y, x, y],
+          frame: { width: frameWidth, height: frameHeight },
+        },
+      };
+      defaultSource = "camera";
+    }
+
+    const normalized = adaptRawEvent(payload, {
+      fallbackStoreId: "s001",
+      defaultSource,
+    });
     if (!normalized) {
-      setToast("태그 좌표를 이벤트로 변환하지 못했습니다.");
+      setToast(
+        manualCoordMode === "world"
+          ? "월드 좌표를 해석하지 못했습니다."
+          : "픽셀 좌표를 맵 좌표로 변환하지 못했습니다."
+      );
       return;
     }
 
     const manualEvent: EventItem = {
       ...normalized,
-      id: tagId,
-      zone_id: manualZoneId,
-      object_label: "tag",
-      raw_status: "manual_tag",
-      world_x_m: worldX,
-      world_z_m: worldZ,
+      id: manualEventId,
+      severity: 2,
+      confidence: Math.max(0.95, normalized.confidence),
+      raw_status: "manual_target",
+      world_x_m: manualCoordMode === "world" ? x : normalized.world_x_m,
+      world_z_m: manualCoordMode === "world" ? y : normalized.world_z_m,
+      note:
+        manualCoordMode === "world"
+          ? `manual photo world (${x.toFixed(2)}, ${y.toFixed(2)})`
+          : `manual pixel (${x.toFixed(1)}, ${y.toFixed(1)})`,
     };
 
-    setEvents((prev) => mergeEvents(prev, [manualEvent]));
-    setSelectedId(tagId);
+    setEvents((prev) => mergeEvents(prev, [manualEvent], maxEvents));
+    setSelectedId(manualEventId);
+    if (typeFilter !== "all") setTypeFilter("all");
+    if (zoneFilter !== "all") setZoneFilter("all");
+    if (openOnly) setOpenOnly(false);
+
+    const worldXLabel = Number.isFinite(manualEvent.world_x_m) ? manualEvent.world_x_m!.toFixed(2) : "-";
+    const worldZLabel = Number.isFinite(manualEvent.world_z_m) ? manualEvent.world_z_m!.toFixed(2) : "-";
     setToast(
-      `태그 추가 완료 · norm(${manualEvent.x.toFixed(3)}, ${manualEvent.y.toFixed(3)}) · world(${worldX.toFixed(2)}, ${worldZ.toFixed(2)})`
+      `좌표 이동 완료 · norm(${manualEvent.x.toFixed(3)}, ${manualEvent.y.toFixed(3)}) · world(${worldXLabel}, ${worldZLabel})m`
     );
   };
 
-  const onClearManualTags = () => {
-    setEvents((prev) => prev.filter((event) => !event.id.startsWith(MANUAL_TAG_PREFIX)));
-    if (selectedId?.startsWith(MANUAL_TAG_PREFIX)) setSelectedId(undefined);
-    setToast("수동 태그를 삭제했습니다.");
-  };
-
-  const onSeedPhotoLogs = () => {
-    if (PHOTO_REFERENCE_LOGS.length === 0) {
-      setToast("이미지 기준 기준점 데이터가 없습니다.");
+  const clearManualCoordinateTarget = () => {
+    const remaining = events.filter((event) => !isManualMapEventId(event.id));
+    const removedCount = events.length - remaining.length;
+    if (removedCount <= 0) {
+      setToast("삭제할 수동 매핑 좌표가 없습니다.");
       return;
     }
-    const seeded = buildPhotoReferenceEvents(Date.now());
-    setEvents((prev) => mergeEvents(prev, seeded));
-    setSelectedId((prev) => seeded[0]?.id ?? prev);
-    setToast(`이미지 기준 로그 ${seeded.length}건을 찍었습니다.`);
+    setEvents(remaining);
+    setSelectedId((prev) => (isManualMapEventId(prev) ? undefined : prev));
+    setToast(`수동 매핑 좌표 ${removedCount}건을 삭제했습니다.`);
   };
 
+  const seedHistory = () => {
+    if (!isAdmin) {
+      setToast("관리 권한에서만 히스토리 시드를 만들 수 있어요.");
+      return;
+    }
+    const incoming = generateDummyEvents(40, {
+      liveWindowMs,
+      historyRatio: 1,
+      forceHistory: true,
+    });
+    setEvents((prev) => mergeEvents(prev, incoming, maxEvents));
+    setToast("지난 알림을 채웠습니다.");
+  };
+
+  const clearAll = () => {
+    if (!isAdmin) {
+      setToast("관리 권한에서만 전체 초기화가 가능해요.");
+      return;
+    }
+    setEvents([]);
+    setTimeline([]);
+    setSelectedId(undefined);
+    setToast("화면 데이터를 초기화했습니다.");
+  };
+
+  const ackAtByEvent = useMemo(() => {
+    const index = new Map<string, number>();
+    timeline.forEach((entry) => {
+      if (entry.to_status !== "ack") return;
+      const prev = index.get(entry.event_id) ?? 0;
+      if (entry.at > prev) index.set(entry.event_id, entry.at);
+    });
+    return index;
+  }, [timeline]);
+
+  const openEvents = useMemo(
+    () => filteredEvents.filter((event) => event.incident_status !== "resolved"),
+    [filteredEvents]
+  );
+  const hasManualMappings = useMemo(
+    () => events.some((event) => isManualMapEventId(event.id)),
+    [events]
+  );
+
+  const criticalCount = liveEvents.filter((event) => event.severity === 3).length;
+  const openCount = openEvents.length;
+  const overdueAckCount = openEvents.filter(
+    (event) => event.incident_status === "new" && now - event.detected_at > ACK_SLA_MS
+  ).length;
+  const overdueResolveCount = openEvents.filter((event) => {
+    if (event.incident_status !== "ack") return false;
+    const ackAt = ackAtByEvent.get(event.id) ?? event.detected_at;
+    return now - ackAt > RESOLVE_SLA_MS;
+  }).length;
+  const slaAlerts = useMemo<ZoneSlaAlert[]>(() => {
+    const ackThresholdSec = Math.round(ACK_SLA_MS / 1000);
+    const resolveThresholdSec = Math.round(RESOLVE_SLA_MS / 1000);
+    const byZone = new Map<string, Omit<ZoneSlaAlert, "breachCount">>();
+
+    openEvents.forEach((event) => {
+      const zoneId = event.zone_id;
+      const prev = byZone.get(zoneId);
+      const next: Omit<ZoneSlaAlert, "breachCount"> = prev ?? {
+        zoneId,
+        openCount: 0,
+        worstAgeSec: 0,
+        overdueAckCount: 0,
+        overdueResolveCount: 0,
+        ackThresholdSec,
+        resolveThresholdSec,
+        topSeverity: 1,
+      };
+
+      next.openCount += 1;
+      next.topSeverity = Math.max(next.topSeverity, event.severity) as 1 | 2 | 3;
+      next.worstAgeSec = Math.max(
+        next.worstAgeSec,
+        Math.max(0, Math.round((now - event.detected_at) / 1000))
+      );
+
+      if (event.incident_status === "new") {
+        if (now - event.detected_at > ACK_SLA_MS) next.overdueAckCount += 1;
+      } else if (event.incident_status === "ack") {
+        const ackAt = ackAtByEvent.get(event.id) ?? event.detected_at;
+        if (now - ackAt > RESOLVE_SLA_MS) next.overdueResolveCount += 1;
+      }
+
+      byZone.set(zoneId, next);
+    });
+
+    return Array.from(byZone.values())
+      .map((row) => ({
+        ...row,
+        breachCount: row.overdueAckCount + row.overdueResolveCount,
+      }))
+      .filter((row) => row.breachCount > 0)
+      .sort((a, b) => b.breachCount - a.breachCount || b.topSeverity - a.topSeverity || b.worstAgeSec - a.worstAgeSec)
+      .slice(0, 8);
+  }, [ackAtByEvent, now, openEvents]);
+
+  const recentActions = useMemo(() => timeline.slice(0, 8), [timeline]);
+  const avgLatency =
+    liveEvents.length > 0
+      ? Math.round(liveEvents.reduce((sum, event) => sum + event.latency_ms, 0) / liveEvents.length)
+      : 0;
+  const selectedSummary = selectedEvent
+    ? `${getEventTypeLabel(selectedEvent.type)} · ${selectedEvent.id.slice(-8)}`
+    : "없음";
+  const liveRatio =
+    visibleEvents.length > 0
+      ? `${Math.round((liveEvents.length / visibleEvents.length) * 100)}%`
+      : "0%";
+
+  const playLabel =
+    feedMode === "live"
+      ? playing
+        ? "실시간 잠시 멈춤"
+        : "실시간 다시 시작"
+      : playing
+        ? "자동 생성 멈춤"
+        : "자동 생성 시작";
+
+  const lastSyncLabel =
+    lastSyncAt !== undefined
+      ? new Date(lastSyncAt).toLocaleTimeString(undefined, {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })
+      : "-";
+  const hasOpsKicker = meta.opsKicker.trim().length > 0;
+  const hasOpsTitle = meta.opsTitle.trim().length > 0;
+
   return (
-    <section style={{ display: "grid", gap: 14 }}>
-      <div style={{ display: "grid", gap: 8 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700 }}>JSON 동기화 + 수동 태그</h2>
-        <p style={{ opacity: 0.82 }}>
-          요청 반영: JSON 매핑 동기화와 프론트 태그 추가 로직만 유지했습니다.
-        </p>
+    <section className="opsShell reveal delay-1">
+      <div className="opsTop">
+        <div className="opsHeading">
+          {hasOpsKicker ? (
+            <p className="kicker">
+              {meta.icon} {meta.opsKicker}
+            </p>
+          ) : null}
+          {hasOpsTitle ? <h2>{meta.opsTitle}</h2> : null}
+          <p>{meta.opsLead}</p>
+        </div>
+
+        <div className="opsMetricRow">
+          <article className="opsMetricCard">
+            <span>현재 알림</span>
+            <strong>{liveEvents.length}</strong>
+            <small>최근 {liveWindowMin}분 기준</small>
+          </article>
+          <article className="opsMetricCard">
+            <span>긴급 알림</span>
+            <strong>{criticalCount}</strong>
+            <small>중요도 3 기준</small>
+          </article>
+          <article className="opsMetricCard">
+            <span>미해결 알림</span>
+            <strong>{openCount}</strong>
+            <small>미해결 사건</small>
+          </article>
+          <article className="opsMetricCard">
+            <span>확인 지연</span>
+            <strong>{overdueAckCount}</strong>
+            <small>{Math.round(ACK_SLA_MS / 60_000)}분 이상 미확인</small>
+          </article>
+          <article className="opsMetricCard">
+            <span>처리 지연</span>
+            <strong>{overdueResolveCount}</strong>
+            <small>{Math.round(RESOLVE_SLA_MS / 60_000)}분 이상 미해결</small>
+          </article>
+          <article className="opsMetricCard">
+            <span>평균 반영 시간</span>
+            <strong>{avgLatency}ms</strong>
+            <small>실시간 평균 수신 지연</small>
+          </article>
+        </div>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gap: 10,
-          border: "1px solid rgba(170, 199, 247, 0.32)",
-          borderRadius: 12,
-          padding: 12,
-          background: "rgba(8, 16, 29, 0.52)",
-        }}
-      >
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
-          <input
-            type="file"
-            accept="application/json,.json"
-            onChange={(event) => void onUploadFile(event.target.files?.[0] ?? null)}
-          />
-          <button type="button" className="opsPill" onClick={onSyncText}>
-            텍스트 JSON 동기화
+      <div className="opsControls">
+        <button
+          type="button"
+          className={"opsToggle" + (playing ? " active" : "")}
+          onClick={() => setPlaying((value) => !value)}
+        >
+          {playLabel}
+        </button>
+
+        <div className="opsControlGroup">
+          <span>데이터</span>
+          <button
+            type="button"
+            className={"opsPill" + (feedMode === "live" ? " active" : "")}
+            onClick={() => setFeedMode("live")}
+            disabled={!HAS_LIVE_SOURCE || !canOperate}
+          >
+            {meta.modeLiveLabel}
           </button>
-          <button type="button" className="opsPill" onClick={onSeedPhotoLogs}>
-            이미지 로그 찍기
+          <button
+            type="button"
+            className={"opsPill" + (feedMode === "demo" ? " active" : "")}
+            onClick={() => setFeedMode("demo")}
+            disabled={!canOperate}
+          >
+            {meta.modeDemoLabel}
+          </button>
+        </div>
+
+        <div className="opsControlGroup">
+          <span>속도</span>
+          {[1, 2, 4].map((value) => (
+            <button
+              key={value}
+              type="button"
+              className={"opsPill" + (speed === value ? " active" : "")}
+              onClick={() => setSpeed(value as Speed)}
+              disabled={!canOperate}
+            >
+              {value}배속
+            </button>
+          ))}
+        </div>
+
+        <div className="opsControlGroup">
+          <span>최근 시간</span>
+          {[30, 60, 120].map((value) => (
+            <button
+              key={value}
+              type="button"
+              className={"opsPill" + (liveWindowMin === value ? " active" : "")}
+              onClick={() => setLiveWindowMin(value)}
+            >
+              {value}분
+            </button>
+          ))}
+        </div>
+
+        <div className="opsControlGroup">
+          <span>중요도</span>
+          {[1, 2, 3].map((value) => (
+            <button
+              key={value}
+              type="button"
+              className={"opsPill" + (minSeverity === value ? " active" : "")}
+              onClick={() => setMinSeverity(value as 1 | 2 | 3)}
+            >
+              {value} 이상
+            </button>
+          ))}
+        </div>
+
+        <div className="opsControlGroup">
+          <span>유형</span>
+          <button
+            type="button"
+            className={"opsPill" + (typeFilter === "all" ? " active" : "")}
+            onClick={() => setTypeFilter("all")}
+          >
+            전체
+          </button>
+          {EVENT_TYPES.map((type) => (
+            <button
+              key={type}
+              type="button"
+              className={"opsPill" + (typeFilter === type ? " active" : "")}
+              onClick={() => setTypeFilter(type)}
+            >
+              {getEventTypeLabel(type)}
+            </button>
+          ))}
+        </div>
+
+        <div className="opsControlGroup">
+          <span>구역</span>
+          <select
+            className="opsSelect"
+            value={zoneFilter}
+            onChange={(event) => setZoneFilter(event.target.value)}
+          >
+            <option value="all">전체</option>
+            {zoneOptions.map((zoneId) => (
+              <option key={zoneId} value={zoneId}>
+                {getZoneLabel(zoneId)}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="opsControlGroup">
+          <span>표시</span>
+          <button
+            type="button"
+            className={"opsPill" + (openOnly ? " active" : "")}
+            onClick={() => setOpenOnly((value) => !value)}
+          >
+            {openOnly ? "미해결만" : "전체"}
+          </button>
+          <button
+            type="button"
+            className={"opsPill" + (debugOverlay ? " active" : "")}
+            onClick={() => setDebugOverlay((value) => !value)}
+            disabled={!isAdmin && !debugOverlay}
+          >
+            {debugOverlay ? "구역 경계 표시 중" : "구역 경계 숨김"}
+          </button>
+          <button
+            type="button"
+            className={"opsPill" + (showDiagnostics ? " active" : "")}
+            onClick={() => setShowDiagnostics((value) => !value)}
+          >
+            {showDiagnostics ? "진단 패널 표시 중" : "진단 패널 숨김"}
+          </button>
+        </div>
+
+        <div className="opsControlGroup">
+          <span>보관 개수</span>
+          {[220, 360, 520, 720].map((value) => (
+            <button
+              key={value}
+              type="button"
+              className={"opsPill" + (maxEvents === value ? " active" : "")}
+              onClick={() => setMaxEvents(value)}
+              disabled={!isAdmin}
+            >
+              {value}
+            </button>
+          ))}
+        </div>
+
+        <div className="opsControlGroup">
+          <span>권한</span>
+          {(["viewer", "operator", "admin"] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              className={"opsPill" + (role === value ? " active" : "")}
+              onClick={() => setRole(value)}
+            >
+              {ROLE_LABEL[value]}
+            </button>
+          ))}
+        </div>
+
+        {feedMode === "demo" && isAdmin && (
+          <div className="opsControlGroup">
+            <span>샘플</span>
+            <button type="button" className="opsPill" onClick={injectOne}>
+              알림 1개 추가
+            </button>
+            <button type="button" className="opsPill" onClick={injectWorldSample}>
+              위치 데이터 1개 추가
+            </button>
+            <button type="button" className="opsPill" onClick={injectPhotoBasedLogs}>
+              사진 기준 로그 반영
+            </button>
+            <button type="button" className="opsPill" onClick={seedHistory}>
+              지난 알림 채우기
+            </button>
+            <button type="button" className="opsPill" onClick={clearAll}>
+              전체 지우기
+            </button>
+          </div>
+        )}
+
+        <form
+          className="opsControlGroup opsCoordGroup"
+          onSubmit={(event) => {
+            event.preventDefault();
+            applyManualCoordinateTarget();
+          }}
+        >
+          <span>좌표 이동</span>
+          <select
+            className="opsSelect"
+            value={manualCoordMode}
+            onChange={(event) => setManualCoordMode(event.target.value as ManualCoordinateMode)}
+            aria-label="좌표 입력 모드"
+          >
+            <option value="world">photo world (x,z)</option>
+            <option value="pixel">pred px (x,y)</option>
+          </select>
+          <input
+            className="opsCoordInput"
+            value={manualCoordX}
+            onChange={(event) => setManualCoordX(event.target.value)}
+            placeholder={manualCoordMode === "world" ? "x (m)" : "x (px)"}
+            inputMode="decimal"
+            aria-label={manualCoordMode === "world" ? "월드 X 좌표" : "픽셀 X 좌표"}
+          />
+          <input
+            className="opsCoordInput"
+            value={manualCoordY}
+            onChange={(event) => setManualCoordY(event.target.value)}
+            placeholder={manualCoordMode === "world" ? "z (m)" : "y (px)"}
+            inputMode="decimal"
+            aria-label={manualCoordMode === "world" ? "월드 Z 좌표" : "픽셀 Y 좌표"}
+          />
+          {manualCoordMode === "pixel" ? (
+            <>
+              <input
+                className="opsCoordInput opsCoordInputWide"
+                value={manualCameraId}
+                onChange={(event) => setManualCameraId(event.target.value)}
+                placeholder="camera id"
+                aria-label="카메라 아이디"
+              />
+              <input
+                className="opsCoordInput opsCoordInputTiny"
+                value={manualFrameWidth}
+                onChange={(event) => setManualFrameWidth(event.target.value)}
+                placeholder="W"
+                inputMode="numeric"
+                aria-label="프레임 너비"
+              />
+              <input
+                className="opsCoordInput opsCoordInputTiny"
+                value={manualFrameHeight}
+                onChange={(event) => setManualFrameHeight(event.target.value)}
+                placeholder="H"
+                inputMode="numeric"
+                aria-label="프레임 높이"
+              />
+            </>
+          ) : null}
+          <button type="submit" className="opsPill" disabled={!canOperate}>
+            좌표 추가
           </button>
           <button
             type="button"
             className="opsPill"
-            onClick={() => {
-              setEvents([]);
-              setSignalChecks(INITIAL_SIGNAL_CHECKS);
-              setSelectedId(undefined);
-              setToast("이벤트와 체크 상태를 모두 비웠습니다.");
-            }}
+            onClick={clearManualCoordinateTarget}
+            disabled={!hasManualMappings}
           >
-            전체 비우기
+            매핑 삭제
           </button>
-        </div>
-
-        <textarea
-          value={jsonInput}
-          onChange={(event) => setJsonInput(event.target.value)}
-          placeholder='여기에 JSON payload를 붙여넣고 "텍스트 JSON 동기화"를 누르세요.'
-          style={{
-            minHeight: 140,
-            width: "100%",
-            borderRadius: 10,
-            border: "1px solid rgba(173, 202, 255, 0.34)",
-            background: "rgba(4, 10, 20, 0.68)",
-            color: "rgba(236,243,255,0.95)",
-            padding: "0.6rem",
-            fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-            fontSize: 12,
-          }}
-        />
+        </form>
       </div>
 
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          onAddManualTag();
-        }}
-        style={{
-          display: "grid",
-          gap: 10,
-          border: "1px solid rgba(170, 199, 247, 0.32)",
-          borderRadius: 12,
-          padding: 12,
-          background: "rgba(8, 16, 29, 0.52)",
-        }}
-      >
-        <strong>수동 태그 추가</strong>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          <select value={manualMode} onChange={(event) => setManualMode(event.target.value as "world" | "norm")}>
-            <option value="world">world(x,z)</option>
-            <option value="norm">norm(x,y)</option>
-          </select>
-          <input
-            value={manualX}
-            onChange={(event) => setManualX(event.target.value)}
-            placeholder={manualMode === "world" ? "x (m)" : "x (0..1 or 0..100)"}
-            inputMode="decimal"
-          />
-          <input
-            value={manualY}
-            onChange={(event) => setManualY(event.target.value)}
-            placeholder={manualMode === "world" ? "z (m)" : "y (0..1 or 0..100)"}
-            inputMode="decimal"
-          />
-          <select value={manualZoneId} onChange={(event) => setManualZoneId(event.target.value)}>
-            {zm.zones.map((zone) => (
-              <option key={zone.zone_id} value={zone.zone_id}>
-                {getZoneLabel(zone.zone_id)}
-              </option>
-            ))}
-          </select>
-          <button type="submit" className="opsPill">
-            태그 추가
-          </button>
-          <button type="button" className="opsPill" onClick={onClearManualTags}>
-            수동 태그 삭제
-          </button>
-        </div>
-        {manualMode === "world" ? (
-          <p style={{ margin: 0, fontSize: 11, opacity: 0.72 }}>
-            안내: world 입력에서 z값은 내부 동기화 시 `-z` 축 기준으로 변환되어 입체/평면에 함께 반영됩니다.
-          </p>
-        ) : null}
-      </form>
+      <div className="opsFeedStatus" role="status" aria-live="polite">
+        <span className={`feedDot ${connection}`} aria-hidden />
+        <strong>{transportLabel(transport)}</strong>
+        <span>{connectionNote}</span>
+        <span className="mono">마지막 갱신 {lastSyncLabel}</span>
+        <span className="opsFeedHint mono">단축키 [ / ] 이동 · Esc 해제</span>
+      </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12 }}>
-        <article style={{ minWidth: 0 }}>
+      <SlaAlertPanel
+        alerts={slaAlerts}
+        onSelectZone={(zoneId) => {
+          setZoneFilter(zoneId);
+          setOpenOnly(true);
+          setToast(`${getZoneLabel(zoneId)} 구역으로 필터했어요.`);
+        }}
+      />
+
+      {showDiagnostics && (
+        <div className="opsDiagnostics">
+          <div className="opsDiagnosticsHead">
+            <strong>운영 진단 패널</strong>
+            <span className="mono">
+              표시 {visibleEvents.length}건 · 라이브 비율 {liveRatio}
+            </span>
+          </div>
+          <div className="opsDiagnosticsGrid">
+            <article className="opsDiagItem">
+              <span>선택 객체</span>
+              <strong className="mono">{selectedSummary}</strong>
+            </article>
+            <article className="opsDiagItem">
+              <span>연결 상태</span>
+              <strong>{transportLabel(transport)}</strong>
+            </article>
+            <article className="opsDiagItem">
+              <span>필터</span>
+              <strong>
+                {typeFilter === "all" ? "전체" : getEventTypeLabel(typeFilter)} · {zoneFilter === "all" ? "전체 구역" : getZoneLabel(zoneFilter)} · S{minSeverity}+ · {openOnly ? "미해결" : "전체"}
+              </strong>
+            </article>
+            <article className="opsDiagItem">
+              <span>미해결/긴급</span>
+              <strong>{openCount} / {criticalCount}</strong>
+            </article>
+          </div>
+
+          <div className="opsDiagLog">
+            <div className="opsDiagLogHead">
+              <strong>최근 처리</strong>
+              <span className="mono">권한 {ROLE_LABEL[role]}</span>
+            </div>
+            {recentActions.length === 0 ? (
+              <div className="opsDiagLogEmpty">아직 기록된 처리 동작이 없습니다.</div>
+            ) : (
+              <div className="opsDiagLogList">
+                {recentActions.map((entry) => {
+                  const at = new Date(entry.at).toLocaleTimeString(undefined, {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                  });
+                  const actionLabel =
+                    entry.action === "ack"
+                      ? "확인"
+                      : entry.action === "dispatch"
+                        ? "호출"
+                        : "종료";
+                  return (
+                    <div key={entry.id} className="opsDiagLogRow">
+                      <span className="mono">{at}</span>
+                      <span className="opsDiagLogBadge">{actionLabel}</span>
+                      <span>{getZoneLabel(entry.zone_id)}</span>
+                      <span className="mono">{getEventIdLabel(entry.event_id)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="opsGrid">
+        <article className="opsCard opsMapCard">
           <MapView
-            events={events}
+            events={visibleEvents}
             selectedId={selectedId}
             onSelect={setSelectedId}
-            mapAspectRatioOverride={MODEL_REF_WIDTH_M / MODEL_REF_DEPTH_M}
+            liveWindowMs={liveWindowMs}
+            debugOverlay={debugOverlay}
           />
         </article>
 
-        <aside
-          style={{
-            border: "1px solid rgba(170, 199, 247, 0.32)",
-            borderRadius: 12,
-            padding: 12,
-            background: "rgba(8, 16, 29, 0.52)",
-            display: "grid",
-            gap: 10,
-            alignContent: "start",
-          }}
-        >
-          <div
-            style={{
-              border: "1px solid rgba(170, 199, 247, 0.26)",
-              borderRadius: 10,
-              padding: "0.62rem 0.66rem",
-              background: "rgba(5, 14, 28, 0.66)",
-              display: "grid",
-              gap: 8,
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-              <strong>현재 매장 온도</strong>
-              <span
-                style={{
-                  fontSize: 11,
-                  padding: "0.16rem 0.42rem",
-                  borderRadius: 999,
-                  background: temperatureTone.chipBg,
-                  color: temperatureTone.accent,
-                  border: "1px solid rgba(255,255,255,0.14)",
-                }}
-              >
-                {temperatureTone.label}
-              </span>
+        <article className="opsCard opsDetailCard">
+          <header className="opsCardHead opsDetailHead">
+            <div>
+              <h3>처리 상세</h3>
+              <p>{hydrated ? "상태 변화와 처리 기록" : "데이터를 불러오는 중"}</p>
             </div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-              <span style={{ fontSize: 32, lineHeight: 1, fontWeight: 800, color: temperatureTone.accent }}>
-                {storeTemperatureC.toFixed(1)}
-              </span>
-              <span style={{ fontSize: 14, opacity: 0.9 }}>°C</span>
+            <div className="opsDetailTools">
+              <button type="button" className="opsPill" onClick={() => moveSelection(-1)} disabled={visibleEvents.length === 0}>
+                이전
+              </button>
+              <button type="button" className="opsPill" onClick={() => moveSelection(1)} disabled={visibleEvents.length === 0}>
+                다음
+              </button>
+              <button type="button" className="opsPill" onClick={clearSelection} disabled={!selectedId}>
+                선택 해제
+              </button>
             </div>
-            <p style={{ fontSize: 11, opacity: 0.72 }}>UI 샘플 (실시간 센서 연동 전)</p>
+          </header>
+
+          <div className="opsDetailStack">
+            <EventDetail
+              event={selectedEvent}
+              liveWindowMs={liveWindowMs}
+              readOnly={!canOperate}
+              onAcknowledge={markAcknowledged}
+              onDispatch={dispatchOperator}
+              onResolve={markResolved}
+            />
+            <IncidentTimeline event={selectedEvent} entries={selectedTimeline} />
           </div>
-
-          <div style={{ display: "grid", gap: 8 }}>
-            <strong>실시간 체크</strong>
-
-            <div
-              style={{
-                border: crowdTone.border,
-                borderRadius: 10,
-                padding: "0.52rem 0.6rem",
-                background: "rgba(6, 14, 27, 0.62)",
-                display: "grid",
-                gap: 6,
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                <span style={{ fontWeight: 700 }}>혼잡도</span>
-                <span
-                  style={{
-                    fontSize: 11,
-                    borderRadius: 999,
-                    padding: "0.14rem 0.4rem",
-                    background: crowdTone.chipBg,
-                    color: crowdTone.color,
-                  }}
-                >
-                  {crowdTone.label}
-                </span>
-              </div>
-              <div style={{ fontSize: 13 }}>
-                수준 <strong>{signalChecks.crowd.congestionLevel}</strong> · 인원 <strong>{signalChecks.crowd.count}</strong>
-              </div>
-              <div style={{ fontSize: 11, opacity: 0.78 }}>
-                zone {signalChecks.crowd.zoneId} · {formatSignalUpdatedAt(signalChecks.crowd.updatedAt)}
-              </div>
-            </div>
-
-            <div
-              style={{
-                border: safetyTone.border,
-                borderRadius: 10,
-                padding: "0.52rem 0.6rem",
-                background: "rgba(6, 14, 27, 0.62)",
-                display: "grid",
-                gap: 6,
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                <span style={{ fontWeight: 700 }}>이상행동</span>
-                <span
-                  style={{
-                    fontSize: 11,
-                    borderRadius: 999,
-                    padding: "0.14rem 0.4rem",
-                    background: safetyTone.chipBg,
-                    color: safetyTone.color,
-                  }}
-                >
-                  {safetyTone.label}
-                </span>
-              </div>
-              <div style={{ fontSize: 13 }}>
-                심각도 <strong>{signalChecks.safety.severity}</strong> · 낙상 <strong>{signalChecks.safety.fallCount}</strong>
-              </div>
-              <div style={{ fontSize: 11, opacity: 0.78 }}>
-                {signalChecks.safety.summary} · 조치 {signalChecks.safety.action}
-              </div>
-              <div style={{ fontSize: 11, opacity: 0.78 }}>
-                zone {signalChecks.safety.zoneId} · {formatSignalUpdatedAt(signalChecks.safety.updatedAt)}
-              </div>
-            </div>
-
-            <div
-              style={{
-                border: trashTone.border,
-                borderRadius: 10,
-                padding: "0.52rem 0.6rem",
-                background: "rgba(6, 14, 27, 0.62)",
-                display: "grid",
-                gap: 6,
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                <span style={{ fontWeight: 700 }}>쓰레기</span>
-                <span
-                  style={{
-                    fontSize: 11,
-                    borderRadius: 999,
-                    padding: "0.14rem 0.4rem",
-                    background: trashTone.chipBg,
-                    color: trashTone.color,
-                  }}
-                >
-                  {trashTone.label}
-                </span>
-              </div>
-              <div style={{ fontSize: 13 }}>
-                심각도 <strong>{signalChecks.trash.severity}</strong> · 감지 <strong>{signalChecks.trash.trashCount}</strong>
-              </div>
-              <div style={{ fontSize: 11, opacity: 0.78 }}>
-                zone {signalChecks.trash.zoneId} · {formatSignalUpdatedAt(signalChecks.trash.updatedAt)}
-              </div>
-            </div>
-          </div>
-
-          <strong>선택 정보</strong>
-          {selectedEvent ? (
-            <>
-              <p>ID: <span className="mono">{selectedEvent.id}</span></p>
-              <p>타입: {getEventTypeLabel(selectedEvent.type)}</p>
-              <p>구역: {getZoneLabel(selectedEvent.zone_id)}</p>
-              <p>norm: <span className="mono">({selectedEvent.x.toFixed(3)}, {selectedEvent.y.toFixed(3)})</span></p>
-              <p>world: <span className="mono">({formatMeters(selectedEvent.world_x_m)}, {formatMeters(selectedEvent.world_z_m)})</span></p>
-            </>
-          ) : (
-            <p style={{ opacity: 0.76 }}>지도의 마커를 선택해 주세요.</p>
-          )}
-
-          <hr style={{ borderColor: "rgba(170, 199, 247, 0.2)" }} />
-
-          <strong>이벤트 목록 ({events.length})</strong>
-          <div style={{ display: "grid", gap: 6, maxHeight: 360, overflow: "auto" }}>
-            {events.length === 0 ? (
-              <p style={{ opacity: 0.76 }}>입력된 이벤트가 없습니다.</p>
-            ) : (
-              events.map((event) => (
-                <button
-                  key={event.id}
-                  type="button"
-                  onClick={() => setSelectedId(event.id)}
-                  style={{
-                    textAlign: "left",
-                    borderRadius: 8,
-                    border: event.id === selectedId ? "1px solid rgba(168,208,255,0.55)" : "1px solid rgba(168,208,255,0.22)",
-                    padding: "0.38rem 0.46rem",
-                    background: event.id === selectedId ? "rgba(129, 178, 255, 0.2)" : "rgba(12, 18, 32, 0.52)",
-                    color: "rgba(228, 240, 255, 0.95)",
-                    cursor: "pointer",
-                  }}
-                >
-                  <div style={{ fontSize: 12, fontWeight: 700 }}>{getEventTypeLabel(event.type)}</div>
-                  <div className="mono" style={{ fontSize: 11, opacity: 0.82 }}>
-                    {event.id}
-                  </div>
-                </button>
-              ))
-            )}
-          </div>
-        </aside>
+        </article>
       </div>
 
-      {toast ? (
-        <div
-          role="status"
-          aria-live="polite"
-          style={{
-            position: "fixed",
-            right: 20,
-            bottom: 20,
-            borderRadius: 10,
-            border: "1px solid rgba(158, 204, 255, 0.44)",
-            background: "rgba(6, 15, 30, 0.82)",
-            color: "rgba(235, 243, 255, 0.97)",
-            padding: "0.5rem 0.7rem",
-            boxShadow: "0 12px 24px rgba(0,0,0,0.32)",
-          }}
-        >
+      {toast && (
+        <div className="opsToast" role="status" aria-live="polite">
           {toast}
         </div>
-      ) : null}
+      )}
     </section>
   );
 }
