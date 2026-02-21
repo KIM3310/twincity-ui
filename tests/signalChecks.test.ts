@@ -93,7 +93,6 @@ describe("signalChecks", () => {
         objects: [
           {
             track_id: 1,
-            label: "unknown",
             status: "trash",
             confidence: 0.88,
             location: {
@@ -119,6 +118,7 @@ describe("signalChecks", () => {
     });
     expect(parsed.generatedEvents).toHaveLength(1);
     expect(parsed.generatedEvents[0].id).toContain("cleaning");
+    expect(parsed.generatedEvents[0].object_label).toBeUndefined();
   });
 
   test("mergeSignalChecks ignores older updates", () => {
