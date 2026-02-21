@@ -191,7 +191,8 @@ function buildObjectEvent(input: BuildObjectEventInput): EventItem | null {
   const trackId = trackIdRaw !== null ? String(Math.trunc(trackIdRaw)) : `${input.index}`;
   const status = parseText(input.object.status) ?? "unknown";
   const statusKey = status.toLowerCase();
-  const label = parseText(input.object.label) ?? "unknown";
+  const parsedLabel = parseText(input.object.label);
+  const label = input.envelopeType === "cleaning" ? null : (parsedLabel ?? "unknown");
   const confidence = parseNumber(input.object.confidence) ?? 0.75;
 
   const location = asRecord(input.object.location) ?? {};
@@ -221,13 +222,15 @@ function buildObjectEvent(input: BuildObjectEventInput): EventItem | null {
     timestamp: input.timestampMs,
     camera_id: input.deviceId,
     track_id: trackId,
-    label,
     status,
     eventType,
     severity: input.envelopeType === "cleaning" ? 2 : severityToLevel(input.severityText),
     confidence,
     zone_id: zoneId,
   };
+  if (label) {
+    base.label = label;
+  }
 
   if (worldX !== null && worldZ !== null) {
     const mapped = worldToMapNorm(worldX - WORLD_OFFSET_X_M, worldZ - WORLD_OFFSET_Z_M);
@@ -260,7 +263,7 @@ function buildObjectEvent(input: BuildObjectEventInput): EventItem | null {
     ...normalized,
     id: `${input.deviceId}:${input.envelopeType}:${trackId}:${input.timestampMs}`,
     source: input.source,
-    object_label: label,
+    object_label: label ?? undefined,
     raw_status: status,
     world_x_m: worldX !== null ? worldX : normalized.world_x_m,
     world_z_m: worldZ !== null ? worldZ : normalized.world_z_m,
