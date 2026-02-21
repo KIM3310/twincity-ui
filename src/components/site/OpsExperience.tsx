@@ -19,6 +19,14 @@ import { worldToMapNorm } from "@/lib/coordinateTransform";
 import { adaptRawEvent, normalizeEventFeed } from "@/lib/eventAdapter";
 import { applyHomography, computeHomography } from "@/lib/homography";
 import { getEventIdLabel, getEventTypeLabel, getZoneLabel } from "@/lib/labels";
+import {
+  INITIAL_SIGNAL_CHECKS,
+  mergeSignalChecks,
+  parseSignalPayload,
+  type SignalChecksPatch,
+  type SignalChecksState,
+  type SignalTone,
+} from "@/lib/signalChecks";
 import type {
   EventItem,
   EventTypeFilter,
@@ -510,6 +518,8 @@ type IncomingSyncBatch = {
   mode: IncomingSyncMode;
   upsert: EventItem[];
   removeIds: string[];
+  signalPatch: SignalChecksPatch;
+  signalLabels: string[];
 };
 
 function dedupeIds(ids: string[]) {
@@ -771,6 +781,8 @@ function emptySyncBatch(mode: IncomingSyncMode = "merge"): IncomingSyncBatch {
     mode,
     upsert: [],
     removeIds: [],
+    signalPatch: {},
+    signalLabels: [],
   };
 }
 
@@ -778,10 +790,20 @@ function normalizeIncomingPayload(payload: unknown, maxEvents: number): Incoming
   const parsed = parseMaybeJson(payload);
   if (typeof parsed === "string") return emptySyncBatch();
   if (parsed === null || parsed === undefined) return emptySyncBatch();
+  const signal = parseSignalPayload(parsed, {
+    fallbackStoreId: "s001",
+    defaultSource: "api",
+  });
 
   if (Array.isArray(parsed)) {
     const rows = normalizeRecordsForSync(parsed, maxEvents);
-    return { mode: "merge", upsert: rows.upsert, removeIds: rows.removeIds };
+    return {
+      mode: "merge",
+      upsert: rows.upsert,
+      removeIds: rows.removeIds,
+      signalPatch: signal.patch,
+      signalLabels: signal.labels,
+    };
   }
 
   const row = asRecord(parsed);
@@ -790,7 +812,13 @@ function normalizeIncomingPayload(payload: unknown, maxEvents: number): Incoming
   const rootRemoveIds = collectRemoveIds(row);
 
   if (row.type === "ping" || row.type === "heartbeat") {
-    return { mode, upsert: [], removeIds: rootRemoveIds };
+    return {
+      mode,
+      upsert: [],
+      removeIds: rootRemoveIds,
+      signalPatch: signal.patch,
+      signalLabels: signal.labels,
+    };
   }
 
   const objectRows = pickValue(row, [
@@ -810,6 +838,8 @@ function normalizeIncomingPayload(payload: unknown, maxEvents: number): Incoming
       mode,
       upsert: rows.upsert,
       removeIds: dedupeIds([...rootRemoveIds, ...rows.removeIds]),
+      signalPatch: signal.patch,
+      signalLabels: signal.labels,
     };
   }
 
@@ -837,6 +867,8 @@ function normalizeIncomingPayload(payload: unknown, maxEvents: number): Incoming
       mode,
       upsert: rows.upsert,
       removeIds: dedupeIds([...rootRemoveIds, ...rows.removeIds]),
+      signalPatch: signal.patch,
+      signalLabels: signal.labels,
     };
   }
 
@@ -858,6 +890,8 @@ function normalizeIncomingPayload(payload: unknown, maxEvents: number): Incoming
       mode,
       upsert: [],
       removeIds: dedupeIds(removeId ? [...rootRemoveIds, removeId] : rootRemoveIds),
+      signalPatch: signal.patch,
+      signalLabels: signal.labels,
     };
   }
 
@@ -870,6 +904,8 @@ function normalizeIncomingPayload(payload: unknown, maxEvents: number): Incoming
     mode,
     upsert: single ? dropLowSignalEvents([single]) : [],
     removeIds: rootRemoveIds,
+    signalPatch: signal.patch,
+    signalLabels: signal.labels,
   };
 }
 
@@ -911,6 +947,22 @@ function transportLabel(transport: FeedTransport) {
   return "연결 없음";
 }
 
+function formatSignalUpdatedAt(updatedAt: number | null) {
+  if (!updatedAt || !Number.isFinite(updatedAt)) return "-";
+  return new Date(updatedAt).toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
+function getSignalToneDisplay(tone: SignalTone) {
+  if (tone === "critical") return { className: "tone-critical", label: "위험" };
+  if (tone === "watch") return { className: "tone-watch", label: "주의" };
+  if (tone === "ok") return { className: "tone-ok", label: "정상" };
+  return { className: "tone-idle", label: "대기" };
+}
+
 export default function OpsExperience() {
   const { meta } = useTheme();
   const reconnectAttemptRef = useRef(0);
@@ -918,6 +970,7 @@ export default function OpsExperience() {
 
   const [hydrated, setHydrated] = useState(false);
   const [events, setEvents] = useState<EventItem[]>([]);
+  const [signalChecks, setSignalChecks] = useState<SignalChecksState>(() => INITIAL_SIGNAL_CHECKS);
   const [timeline, setTimeline] = useState<IncidentTimelineEntry[]>([]);
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
 
@@ -1182,8 +1235,16 @@ export default function OpsExperience() {
       const incoming = normalizeIncomingPayload(payload, maxEvents);
       const hasMutation =
         incoming.mode === "replace" || incoming.upsert.length > 0 || incoming.removeIds.length > 0;
-      if (!hasMutation) return;
-      setEvents((prev) => applyIncomingSyncBatch(prev, incoming, maxEvents));
+      const hasSignalMutation = Boolean(
+        incoming.signalPatch.crowd || incoming.signalPatch.safety || incoming.signalPatch.trash
+      );
+      if (!hasMutation && !hasSignalMutation) return;
+      if (hasMutation) {
+        setEvents((prev) => applyIncomingSyncBatch(prev, incoming, maxEvents));
+      }
+      if (hasSignalMutation) {
+        setSignalChecks((prev) => mergeSignalChecks(prev, incoming.signalPatch));
+      }
       setLastSyncAt(Date.now());
     };
 
@@ -1848,6 +1909,9 @@ export default function OpsExperience() {
       : "-";
   const hasOpsKicker = meta.opsKicker.trim().length > 0;
   const hasOpsTitle = meta.opsTitle.trim().length > 0;
+  const crowdTone = getSignalToneDisplay(signalChecks.crowd.tone);
+  const safetyTone = getSignalToneDisplay(signalChecks.safety.tone);
+  const trashTone = getSignalToneDisplay(signalChecks.trash.tone);
 
   return (
     <section className="opsShell reveal delay-1">
@@ -2162,6 +2226,100 @@ export default function OpsExperience() {
         <span className="mono">마지막 갱신 {lastSyncLabel}</span>
         <span className="opsFeedHint mono">단축키 [ / ] 이동 · Esc 해제</span>
       </div>
+
+      <section className="opsSignalGrid" aria-label="실시간 3대 상황">
+        <article className="opsSignalCard">
+          <div className="opsSignalHead">
+            <strong>혼잡도</strong>
+            <span className={`opsSignalTone ${crowdTone.className}`}>{crowdTone.label}</span>
+          </div>
+          <div className="opsSignalBody">
+            <p>
+              인원 <strong>{signalChecks.crowd.count}</strong>명 · 혼잡도 <strong>{signalChecks.crowd.congestionLevel}</strong>
+            </p>
+            <p>
+              구역 <strong>{signalChecks.crowd.zoneId}</strong> · 갱신 <strong>{formatSignalUpdatedAt(signalChecks.crowd.updatedAt)}</strong>
+            </p>
+          </div>
+          <button
+            type="button"
+            className="opsSignalFocus"
+            onClick={() => {
+              setTypeFilter("crowd");
+              setOpenOnly(false);
+              setToast("혼잡도 이벤트 중심으로 지도를 보여줍니다.");
+            }}
+          >
+            지도에서 혼잡도 보기
+          </button>
+        </article>
+
+        <article className="opsSignalCard">
+          <div className="opsSignalHead">
+            <strong>이상행동</strong>
+            <span className={`opsSignalTone ${safetyTone.className}`}>{safetyTone.label}</span>
+          </div>
+          <div className="opsSignalBody">
+            <p>
+              심각도 <strong>{signalChecks.safety.severity}</strong> · 낙상 <strong>{signalChecks.safety.fallCount}</strong>건
+            </p>
+            <p>
+              요약 <strong>{signalChecks.safety.summary}</strong> · 조치 <strong>{signalChecks.safety.action}</strong>
+            </p>
+            <p>
+              구역 <strong>{signalChecks.safety.zoneId}</strong> · 갱신 <strong>{formatSignalUpdatedAt(signalChecks.safety.updatedAt)}</strong>
+            </p>
+          </div>
+          <button
+            type="button"
+            className="opsSignalFocus"
+            onClick={() => {
+              setTypeFilter("all");
+              if (signalChecks.safety.zoneId && signalChecks.safety.zoneId !== "-") {
+                setZoneFilter(signalChecks.safety.zoneId);
+              }
+              setMinSeverity(2);
+              setOpenOnly(false);
+              setToast("이상행동 신호 구역으로 필터를 맞췄습니다.");
+            }}
+          >
+            지도에서 이상행동 보기
+          </button>
+        </article>
+
+        <article className="opsSignalCard">
+          <div className="opsSignalHead">
+            <strong>쓰레기</strong>
+            <span className={`opsSignalTone ${trashTone.className}`}>{trashTone.label}</span>
+          </div>
+          <div className="opsSignalBody">
+            <p>
+              심각도 <strong>{signalChecks.trash.severity}</strong> · 감지 <strong>{signalChecks.trash.trashCount}</strong>건
+            </p>
+            <p>
+              이벤트 <strong>{signalChecks.trash.count}</strong>건 · 구역 <strong>{signalChecks.trash.zoneId}</strong>
+            </p>
+            <p>
+              갱신 <strong>{formatSignalUpdatedAt(signalChecks.trash.updatedAt)}</strong>
+            </p>
+          </div>
+          <button
+            type="button"
+            className="opsSignalFocus"
+            onClick={() => {
+              setTypeFilter("unknown");
+              if (signalChecks.trash.zoneId && signalChecks.trash.zoneId !== "-") {
+                setZoneFilter(signalChecks.trash.zoneId);
+              }
+              setMinSeverity(2);
+              setOpenOnly(false);
+              setToast("쓰레기 감지 중심으로 지도를 보여줍니다.");
+            }}
+          >
+            지도에서 쓰레기 보기
+          </button>
+        </article>
+      </section>
 
       <SlaAlertPanel
         alerts={slaAlerts}
