@@ -2,7 +2,7 @@
 
 import Script from "next/script";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "";
 const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID ?? "";
@@ -32,6 +32,7 @@ function hasConsent(): boolean {
 }
 
 function isDntEnabled(): boolean {
+  if (typeof window === "undefined") return false;
   return (
     navigator.doNotTrack === "1" ||
     (window as Window & { doNotTrack?: string }).doNotTrack === "1" ||
@@ -43,13 +44,20 @@ function isDntEnabled(): boolean {
 export default function AnalyticsScripts() {
   const pathname = usePathname();
   const useGtm = isValidGtmId(GTM_ID);
-  const canTrack = useMemo(() => {
+
+  const isBrowser = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+
+  const canTrack = (() => {
+    if (!isBrowser) return false;
     if (!ANALYTICS_ENABLED) return false;
-    if (typeof window === "undefined") return false;
     if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") return false;
     if (isDntEnabled() || !hasConsent()) return false;
     return true;
-  }, []);
+  })();
 
   useEffect(() => {
     if (!canTrack) {
