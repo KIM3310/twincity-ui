@@ -12,6 +12,7 @@ describe("assetProbe", () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(new Response(null, { status: 404 }))
+      .mockResolvedValueOnce(new Response(null, { status: 404 }))
       .mockResolvedValueOnce(new Response(null, { status: 200 }));
 
     vi.stubGlobal("fetch", fetchMock);
@@ -24,7 +25,7 @@ describe("assetProbe", () => {
 
     expect(first).toEqual({ exists: true, path: "/b.png" });
     expect(second).toEqual({ exists: true, path: "/b.png" });
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   test("falls back to GET when HEAD is not supported", async () => {
@@ -65,5 +66,25 @@ describe("assetProbe", () => {
     const result = await resolveFirstAvailableAsset(request, ["/first.png", "/second.png"], 0);
 
     expect(result).toEqual({ exists: false, path: "/first.png" });
+  });
+
+  test("deduplicates concurrent probes for the same key", async () => {
+    let resolveFetch!: (value: Response) => void;
+    const pendingResponse = new Promise<Response>((resolve) => {
+      resolveFetch = resolve;
+    });
+    const fetchMock = vi.fn().mockReturnValue(pendingResponse);
+    vi.stubGlobal("fetch", fetchMock);
+
+    const request = new Request("https://example.com/api/3d-test/status");
+    const p1 = resolveFirstAvailableAsset(request, ["/only.png"], 30_000);
+    const p2 = resolveFirstAvailableAsset(request, ["/only.png"], 30_000);
+
+    resolveFetch(new Response(null, { status: 200 }));
+    const [r1, r2] = await Promise.all([p1, p2]);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(r1).toEqual({ exists: true, path: "/only.png" });
+    expect(r2).toEqual({ exists: true, path: "/only.png" });
   });
 });
