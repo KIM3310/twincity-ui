@@ -1,4 +1,5 @@
 import { apiError, noStoreHeaders, resolveRequestId } from "@/lib/apiResponse";
+import { resolveFirstAvailableAsset } from "@/lib/assetProbe";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
@@ -13,23 +14,16 @@ const CANDIDATE_MODEL_PATHS = [
 
 export async function GET(request: Request) {
   const requestId = resolveRequestId(request);
-
-  for (const modelPath of CANDIDATE_MODEL_PATHS) {
-    try {
-      const modelUrl = new URL(modelPath, request.url);
-      const assetResponse = await fetch(modelUrl.toString(), { cache: "no-store" });
-      if (!assetResponse.ok) continue;
-      const buffer = await assetResponse.arrayBuffer();
-      return new Response(buffer, {
-        status: 200,
-        headers: noStoreHeaders(requestId, {
-          "content-type": assetResponse.headers.get("content-type") || "model/gltf-binary",
-        }),
-      });
-    } catch {
-      // Try next candidate.
-    }
+  const resolved = await resolveFirstAvailableAsset(request, CANDIDATE_MODEL_PATHS);
+  if (!resolved.exists) {
+    return apiError("model not found", { status: 404, requestId });
   }
 
-  return apiError("model not found", { status: 404, requestId });
+  const location = new URL(resolved.path, request.url).toString();
+  return new Response(null, {
+    status: 307,
+    headers: noStoreHeaders(requestId, {
+      location,
+    }),
+  });
 }
