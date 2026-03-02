@@ -9,9 +9,9 @@
     "dev:turbo": "next dev --turbo --hostname 127.0.0.1",
     "open:local": "bash ./tools/open_local.sh",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "build": "next build",
+    "test": "vitest run --configLoader runner",
+    "test:watch": "vitest --configLoader runner",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint . --max-warnings=0"
   },

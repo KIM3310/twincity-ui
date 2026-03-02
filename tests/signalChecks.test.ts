@@ -121,6 +121,52 @@ describe("signalChecks", () => {
     expect(parsed.generatedEvents[0].object_label).toBeUndefined();
   });
 
+  test("parses nested SAFETY envelope even when wrapper has unrelated type", () => {
+    const payload = {
+      type: "edge.batch",
+      request_id: "req-1",
+      payload: {
+        eventType: "SAFETY",
+        deviceId: "camera-edge-01",
+        timestamp: "2026-02-12T12:05:00Z",
+        severity: "Critical",
+        data: {
+          count: 1,
+          objects: [
+            {
+              track_id: 777,
+              label: "person",
+              status: "fall_down",
+              confidence: 0.91,
+              location: {
+                bbox: [210, 120, 260, 260],
+                world: { x: 7.4, z: 3.9 },
+                zone_id: "Store_Main",
+              },
+              vlm_analysis: {
+                summary: "Person appears to have fallen.",
+                action: "Call_119",
+              },
+            },
+          ],
+        },
+      },
+    };
+
+    const parsed = parseSignalPayload(payload);
+
+    expect(parsed.patch.safety).toMatchObject({
+      deviceId: "camera-edge-01",
+      zoneId: "Store_Main",
+      count: 1,
+      severity: "Critical",
+      fallCount: 1,
+      tone: "critical",
+    });
+    expect(parsed.generatedEvents).toHaveLength(1);
+    expect(parsed.generatedEvents[0].raw_status).toBe("fall_down");
+  });
+
   test("mergeSignalChecks ignores older updates", () => {
     const prev = {
       ...INITIAL_SIGNAL_CHECKS,

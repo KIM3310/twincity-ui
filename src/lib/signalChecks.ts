@@ -283,6 +283,20 @@ export function parseSignalPayload(payload: unknown, options: ParseSignalOptions
     if (!result.labels.includes(label)) result.labels.push(label);
   };
 
+  const visitNested = (row: Record<string, unknown>) => {
+    visit(row.event);
+    visit(row.alert);
+    visit(row.events);
+    visit(row.items);
+    visit(row.records);
+    visit(row.results);
+    visit(row.alerts);
+    visit(row.data);
+    visit(row.payload);
+    visit(row.message);
+    visit(row.sync);
+  };
+
   const visit = (value: unknown) => {
     if (Array.isArray(value)) {
       value.forEach((row) => visit(row));
@@ -293,21 +307,14 @@ export function parseSignalPayload(payload: unknown, options: ParseSignalOptions
 
     const eventTypeRaw = parseText(row.eventType ?? row.event_type ?? row.type);
     if (!eventTypeRaw) {
-      visit(row.event);
-      visit(row.alert);
-      visit(row.events);
-      visit(row.items);
-      visit(row.records);
-      visit(row.results);
-      visit(row.alerts);
-      visit(row.data);
-      visit(row.payload);
-      visit(row.message);
-      visit(row.sync);
+      visitNested(row);
       return;
     }
     const eventType = eventTypeRaw.toLowerCase();
-    if (!["crowd", "safety", "cleaning"].includes(eventType)) return;
+    if (!["crowd", "safety", "cleaning"].includes(eventType)) {
+      visitNested(row);
+      return;
+    }
 
     const data = asRecord(row.data) ?? {};
     const timestampMs = parseEpochMs(row.timestamp) ?? Date.now();
