@@ -12,3 +12,6 @@ dist/
 !.env.local.example
 
 .DS_Store
+
+# Debug artifacts
+.venv_*/
