@@ -77,7 +77,7 @@ export default function ReportsPage() {
   const [timeline, setTimeline] = useState<IncidentTimelineEntry[]>([]);
   const [range, setRange] = useState<RangeKey>("120m");
   const [notice, setNotice] = useState<string | null>(null);
-  const [now, setNow] = useState<number | null>(null);
+  const [now, setNow] = useState<number>(() => Date.now());
 
   const load = useCallback(() => {
     try {
@@ -110,7 +110,6 @@ export default function ReportsPage() {
   }, [load]);
 
   useEffect(() => {
-    setNow(Date.now());
     const timer = window.setInterval(() => setNow(Date.now()), 5000);
     return () => window.clearInterval(timer);
   }, []);
@@ -122,7 +121,6 @@ export default function ReportsPage() {
   }, [notice]);
 
   const since = useMemo(() => {
-    if (now === null) return Number.NEGATIVE_INFINITY;
     const ms = rangeMs(range);
     return Number.isFinite(ms) ? now - ms : Number.NEGATIVE_INFINITY;
   }, [now, range]);
