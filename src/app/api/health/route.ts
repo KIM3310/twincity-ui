@@ -15,6 +15,7 @@ export function GET(request: Request) {
       service: runtimeMeta.service,
       now: runtimeMeta.generated_at,
       live_sources: runtimeMeta.live_sources,
+      diagnostics: runtimeMeta.diagnostics,
       links: {
         meta: "/api/meta",
       },

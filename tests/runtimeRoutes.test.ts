@@ -62,10 +62,15 @@ describe("runtime routes", () => {
             http: true,
             poll_ms: 7000,
           },
+          diagnostics: {
+            ingest_mode: "ws",
+            live_source_count: 2,
+          },
           links: {
             meta: "/api/meta",
           },
         });
+        expect(body.diagnostics.next_action).toContain("/api/3d-test/status");
         expect(response.headers.get("x-request-id")).toBe(body.request_id);
       }
     );
@@ -90,9 +95,14 @@ describe("runtime routes", () => {
             http: false,
             poll_ms: 5000,
           },
+          diagnostics: {
+            ingest_mode: "sse",
+            live_source_count: 1,
+          },
         });
         expect(body.features).toContain("digital-twin-floor-map");
         expect(body.routes).toContain("/api/meta");
+        expect(body.diagnostics.next_action).toContain("/api/3d-test/status");
         expect(response.headers.get("x-request-id")).toBe(body.request_id);
       }
     );
