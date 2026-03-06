@@ -12,12 +12,7 @@ export function GET(request: Request) {
     {
       ok: true,
       request_id: requestId,
-      service: runtimeMeta.service,
-      now: runtimeMeta.generated_at,
-      live_sources: runtimeMeta.live_sources,
-      links: {
-        meta: "/api/meta",
-      },
+      ...runtimeMeta,
     },
     { requestId }
   );
