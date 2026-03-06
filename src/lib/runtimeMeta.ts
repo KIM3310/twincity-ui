@@ -1,5 +1,6 @@
 type RuntimeMeta = {
   service: string;
+  status: "ok";
   generated_at: string;
   live_sources: {
     ws: boolean;
@@ -11,6 +12,11 @@ type RuntimeMeta = {
     ingest_mode: "ws" | "sse" | "http" | "demo";
     live_source_count: number;
     next_action: string;
+  };
+  ops_contract: {
+    schema: "ops-envelope-v1";
+    version: 1;
+    required_fields: string[];
   };
   features: string[];
   routes: string[];
@@ -30,6 +36,7 @@ export function buildRuntimeMeta(now = new Date()): RuntimeMeta {
 
   return {
     service: "twincity-ui",
+    status: "ok",
     generated_at: now.toISOString(),
     live_sources: liveSources,
     diagnostics: {
@@ -39,6 +46,11 @@ export function buildRuntimeMeta(now = new Date()): RuntimeMeta {
         liveSourceCount > 0
           ? "Drive the configured event transport and confirm /api/3d-test/status stays green."
           : "Configure NEXT_PUBLIC_EVENT_WS_URL, NEXT_PUBLIC_EVENT_STREAM_URL, or NEXT_PUBLIC_EVENT_API_URL.",
+    },
+    ops_contract: {
+      schema: "ops-envelope-v1",
+      version: 1,
+      required_fields: ["service", "status", "diagnostics.next_action"],
     },
     features: [
       "digital-twin-floor-map",
