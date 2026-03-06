@@ -13,9 +13,11 @@ export function GET(request: Request) {
       ok: true,
       request_id: requestId,
       service: runtimeMeta.service,
+      status: runtimeMeta.status,
       now: runtimeMeta.generated_at,
       live_sources: runtimeMeta.live_sources,
       diagnostics: runtimeMeta.diagnostics,
+      ops_contract: runtimeMeta.ops_contract,
       links: {
         meta: "/api/meta",
       },

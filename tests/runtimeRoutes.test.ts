@@ -56,6 +56,7 @@ describe("runtime routes", () => {
         expect(body).toMatchObject({
           ok: true,
           service: "twincity-ui",
+          status: "ok",
           live_sources: {
             ws: true,
             sse: false,
@@ -70,6 +71,7 @@ describe("runtime routes", () => {
             meta: "/api/meta",
           },
         });
+        expect(body.ops_contract.schema).toBe("ops-envelope-v1");
         expect(body.diagnostics.next_action).toContain("/api/3d-test/status");
         expect(response.headers.get("x-request-id")).toBe(body.request_id);
       }
@@ -89,6 +91,7 @@ describe("runtime routes", () => {
         expect(body).toMatchObject({
           ok: true,
           service: "twincity-ui",
+          status: "ok",
           live_sources: {
             ws: false,
             sse: true,
@@ -102,6 +105,7 @@ describe("runtime routes", () => {
         });
         expect(body.features).toContain("digital-twin-floor-map");
         expect(body.routes).toContain("/api/meta");
+        expect(body.ops_contract.schema).toBe("ops-envelope-v1");
         expect(body.diagnostics.next_action).toContain("/api/3d-test/status");
         expect(response.headers.get("x-request-id")).toBe(body.request_id);
       }
