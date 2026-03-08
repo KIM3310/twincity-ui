@@ -20,13 +20,19 @@ export function GET(request: Request) {
       live_sources: runtimeMeta.live_sources,
       diagnostics: runtimeMeta.diagnostics,
       ops_contract: runtimeMeta.ops_contract,
-      capabilities: ["service-metadata-surface", "report-schema-surface"],
+      capabilities: [
+        "service-metadata-surface",
+        "runtime-brief-surface",
+        "report-schema-surface",
+      ],
       service_grade: {
         readiness: serviceMeta.readiness_contract,
+        runtime_brief: "/api/runtime-brief",
         report_schema: "/api/schema/report",
       },
       links: {
         meta: "/api/meta",
+        runtime_brief: "/api/runtime-brief",
         report_schema: "/api/schema/report",
         reports: "/reports",
       },

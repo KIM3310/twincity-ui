@@ -4,6 +4,11 @@ import { useMemo, useState, useEffect, useCallback } from "react";
 import ControlTowerReadiness from "@/components/site/ControlTowerReadiness";
 import { normalizeEventFeed } from "@/lib/eventAdapter";
 import { getEventTypeLabel, getZoneLabel } from "@/lib/labels";
+import {
+  buildControlTowerReportSchema,
+  buildControlTowerRuntimeBrief,
+  buildControlTowerServiceMeta,
+} from "@/lib/serviceMeta";
 import type { EventItem, IncidentTimelineEntry } from "@/lib/types";
 
 const STORAGE_KEY = "twincity-ops-experience-v2";
@@ -79,6 +84,9 @@ export default function ReportsPage() {
   const [range, setRange] = useState<RangeKey>("120m");
   const [notice, setNotice] = useState<string | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
+  const runtimeBrief = useMemo(() => buildControlTowerRuntimeBrief(), []);
+  const serviceMeta = useMemo(() => buildControlTowerServiceMeta(), []);
+  const reportSchema = useMemo(() => buildControlTowerReportSchema(), []);
 
   const load = useCallback(() => {
     try {
@@ -285,7 +293,81 @@ export default function ReportsPage() {
         <ControlTowerReadiness variant="compact" />
       </div>
 
-      <section className="panel reveal delay-2" style={{ padding: "1rem" }}>
+      <section className="splitBlock reveal delay-2">
+        <article className="panel reportCard">
+          <p className="kicker">Review Pack</p>
+          <h2 className="panelTitle">리포트 계약과 운영 증거</h2>
+          <p className="pageLead" style={{ maxWidth: "unset" }}>
+            {runtimeBrief.headline}
+          </p>
+          <div className="readinessTagRow">
+            <span className="chip" data-tone="calm">
+              {runtimeBrief.readiness_contract}
+            </span>
+            <span className="chip" data-tone="watch">
+              {runtimeBrief.diagnostics.ingest_mode}
+            </span>
+            <span className="chip" data-tone="critical">
+              {runtimeBrief.report_contract.schema}
+            </span>
+          </div>
+          <div className="reportTable">
+            <div className="reportRow">
+              <span>Ingest mode</span>
+              <span className="mono">{runtimeBrief.diagnostics.ingest_mode}</span>
+            </div>
+            <div className="reportRow">
+              <span>Live sources</span>
+              <span className="mono">
+                {[runtimeBrief.live_sources.ws, runtimeBrief.live_sources.sse, runtimeBrief.live_sources.http]
+                  .filter(Boolean)
+                  .length || 0}
+                /3
+              </span>
+            </div>
+            <div className="reportRow">
+              <span>Evidence routes</span>
+              <span className="mono">{runtimeBrief.evidence_counts.routes}</span>
+            </div>
+            <div className="reportRow">
+              <span>Review route count</span>
+              <span className="mono">{runtimeBrief.route_count}</span>
+            </div>
+          </div>
+        </article>
+
+        <article className="panel reportCard">
+          <p className="kicker">Export Contract</p>
+          <h2 className="panelTitle">CSV와 summary가 무엇을 보장하는지</h2>
+          <div className="reportTable">
+            <div className="reportRow">
+              <span>Schema</span>
+              <span className="mono">{reportSchema.schema}</span>
+            </div>
+            <div className="reportRow">
+              <span>Required sections</span>
+              <span className="mono">{reportSchema.required_sections.length}</span>
+            </div>
+            <div className="reportRow">
+              <span>Export formats</span>
+              <span className="mono">{reportSchema.export_formats.join(", ")}</span>
+            </div>
+            <div className="reportRow">
+              <span>Current watchouts</span>
+              <span className="mono">{serviceMeta.watchouts.length}</span>
+            </div>
+          </div>
+          <div className="readinessList">
+            {runtimeBrief.review_flow.slice(0, 3).map((item) => (
+              <div key={item} className="readinessListItem">
+                {item}
+              </div>
+            ))}
+          </div>
+        </article>
+      </section>
+
+      <section className="panel reveal delay-3" style={{ padding: "1rem" }}>
         <div className="reportControls">
           <div className="reportControl">
             <span className="reportLabel">기간</span>
@@ -314,7 +396,7 @@ export default function ReportsPage() {
         {notice && <div className="reportNotice mono">{notice}</div>}
       </section>
 
-      <section className="reveal delay-3">
+      <section className="reveal delay-4">
         <div className="opsMetricRow">
           <article className="opsMetricCard">
             <span>총 알림</span>
@@ -344,7 +426,7 @@ export default function ReportsPage() {
         </div>
       </section>
 
-      <section className="splitBlock reveal delay-4">
+      <section className="splitBlock reveal delay-5">
         <article className="panel reportCard">
           <h2 className="panelTitle">유형 분포</h2>
           {byType.length === 0 ? (
@@ -378,7 +460,7 @@ export default function ReportsPage() {
         </article>
       </section>
 
-      <section className="panel reveal delay-4 reportCard">
+      <section className="panel reveal delay-5 reportCard">
         <h2 className="panelTitle">SLA 평균</h2>
         <div className="reportTable">
           <div className="reportRow">
