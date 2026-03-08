@@ -331,6 +331,43 @@ export default function ReportsPage() {
     }
   };
 
+  const copyReviewRoutes = async () => {
+    const text = [
+      `TwinCity review routes (${filterSummary})`,
+      ...serviceMeta.review_flow.map((item) => `- ${item}`),
+      "",
+      "Routes",
+      ...serviceMeta.routes.map((route) => `- ${route}`),
+    ].join("\n");
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setNotice("리뷰 경로를 클립보드에 복사했습니다.");
+    } catch {
+      setNotice("복사 권한이 없어서 실패했습니다.");
+    }
+  };
+
+  const focusHighestRisk = () => {
+    const target = inRangeEvents
+      .slice()
+      .sort((a, b) => {
+        if (b.severity !== a.severity) return b.severity - a.severity;
+        const aTimelineAt = latestTimelineByEvent.get(a.id)?.at ?? a.detected_at;
+        const bTimelineAt = latestTimelineByEvent.get(b.id)?.at ?? b.detected_at;
+        return bTimelineAt - aTimelineAt;
+      })[0];
+
+    if (!target) {
+      setNotice("집중 검토할 incident가 없습니다.");
+      return;
+    }
+
+    setSeverityFilter(String(target.severity) as "1" | "2" | "3");
+    setZoneFilter(target.zone_id);
+    setNotice(`가장 위험한 incident 기준으로 필터를 맞췄습니다: ${getZoneLabel(target.zone_id)} · S${target.severity}`);
+  };
+
   return (
     <div className="pageStack">
       <header className="pageHeading reveal">
@@ -459,6 +496,12 @@ export default function ReportsPage() {
           <div className="reportActions">
             <button type="button" className="button buttonGhost" onClick={load}>
               새로고침
+            </button>
+            <button type="button" className="button buttonGhost" onClick={copyReviewRoutes}>
+              리뷰 경로 복사
+            </button>
+            <button type="button" className="button buttonGhost" onClick={focusHighestRisk} disabled={inRangeEvents.length === 0}>
+              최고 위험 집중
             </button>
             <button type="button" className="button buttonGhost" onClick={copySummary}>
               요약 복사
