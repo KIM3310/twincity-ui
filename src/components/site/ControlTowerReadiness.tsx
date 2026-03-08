@@ -21,6 +21,8 @@ export default function ControlTowerReadiness({
   const compact = variant === "compact";
   const stages = compact ? meta.stages.slice(0, 3) : meta.stages;
   const artifacts = compact ? meta.artifacts.slice(0, 4) : meta.artifacts;
+  const proofAssets = compact ? meta.proof_assets.slice(0, 3) : meta.proof_assets;
+  const twoMinuteReview = compact ? meta.two_minute_review.slice(0, 3) : meta.two_minute_review;
 
   return (
     <section className={"panel readinessBoard" + (compact ? " compact" : "")}>
@@ -101,6 +103,20 @@ export default function ControlTowerReadiness({
             ))}
           </div>
         </article>
+
+        <article className="readinessListCard">
+          <div className="readinessSectionHead">
+            <h3>2-Minute Review</h3>
+            <small>fast reviewer path through the product</small>
+          </div>
+          <div className="readinessList">
+            {twoMinuteReview.map((item) => (
+              <div key={item} className="readinessListItem">
+                {item}
+              </div>
+            ))}
+          </div>
+        </article>
       </div>
 
       {!compact ? (
@@ -138,6 +154,22 @@ export default function ControlTowerReadiness({
           ))}
         </div>
       </div>
+
+      {!compact ? (
+        <article className="readinessListCard">
+          <div className="readinessSectionHead">
+            <h3>Proof Assets</h3>
+            <small>short reviewer bundle for the first pass</small>
+          </div>
+          <div className="readinessList">
+            {proofAssets.map((artifact) => (
+              <div key={`${artifact.kind}:${artifact.href}`} className="readinessListItem">
+                {artifact.label} {"->"} {artifact.href}
+              </div>
+            ))}
+          </div>
+        </article>
+      ) : null}
 
       {!compact ? (
         <article className="readinessListCard">

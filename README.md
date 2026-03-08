@@ -97,6 +97,20 @@ AdSense crawl helpers are provided in `public/ads.txt`, `public/robots.txt`, `pu
 - `twincity-report-v1` report schema surfaced through `/api/schema/report`
 - reviewer flow: `health -> runtime brief -> meta -> events -> reports`
 
+## 2-Minute Review Path
+
+1. Open `/api/health` to confirm whether the control tower is demo-first or live-wired.
+2. Read `/api/meta` for trust boundary, stage ownership, and review artifacts.
+3. Open `/reports` to validate SLA proof and export posture.
+4. Use `/events` to inspect one alert through triage, dispatch, and timeline state.
+
+## Proof Assets
+
+- `/api/health`
+- `/api/meta`
+- `/reports`
+- `public/screenshots/ops_console.png`
+
 ## Glossary (first-time readers)
 - WS: WebSocket
 - SSE: Server-Sent Events
