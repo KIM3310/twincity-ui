@@ -54,6 +54,29 @@ export type ControlTowerServiceMeta = {
   features: string[];
 };
 
+export type ControlTowerRuntimeBrief = {
+  service: RuntimeMeta["service"];
+  status: RuntimeMeta["status"];
+  generated_at: string;
+  mode: "demo-first" | "live-wired";
+  headline: string;
+  readiness_contract: "control-tower-runtime-brief-v1";
+  live_sources: RuntimeMeta["live_sources"];
+  diagnostics: RuntimeMeta["diagnostics"];
+  report_contract: ReportSchema;
+  evidence_counts: ControlTowerServiceMeta["evidence_counts"];
+  review_flow: string[];
+  watchouts: string[];
+  route_count: number;
+  links: {
+    health: string;
+    runtime_brief: string;
+    meta: string;
+    report_schema: string;
+    reports: string;
+  };
+};
+
 const CONTROL_TOWER_STAGES: ServiceStage[] = [
   {
     id: "detect",
@@ -104,6 +127,12 @@ const CONTROL_TOWER_ARTIFACTS: ServiceArtifact[] = [
     href: "/api/meta",
     kind: "route",
     note: "control tower posture and trust boundary",
+  },
+  {
+    label: "Runtime Brief",
+    href: "/api/runtime-brief",
+    kind: "route",
+    note: "review-first contract for reports and operator proof",
   },
   {
     label: "Report Schema",
@@ -194,7 +223,7 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
     ingest_contract: runtimeMeta.ops_contract,
     report_contract: reportContract,
     evidence_counts: {
-      routes: 6,
+      routes: 7,
       docs: 4,
       tests: 5,
       assets: 4,
@@ -229,7 +258,35 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
     ],
     stages: CONTROL_TOWER_STAGES,
     artifacts: CONTROL_TOWER_ARTIFACTS,
-    routes: [...runtimeMeta.routes, "/api/schema/report", "/reports"],
+    routes: [...runtimeMeta.routes, "/api/runtime-brief", "/api/schema/report", "/reports"],
     features: runtimeMeta.features,
+  };
+}
+
+export function buildControlTowerRuntimeBrief(now = new Date()): ControlTowerRuntimeBrief {
+  const serviceMeta = buildControlTowerServiceMeta(now);
+
+  return {
+    service: serviceMeta.service,
+    status: serviceMeta.status,
+    generated_at: serviceMeta.generated_at,
+    mode: serviceMeta.mode,
+    headline:
+      "Control tower review pack that keeps ingest mode, export contract, and operator proof visible before deep-dive debugging.",
+    readiness_contract: "control-tower-runtime-brief-v1",
+    live_sources: serviceMeta.live_sources,
+    diagnostics: serviceMeta.diagnostics,
+    report_contract: serviceMeta.report_contract,
+    evidence_counts: serviceMeta.evidence_counts,
+    review_flow: serviceMeta.review_flow,
+    watchouts: serviceMeta.watchouts,
+    route_count: serviceMeta.routes.length,
+    links: {
+      health: "/api/health",
+      runtime_brief: "/api/runtime-brief",
+      meta: "/api/meta",
+      report_schema: "/api/schema/report",
+      reports: "/reports",
+    },
   };
 }
