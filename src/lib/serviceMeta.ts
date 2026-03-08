@@ -48,8 +48,10 @@ export type ControlTowerServiceMeta = {
   strengths: string[];
   watchouts: string[];
   review_flow: string[];
+  two_minute_review: string[];
   stages: ServiceStage[];
   artifacts: ServiceArtifact[];
+  proof_assets: ServiceArtifact[];
   routes: string[];
   features: string[];
 };
@@ -66,7 +68,9 @@ export type ControlTowerRuntimeBrief = {
   report_contract: ReportSchema;
   evidence_counts: ControlTowerServiceMeta["evidence_counts"];
   review_flow: string[];
+  two_minute_review: ControlTowerServiceMeta["two_minute_review"];
   watchouts: string[];
+  proof_assets: ControlTowerServiceMeta["proof_assets"];
   route_count: number;
   links: {
     health: string;
@@ -178,6 +182,33 @@ const CONTROL_TOWER_ARTIFACTS: ServiceArtifact[] = [
   },
 ];
 
+const CONTROL_TOWER_PROOF_ASSETS: ServiceArtifact[] = [
+  {
+    label: "Health API",
+    href: "/api/health",
+    kind: "route",
+    note: "ingest mode, readiness, review links",
+  },
+  {
+    label: "Service Meta",
+    href: "/api/meta",
+    kind: "route",
+    note: "control tower posture and trust boundary",
+  },
+  {
+    label: "Reports View",
+    href: "/reports",
+    kind: "route",
+    note: "SLA metrics, exports, replay summary",
+  },
+  {
+    label: "Ops Console Screenshot",
+    href: "public/screenshots/ops_console.png",
+    kind: "asset",
+    note: "reviewable operator UI proof",
+  },
+];
+
 export function buildControlTowerReportSchema(): ReportSchema {
   return {
     schema: "twincity-report-v1",
@@ -256,8 +287,15 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
       "Use /events or / to exercise triage and timeline handling.",
       "Open /reports for SLA proof and exported summary paths.",
     ],
+    two_minute_review: [
+      "Open /api/health to confirm whether the control tower is demo-first or live-wired.",
+      "Read /api/meta for trust boundary, stage ownership, and review artifacts.",
+      "Open /reports to validate SLA proof and export posture.",
+      "Use /events to inspect one alert through triage, dispatch, and timeline state.",
+    ],
     stages: CONTROL_TOWER_STAGES,
     artifacts: CONTROL_TOWER_ARTIFACTS,
+    proof_assets: CONTROL_TOWER_PROOF_ASSETS,
     routes: [...runtimeMeta.routes, "/api/runtime-brief", "/api/schema/report", "/reports"],
     features: runtimeMeta.features,
   };
@@ -279,7 +317,9 @@ export function buildControlTowerRuntimeBrief(now = new Date()): ControlTowerRun
     report_contract: serviceMeta.report_contract,
     evidence_counts: serviceMeta.evidence_counts,
     review_flow: serviceMeta.review_flow,
+    two_minute_review: serviceMeta.two_minute_review,
     watchouts: serviceMeta.watchouts,
+    proof_assets: serviceMeta.proof_assets,
     route_count: serviceMeta.routes.length,
     links: {
       health: "/api/health",
