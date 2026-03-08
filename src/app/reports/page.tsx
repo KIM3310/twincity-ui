@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect, useCallback } from "react";
+import ControlTowerReadiness from "@/components/site/ControlTowerReadiness";
 import { normalizeEventFeed } from "@/lib/eventAdapter";
 import { getEventTypeLabel, getZoneLabel } from "@/lib/labels";
 import type { EventItem, IncidentTimelineEntry } from "@/lib/types";
@@ -280,7 +281,11 @@ export default function ReportsPage() {
         </p>
       </header>
 
-      <section className="panel reveal delay-1" style={{ padding: "1rem" }}>
+      <div className="reveal delay-1">
+        <ControlTowerReadiness variant="compact" />
+      </div>
+
+      <section className="panel reveal delay-2" style={{ padding: "1rem" }}>
         <div className="reportControls">
           <div className="reportControl">
             <span className="reportLabel">기간</span>
@@ -309,7 +314,7 @@ export default function ReportsPage() {
         {notice && <div className="reportNotice mono">{notice}</div>}
       </section>
 
-      <section className="reveal delay-2">
+      <section className="reveal delay-3">
         <div className="opsMetricRow">
           <article className="opsMetricCard">
             <span>총 알림</span>
@@ -339,7 +344,7 @@ export default function ReportsPage() {
         </div>
       </section>
 
-      <section className="splitBlock reveal delay-3">
+      <section className="splitBlock reveal delay-4">
         <article className="panel reportCard">
           <h2 className="panelTitle">유형 분포</h2>
           {byType.length === 0 ? (
@@ -373,7 +378,7 @@ export default function ReportsPage() {
         </article>
       </section>
 
-      <section className="panel reveal delay-3 reportCard">
+      <section className="panel reveal delay-4 reportCard">
         <h2 className="panelTitle">SLA 평균</h2>
         <div className="reportTable">
           <div className="reportRow">

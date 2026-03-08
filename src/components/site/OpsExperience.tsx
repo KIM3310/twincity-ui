@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "@/components/site/theme";
+import ControlTowerReadiness from "@/components/site/ControlTowerReadiness";
 import EventDetail from "@/components/EventDetail";
 import IncidentTimeline from "@/components/IncidentTimeline";
 import MapView from "@/components/MapView";
@@ -1925,6 +1926,8 @@ export default function OpsExperience() {
           {hasOpsTitle ? <h2>{meta.opsTitle}</h2> : null}
           <p>{meta.opsLead}</p>
         </div>
+
+        <ControlTowerReadiness variant="compact" />
 
         <div className="opsMetricRow">
           <article className="opsMetricCard">

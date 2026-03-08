@@ -69,6 +69,9 @@ NEXT_PUBLIC_ADSENSE_SLOT=1234567890
 ## Key Routes
 - `/events`: main operator console
 - `/reports`: replay + aggregation view (WIP)
+- `/api/health`: ingest mode + readiness links
+- `/api/meta`: control tower trust boundary + evidence surface
+- `/api/schema/report`: report contract for CSV/summary exports
 - `/about`: product intro + community + sponsored slot
 - `/about`, `/privacy`, `/terms`, `/contact`, `/compliance`: policy/compliance pages for review
 
@@ -82,7 +85,15 @@ AdSense crawl helpers are provided in `public/ads.txt`, `public/robots.txt`, `pu
 ## Ops Artifacts (Portfolio)
 - `RUNBOOK.md`
 - `POSTMORTEM_TEMPLATE.md`
+- `src/app/api/meta/route.ts`
+- `src/app/api/schema/report/route.ts`
 - `.github/workflows/ci.yml` (CI: lint + test + build)
+
+## Service-Grade Surfaces
+- `Control Tower Readiness` board on `/`, `/brand`, `/reports`
+- `ops-envelope-v1` ingest contract surfaced through `/api/health` and `/api/meta`
+- `twincity-report-v1` report schema surfaced through `/api/schema/report`
+- reviewer flow: `health -> meta -> events -> reports`
 
 ## Glossary (first-time readers)
 - WS: WebSocket
