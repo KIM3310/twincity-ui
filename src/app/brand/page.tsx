@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import ControlTowerReadiness from "@/components/site/ControlTowerReadiness";
 import LoopVisual from "@/components/site/LoopVisual";
 import LuxuryGifBand from "@/components/site/LuxuryGifBand";
 import ThemeHomeVoice from "@/components/site/ThemeHomeVoice";
@@ -37,6 +38,10 @@ export default function BrandPage() {
       <LuxuryGifBand />
 
       <section className="sectionBlock reveal delay-2">
+        <ControlTowerReadiness />
+      </section>
+
+      <section className="sectionBlock reveal delay-3">
         <div className="sectionHead">
           <p className="kicker">지금 상태</p>
           <h2>핵심 숫자 한눈에 보기</h2>
@@ -53,7 +58,7 @@ export default function BrandPage() {
         </div>
       </section>
 
-      <section className="sectionBlock reveal delay-3">
+      <section className="sectionBlock reveal delay-4">
         <div className="sectionHead">
           <p className="kicker">화면 바로가기</p>
           <h2>필요한 화면으로 빠르게 이동</h2>
@@ -72,7 +77,7 @@ export default function BrandPage() {
 
       <ThemeHomeVoice />
 
-      <section className="quoteStrip reveal delay-3">
+      <section className="quoteStrip reveal delay-4">
         <p>
           &ldquo;쉽게 보이면, 빠르게 움직일 수 있습니다.&rdquo;
         </p>
@@ -80,4 +85,3 @@ export default function BrandPage() {
     </div>
   );
 }
-

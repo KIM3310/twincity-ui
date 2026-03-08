@@ -4,33 +4,41 @@ Last updated: 2026-03-08
 
 ## S - Scope
 - 대상: digital twin ops console
-- baseline 목표: event normalization, replay UX, control tower 시각 언어를 서비스 수준으로 정리
+- 이번 iteration 목표: `payload -> operator loop -> report contract`를 첫 화면에서 읽히게 만들기
 
 ## P - Product Thesis
-- twincity-ui는 단순 시각화가 아니라 `ops decision console`이어야 한다.
-- 리뷰어는 payload -> normalization -> control decision 흐름을 UI에서 바로 읽을 수 있어야 한다.
+- twincity-ui는 예쁜 맵 데모가 아니라 `control tower`여야 한다.
+- 리뷰어는 백엔드가 없어도 `/api/health`, `/api/meta`, `/api/schema/report`, `/reports`만으로 운영 posture를 이해할 수 있어야 한다.
 
 ## E - Execution
-- live/replay 데이터 경계와 sample payload를 명확히 유지
-- operator workflow, report export, runtime signals를 전면에 노출
-- CI와 preview build가 계속 green 하도록 유지
+- `control-tower-readiness-v1` surface 추가
+- report export를 `twincity-report-v1` schema로 명시
+- `/`, `/brand`, `/reports`에 readiness board를 연결
+- health/meta route에 review 링크와 service-grade contract를 포함
 
 ## C - Criteria
-- build/test green
-- demo 스크린과 README로 제품 목적이 명확함
-- event contract와 replay surface가 깨지지 않음
+- `npm run lint`
+- `npm run typecheck`
+- `npm run test`
+- `npm run build`
+- route contract와 UI copy가 같은 readiness 언어를 사용
 
 ## K - Keep
-- intentional UI language
-- ops console 중심 정보 구조
+- 현재의 intentional visual language
+- demo-first reviewability
+- spatial mapping과 event normalization 중심 구조
 
 ## I - Improve
-- scenario gallery와 playback controls 강화
-- contract docs와 screenshot pack 추가
+- scenario replay presets
+- authenticated operator handoff
+- centralized incident history store
 
 ## T - Trace
-- `README.md`
-- `src/`
-- `docs/`
-- `.github/workflows/`
-
+- `src/lib/serviceMeta.ts`
+- `src/components/site/ControlTowerReadiness.tsx`
+- `src/app/api/health/route.ts`
+- `src/app/api/meta/route.ts`
+- `src/app/api/schema/report/route.ts`
+- `src/app/brand/page.tsx`
+- `src/app/reports/page.tsx`
+- `tests/runtimeRoutes.test.ts`
