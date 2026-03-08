@@ -348,6 +348,38 @@ export default function ReportsPage() {
     }
   };
 
+  const copySpotlight = async () => {
+    const target = spotlightEvents[0];
+    if (!target) {
+      setNotice("복사할 spotlight incident가 없습니다.");
+      return;
+    }
+
+    const latestAction = latestTimelineByEvent.get(target.id);
+    const text = [
+      "TwinCity spotlight incident",
+      `Zone: ${getZoneLabel(target.zone_id)}`,
+      `Type: ${getEventTypeLabel(target.type)}`,
+      `Severity: S${target.severity}`,
+      `Status: ${target.incident_status}`,
+      `Event ID: ${target.id}`,
+      `Detected: ${new Date(target.detected_at).toISOString()}`,
+      latestAction
+        ? `Latest action: ${latestAction.action.toUpperCase()} by ${latestAction.actor} @ ${new Date(latestAction.at).toISOString()}`
+        : "Latest action: none",
+      "",
+      "Review flow",
+      ...serviceMeta.review_flow.map((item) => `- ${item}`),
+    ].join("\n");
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setNotice("spotlight incident를 클립보드에 복사했습니다.");
+    } catch {
+      setNotice("복사 권한이 없어서 실패했습니다.");
+    }
+  };
+
   const focusHighestRisk = () => {
     const target = inRangeEvents
       .slice()
@@ -502,6 +534,9 @@ export default function ReportsPage() {
             </button>
             <button type="button" className="button buttonGhost" onClick={focusHighestRisk} disabled={inRangeEvents.length === 0}>
               최고 위험 집중
+            </button>
+            <button type="button" className="button buttonGhost" onClick={copySpotlight} disabled={spotlightEvents.length === 0}>
+              스포트라이트 복사
             </button>
             <button type="button" className="button buttonGhost" onClick={copySummary}>
               요약 복사
