@@ -12,8 +12,10 @@ Last updated: 2026-03-08
 
 ## E - Execution
 - `control-tower-readiness-v1` surface 추가
+- `control-tower-runtime-brief-v1` route 추가
 - report export를 `twincity-report-v1` schema로 명시
 - `/`, `/brand`, `/reports`에 readiness board를 연결
+- `/reports` 상단에 review pack과 export contract 패널 추가
 - health/meta route에 review 링크와 service-grade contract를 포함
 
 ## C - Criteria
@@ -37,6 +39,7 @@ Last updated: 2026-03-08
 - `src/lib/serviceMeta.ts`
 - `src/components/site/ControlTowerReadiness.tsx`
 - `src/app/api/health/route.ts`
+- `src/app/api/runtime-brief/route.ts`
 - `src/app/api/meta/route.ts`
 - `src/app/api/schema/report/route.ts`
 - `src/app/brand/page.tsx`
