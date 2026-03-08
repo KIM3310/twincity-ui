@@ -1511,6 +1511,173 @@ body.is-gated {
   font-size: 0.9rem;
 }
 
+.readinessBoard {
+  gap: 1rem;
+  background:
+    linear-gradient(138deg, color-mix(in srgb, var(--lux-panel), #ffffff 18%), rgba(255, 255, 255, 0.56)),
+    radial-gradient(circle at 100% 0%, var(--lux-ambient-a), transparent 46%);
+  box-shadow: var(--shadow-soft);
+}
+
+.readinessBoard.compact {
+  gap: 0.85rem;
+}
+
+.readinessHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.readinessLead {
+  display: grid;
+  gap: 0.4rem;
+  max-width: 70ch;
+}
+
+.readinessLead p:last-child {
+  color: var(--ink-muted);
+}
+
+.readinessMetricStrip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.72rem;
+  width: min(100%, 460px);
+}
+
+.readinessMetricCard {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.72rem 0.8rem;
+  background: rgba(255, 255, 255, 0.56);
+  display: grid;
+  gap: 0.18rem;
+}
+
+.readinessMetricCard span,
+.readinessSectionHead small,
+.readinessArtifactKind {
+  color: var(--ink-muted);
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.readinessMetricCard strong {
+  font-size: 1.08rem;
+}
+
+.readinessMetricCard small {
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+}
+
+.readinessTagRow {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.readinessTag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.34rem 0.72rem;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+
+.readinessSplit {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.readinessListCard,
+.readinessArtifactCard,
+.readinessStageCard {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.56);
+  padding: 0.9rem;
+  display: grid;
+  gap: 0.72rem;
+}
+
+.readinessSectionHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.readinessSectionHead h3 {
+  font-family: var(--font-display-stack);
+  font-size: 1.14rem;
+}
+
+.readinessList {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.readinessListItem {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.58rem 0.68rem;
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--ink);
+}
+
+.readinessStageGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.readinessStageCard p,
+.readinessArtifactRow p {
+  color: var(--ink-muted);
+}
+
+.readinessStageCard span {
+  color: var(--accent);
+  font-size: 0.84rem;
+}
+
+.readinessArtifactRow {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.68rem 0.74rem;
+  background: rgba(255, 255, 255, 0.48);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+}
+
+.readinessArtifactMeta {
+  display: grid;
+  gap: 0.16rem;
+  justify-items: end;
+  text-align: right;
+}
+
+.readinessArtifactKind {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.18rem 0.5rem;
+  background: rgba(255, 255, 255, 0.7);
+}
+
 .textList {
   display: grid;
   gap: 0.6rem;
@@ -3265,6 +3432,23 @@ body.motion-ready .reveal.in-view .contactCard:nth-child(4) {
 
   .opsControls {
     gap: 0.5rem;
+  }
+
+  .readinessMetricStrip,
+  .readinessSplit,
+  .readinessStageGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .readinessArtifactRow,
+  .readinessSectionHead {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .readinessArtifactMeta {
+    justify-items: start;
+    text-align: left;
   }
 
   .opsToggle {
