@@ -127,6 +127,8 @@ describe("runtime routes", () => {
         expect(body.diagnostics.next_action).toContain("/api/3d-test/status");
         expect(body.report_contract.schema).toBe("twincity-report-v1");
         expect(Array.isArray(body.trust_boundary)).toBe(true);
+        expect(body.two_minute_review).toHaveLength(4);
+        expect(body.proof_assets[0].href).toBe("/api/health");
         expect(body.links.runtime_brief).toBe("/api/runtime-brief");
         expect(response.headers.get("x-request-id")).toBe(body.request_id);
       }
@@ -154,6 +156,8 @@ describe("runtime routes", () => {
     });
     expect(body.route_count).toBeGreaterThanOrEqual(7);
     expect(body.review_flow[0]).toContain("/api/health");
+    expect(body.two_minute_review).toHaveLength(4);
+    expect(body.proof_assets[0].href).toBe("/api/health");
     expect(response.headers.get("x-request-id")).toBe(body.request_id);
   });
 
