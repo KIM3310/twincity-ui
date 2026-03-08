@@ -82,6 +82,8 @@ export default function ReportsPage() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [timeline, setTimeline] = useState<IncidentTimelineEntry[]>([]);
   const [range, setRange] = useState<RangeKey>("120m");
+  const [severityFilter, setSeverityFilter] = useState<"all" | "1" | "2" | "3">("all");
+  const [zoneFilter, setZoneFilter] = useState("all");
   const [notice, setNotice] = useState<string | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
   const runtimeBrief = useMemo(() => buildControlTowerRuntimeBrief(), []);
@@ -139,6 +141,30 @@ export default function ReportsPage() {
     [events, since]
   );
 
+  const availableZones = useMemo(
+    () => Array.from(new Set(inRangeEvents.map((event) => event.zone_id))).sort(),
+    [inRangeEvents]
+  );
+
+  const focusedEvents = useMemo(
+    () =>
+      inRangeEvents.filter((event) => {
+        if (severityFilter !== "all" && String(event.severity) !== severityFilter) return false;
+        if (zoneFilter !== "all" && event.zone_id !== zoneFilter) return false;
+        return true;
+      }),
+    [inRangeEvents, severityFilter, zoneFilter]
+  );
+
+  const filterSummary = useMemo(() => {
+    const parts = [
+      rangeLabel(range),
+      severityFilter === "all" ? "전체 severity" : `S${severityFilter}`,
+      zoneFilter === "all" ? "전체 zone" : getZoneLabel(zoneFilter),
+    ];
+    return parts.join(" · ");
+  }, [range, severityFilter, zoneFilter]);
+
   const ackAtByEvent = useMemo(() => {
     const index = new Map<string, number>();
     timeline.forEach((entry) => {
@@ -159,29 +185,55 @@ export default function ReportsPage() {
     return index;
   }, [timeline]);
 
-  const openCount = inRangeEvents.filter((event) => event.incident_status !== "resolved").length;
-  const criticalCount = inRangeEvents.filter((event) => event.severity === 3).length;
+  const latestTimelineByEvent = useMemo(() => {
+    const index = new Map<string, IncidentTimelineEntry>();
+    timeline.forEach((entry) => {
+      const prev = index.get(entry.event_id);
+      if (!prev || entry.at > prev.at) index.set(entry.event_id, entry);
+    });
+    return index;
+  }, [timeline]);
+
+  const spotlightEvents = useMemo(
+    () =>
+      focusedEvents
+        .slice()
+        .sort((a, b) => {
+          if (a.incident_status !== b.incident_status) {
+            return a.incident_status === "resolved" ? 1 : -1;
+          }
+          if (b.severity !== a.severity) return b.severity - a.severity;
+          const aTimelineAt = latestTimelineByEvent.get(a.id)?.at ?? a.detected_at;
+          const bTimelineAt = latestTimelineByEvent.get(b.id)?.at ?? b.detected_at;
+          return bTimelineAt - aTimelineAt;
+        })
+        .slice(0, 3),
+    [focusedEvents, latestTimelineByEvent]
+  );
+
+  const openCount = focusedEvents.filter((event) => event.incident_status !== "resolved").length;
+  const criticalCount = focusedEvents.filter((event) => event.severity === 3).length;
 
   const ackDurations = useMemo(() => {
     const rows: number[] = [];
-    inRangeEvents.forEach((event) => {
+    focusedEvents.forEach((event) => {
       const ackAt = ackAtByEvent.get(event.id);
       if (!ackAt) return;
       rows.push(Math.max(0, ackAt - event.detected_at));
     });
     return rows;
-  }, [ackAtByEvent, inRangeEvents]);
+  }, [ackAtByEvent, focusedEvents]);
 
   const resolveDurations = useMemo(() => {
     const rows: number[] = [];
-    inRangeEvents.forEach((event) => {
+    focusedEvents.forEach((event) => {
       const resolvedAt = resolvedAtByEvent.get(event.id);
       if (!resolvedAt) return;
       const ackAt = ackAtByEvent.get(event.id) ?? event.detected_at;
       rows.push(Math.max(0, resolvedAt - ackAt));
     });
     return rows;
-  }, [ackAtByEvent, inRangeEvents, resolvedAtByEvent]);
+  }, [ackAtByEvent, focusedEvents, resolvedAtByEvent]);
 
   const ackSlaMet = ackDurations.filter((ms) => ms <= ACK_SLA_MS).length;
   const resolveSlaMet = resolveDurations.filter((ms) => ms <= RESOLVE_SLA_MS).length;
@@ -191,19 +243,19 @@ export default function ReportsPage() {
 
   const byType = useMemo(() => {
     const map = new Map<string, number>();
-    inRangeEvents.forEach((event) => {
+    focusedEvents.forEach((event) => {
       map.set(event.type, (map.get(event.type) ?? 0) + 1);
     });
     return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
-  }, [inRangeEvents]);
+  }, [focusedEvents]);
 
   const byZone = useMemo(() => {
     const map = new Map<string, number>();
-    inRangeEvents.forEach((event) => {
+    focusedEvents.forEach((event) => {
       map.set(event.zone_id, (map.get(event.zone_id) ?? 0) + 1);
     });
     return Array.from(map.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  }, [inRangeEvents]);
+  }, [focusedEvents]);
 
   const downloadCsv = () => {
     const header = [
@@ -221,7 +273,7 @@ export default function ReportsPage() {
       "note",
     ];
 
-    const rows = inRangeEvents.map((event) => {
+    const rows = focusedEvents.map((event) => {
       const ackAt = ackAtByEvent.get(event.id);
       const resolvedAt = resolvedAtByEvent.get(event.id);
       return [
@@ -258,8 +310,8 @@ export default function ReportsPage() {
 
   const copySummary = async () => {
     const text = [
-      `TwinCity 운영 리포트 (${rangeLabel(range)})`,
-      `총 알림: ${inRangeEvents.length}`,
+      `TwinCity 운영 리포트 (${filterSummary})`,
+      `총 알림: ${focusedEvents.length}`,
       `미해결: ${openCount}`,
       `긴급(S3): ${criticalCount}`,
       `ACK SLA(<=${Math.round(ACK_SLA_MS / 60_000)}m): ${ackDurations.length > 0 ? `${ackSlaMet}/${ackDurations.length}` : "-"}`,
@@ -379,6 +431,30 @@ export default function ReportsPage() {
               ))}
             </select>
           </div>
+          <div className="reportControl">
+            <span className="reportLabel">Severity</span>
+            <select
+              className="opsSelect"
+              value={severityFilter}
+              onChange={(e) => setSeverityFilter(e.target.value as "all" | "1" | "2" | "3")}
+            >
+              <option value="all">전체</option>
+              <option value="3">S3</option>
+              <option value="2">S2</option>
+              <option value="1">S1</option>
+            </select>
+          </div>
+          <div className="reportControl">
+            <span className="reportLabel">Zone</span>
+            <select className="opsSelect" value={zoneFilter} onChange={(e) => setZoneFilter(e.target.value)}>
+              <option value="all">전체</option>
+              {availableZones.map((zoneId) => (
+                <option key={zoneId} value={zoneId}>
+                  {getZoneLabel(zoneId)}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div className="reportActions">
             <button type="button" className="button buttonGhost" onClick={load}>
@@ -387,7 +463,7 @@ export default function ReportsPage() {
             <button type="button" className="button buttonGhost" onClick={copySummary}>
               요약 복사
             </button>
-            <button type="button" className="button" onClick={downloadCsv} disabled={inRangeEvents.length === 0}>
+            <button type="button" className="button" onClick={downloadCsv} disabled={focusedEvents.length === 0}>
               CSV 다운로드
             </button>
           </div>
@@ -400,8 +476,8 @@ export default function ReportsPage() {
         <div className="opsMetricRow">
           <article className="opsMetricCard">
             <span>총 알림</span>
-            <strong>{inRangeEvents.length}</strong>
-            <small>{rangeLabel(range)} 기준</small>
+            <strong>{focusedEvents.length}</strong>
+            <small>{filterSummary}</small>
           </article>
           <article className="opsMetricCard">
             <span>미해결</span>
@@ -427,6 +503,34 @@ export default function ReportsPage() {
       </section>
 
       <section className="splitBlock reveal delay-5">
+        <article className="panel reportCard">
+          <h2 className="panelTitle">Incident Spotlight</h2>
+          {spotlightEvents.length === 0 ? (
+            <p className="reportEmpty">현재 필터에서 집중 검토할 incident가 없습니다.</p>
+          ) : (
+            <div className="readinessList">
+              {spotlightEvents.map((event) => {
+                const latestAction = latestTimelineByEvent.get(event.id);
+                return (
+                  <div key={event.id} className="readinessListItem">
+                    <strong>
+                      {getZoneLabel(event.zone_id)} · {getEventTypeLabel(event.type)} · S{event.severity}
+                    </strong>
+                    <span className="mono" style={{ display: "block", marginTop: "0.35rem" }}>
+                      {event.id} · {event.incident_status}
+                    </span>
+                    <span style={{ display: "block", marginTop: "0.35rem" }}>
+                      {latestAction
+                        ? `${latestAction.action.toUpperCase()} by ${latestAction.actor} @ ${new Date(latestAction.at).toISOString()}`
+                        : `Detected @ ${new Date(event.detected_at).toISOString()}`}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </article>
+
         <article className="panel reportCard">
           <h2 className="panelTitle">유형 분포</h2>
           {byType.length === 0 ? (
