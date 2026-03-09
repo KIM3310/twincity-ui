@@ -1,22 +1,18 @@
 import { apiJson, resolveRequestId } from "@/lib/apiResponse";
-import { buildControlTowerRuntimeBrief } from "@/lib/serviceMeta";
+import { buildControlTowerRuntimeScorecard } from "@/lib/runtimeScorecard";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export function GET(request: Request) {
   const requestId = resolveRequestId(request);
-  const runtimeBrief = buildControlTowerRuntimeBrief();
+  const scorecard = buildControlTowerRuntimeScorecard();
 
   return apiJson(
     {
       ok: true,
       request_id: requestId,
-      ...runtimeBrief,
-      links: {
-        ...runtimeBrief.links,
-        runtime_scorecard: "/api/runtime-scorecard",
-      },
+      ...scorecard,
     },
     { requestId }
   );

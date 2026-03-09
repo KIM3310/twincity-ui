@@ -8,6 +8,7 @@
     "dev:lan": "next dev --webpack --hostname 0.0.0.0",
     "dev:turbo": "next dev --turbo --hostname 127.0.0.1",
     "open:local": "bash ./tools/open_local.sh",
+    "exercise:runtime": "node tools/exercise_runtime.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

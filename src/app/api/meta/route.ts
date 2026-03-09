@@ -16,6 +16,7 @@ export function GET(request: Request) {
       links: {
         health: "/api/health",
         runtime_brief: "/api/runtime-brief",
+        runtime_scorecard: "/api/runtime-scorecard",
         report_schema: "/api/schema/report",
         report_summary: "/api/reports/summary",
         report_export: "/api/reports/export",

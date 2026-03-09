@@ -75,6 +75,7 @@ export type ControlTowerRuntimeBrief = {
   links: {
     health: string;
     runtime_brief: string;
+    runtime_scorecard?: string;
     meta: string;
     report_schema: string;
     report_summary: string;
@@ -139,6 +140,12 @@ const CONTROL_TOWER_ARTIFACTS: ServiceArtifact[] = [
     href: "/api/runtime-brief",
     kind: "route",
     note: "review-first contract for reports and operator proof",
+  },
+  {
+    label: "Runtime Scorecard",
+    href: "/api/runtime-scorecard",
+    kind: "route",
+    note: "ingest posture, export auth, and SLA snapshot in one compact contract",
   },
   {
     label: "Report Schema",
@@ -208,6 +215,12 @@ const CONTROL_TOWER_PROOF_ASSETS: ServiceArtifact[] = [
     href: "/api/meta",
     kind: "route",
     note: "control tower posture and trust boundary",
+  },
+  {
+    label: "Runtime Scorecard",
+    href: "/api/runtime-scorecard",
+    kind: "route",
+    note: "ingest posture, export auth, and SLA snapshot in one compact contract",
   },
   {
     label: "Reports View",
@@ -326,7 +339,7 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
     stages: CONTROL_TOWER_STAGES,
     artifacts: CONTROL_TOWER_ARTIFACTS,
     proof_assets: CONTROL_TOWER_PROOF_ASSETS,
-    routes: [...runtimeMeta.routes, "/api/runtime-brief", "/api/schema/report", "/api/reports/summary", "/api/reports/export", "/reports"],
+    routes: [...runtimeMeta.routes, "/api/runtime-brief", "/api/runtime-scorecard", "/api/schema/report", "/api/reports/summary", "/api/reports/export", "/reports"],
     features: runtimeMeta.features,
   };
 }
@@ -354,6 +367,7 @@ export function buildControlTowerRuntimeBrief(now = new Date()): ControlTowerRun
     links: {
       health: "/api/health",
       runtime_brief: "/api/runtime-brief",
+      runtime_scorecard: "/api/runtime-scorecard",
       meta: "/api/meta",
       report_schema: "/api/schema/report",
       report_summary: "/api/reports/summary",
