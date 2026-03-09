@@ -18,6 +18,7 @@ export function GET(request: Request) {
         runtime_brief: "/api/runtime-brief",
         report_schema: "/api/schema/report",
         report_summary: "/api/reports/summary",
+        report_export: "/api/reports/export",
         reports: "/reports",
       },
     },
