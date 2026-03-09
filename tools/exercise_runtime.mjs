@@ -1,5 +1,6 @@
 const baseUrl = process.env.TWINCITY_BASE_URL || "http://127.0.0.1:3000";
 const token = (process.env.TWINCITY_EXPORT_OPERATOR_TOKEN || "").trim();
+const role = (process.env.TWINCITY_EXPORT_OPERATOR_ROLE || "").trim();
 
 async function fetchJson(path, options = {}) {
   const response = await fetch(`${baseUrl}${path}`, options);
@@ -10,7 +11,12 @@ async function fetchJson(path, options = {}) {
   return body;
 }
 
-const authHeaders = token ? { "x-operator-token": token } : {};
+const authHeaders = token
+  ? {
+      "x-operator-token": token,
+      ...(role ? { "x-operator-role": role } : {}),
+    }
+  : {};
 const health = await fetchJson("/api/health");
 const scorecard = await fetchJson("/api/runtime-scorecard");
 const summary = await fetchJson("/api/reports/summary");
