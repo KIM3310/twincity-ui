@@ -170,7 +170,9 @@ describe("runtime routes", () => {
 
   test("report summary route exposes deterministic SLA and spotlight contract", async () => {
     const response = await getReportSummaryRoute(
-      new Request("https://example.com/api/reports/summary?range=60m&severity=3")
+      new Request(
+        "https://example.com/api/reports/summary?range=60m&severity=3&incident_status=ack"
+      )
     );
     const body = await response.json();
 
@@ -182,13 +184,15 @@ describe("runtime routes", () => {
       filters: {
         range: "60m",
         severity: "3",
+        incident_status: "ack",
         zone: "all",
       },
       summary: {
-        total_incidents: 2,
-        critical_incidents: 2,
+        total_incidents: 1,
+        critical_incidents: 1,
       },
     });
+    expect(body.summary.status_breakdown.ack).toBe(1);
     expect(body.top_types.some((item: { type: string }) => item.type === "fall")).toBe(
       true
     );
