@@ -5,6 +5,7 @@ TwinCity UI is a Next.js (React/TypeScript) operations console that overlays **Z
 - Spatial context (where it happened)
 - Event context (what happened, severity, status)
 - Workflow context (acknowledge, dispatch, resolve + timeline)
+- Dispatch board context (attention / dispatch / resolved queue posture)
 
 This project is in progress, but it is designed to be **reviewable end-to-end without external infrastructure**:
 - Demo mode includes local mock feeds + replay tools.
@@ -73,6 +74,7 @@ NEXT_PUBLIC_ADSENSE_SLOT=1234567890
 - `/api/runtime-brief`: review-first contract for exports, live source posture, and route count
 - `/api/meta`: control tower trust boundary + evidence surface
 - `/api/schema/report`: report contract for CSV/summary exports
+- `/api/reports/dispatch-board`: compact triage queue board for attention / dispatch / resolved lanes
 - `/about`: product intro + community + sponsored slot
 - `/about`, `/privacy`, `/terms`, `/contact`, `/compliance`: policy/compliance pages for review
 
@@ -93,21 +95,24 @@ AdSense crawl helpers are provided in `public/ads.txt`, `public/robots.txt`, `pu
 ## Service-Grade Surfaces
 - `Control Tower Readiness` board on `/`, `/brand`, `/reports`
 - `GET /api/runtime-brief` for reviewer-first ingest/export posture
+- `GET /api/reports/dispatch-board` for compact unresolved queue posture before export
 - `ops-envelope-v1` ingest contract surfaced through `/api/health` and `/api/meta`
 - `twincity-report-v1` report schema surfaced through `/api/schema/report`
-- reviewer flow: `health -> runtime brief -> meta -> events -> reports`
+- reviewer flow: `health -> runtime brief -> meta -> dispatch board -> events -> reports`
 
 ## 2-Minute Review Path
 
 1. Open `/api/health` to confirm whether the control tower is demo-first or live-wired.
 2. Read `/api/meta` for trust boundary, stage ownership, and review artifacts.
-3. Open `/reports` to validate SLA proof and export posture.
-4. Use `/events` to inspect one alert through triage, dispatch, and timeline state.
+3. Use `/api/reports/dispatch-board` to confirm unresolved queue posture.
+4. Open `/reports` to validate SLA proof and export posture.
+5. Use `/events` to inspect one alert through triage, dispatch, and timeline state.
 
 ## Proof Assets
 
 - `/api/health`
 - `/api/meta`
+- `/api/reports/dispatch-board`
 - `/reports`
 - `public/screenshots/ops_console.png`
 

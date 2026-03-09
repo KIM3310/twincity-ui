@@ -13,6 +13,8 @@ export type ReportFilters = {
   zone: string;
 };
 
+export type DispatchBoardLane = "all" | "attention" | "dispatch" | "resolved";
+
 export type ControlTowerReportSummary = {
   service: string;
   status: "ok";
@@ -67,6 +69,49 @@ export type ControlTowerReportExport = {
   };
   review_routes: string[];
   download_name: string;
+};
+
+export type ControlTowerDispatchBoard = {
+  service: string;
+  status: "ok";
+  generated_at: string;
+  schema: "twincity-dispatch-board-v1";
+  filters: ReportFilters & { lane: DispatchBoardLane };
+  summary: {
+    visible_incidents: number;
+    attention_count: number;
+    dispatch_count: number;
+    resolved_count: number;
+    critical_visible_count: number;
+  };
+  spotlight: {
+    id: string;
+    lane: DispatchBoardLane;
+    severity: number;
+    zone_id: string;
+    incident_status: string;
+  } | null;
+  items: Array<{
+    id: string;
+    lane: DispatchBoardLane;
+    severity: number;
+    type: string;
+    zone_id: string;
+    incident_status: string;
+    latest_action: string;
+    ack_at: string | null;
+    resolved_at: string | null;
+    ack_sla_state: "met" | "missed" | "pending";
+    resolve_sla_state: "met" | "missed" | "pending";
+    note: string | null;
+  }>;
+  review_actions: string[];
+  route_bundle: {
+    dispatch_board: string;
+    report_summary: string;
+    report_export: string;
+    reports: string;
+  };
 };
 
 export function buildDemoReportState() {
@@ -241,12 +286,25 @@ function clampRangeFilter(value: string | null): ReportRangeKey {
     : "120m";
 }
 
+function clampDispatchBoardLane(value: string | null): DispatchBoardLane {
+  return value === "attention" || value === "dispatch" || value === "resolved"
+    ? value
+    : "all";
+}
+
 export function parseReportSummaryFilters(url: URL) {
   return {
     range: clampRangeFilter(url.searchParams.get("range")),
     severity: clampSeverityFilter(url.searchParams.get("severity")),
     incident_status: clampIncidentStatusFilter(url.searchParams.get("incident_status")),
     zone: url.searchParams.get("zone")?.trim() || "all",
+  };
+}
+
+export function parseDispatchBoardFilters(url: URL) {
+  return {
+    ...parseReportSummaryFilters(url),
+    lane: clampDispatchBoardLane(url.searchParams.get("lane")),
   };
 }
 
@@ -503,4 +561,121 @@ export function buildControlTowerReportCsv(input?: {
   return [header, ...rows]
     .map((row) => row.map(toCsvValue).join(","))
     .join("\n");
+}
+
+export function buildControlTowerDispatchBoard(input?: {
+  filters?: Partial<ReportFilters> & { lane?: DispatchBoardLane };
+  now?: number;
+}): ControlTowerDispatchBoard {
+  const filters: ReportFilters = {
+    range: input?.filters?.range ?? "120m",
+    severity: input?.filters?.severity ?? "all",
+    incident_status: input?.filters?.incident_status ?? "all",
+    zone: input?.filters?.zone ?? "all",
+  };
+  const lane = input?.filters?.lane ?? "all";
+  const demo = buildDemoReportState();
+  const now = input?.now ?? demo.now;
+  const { filteredEvents, ackAtByEvent, resolvedAtByEvent } = buildFilteredReportRows(filters, now);
+
+  const latestTimelineByEvent = new Map<string, IncidentTimelineEntry>();
+  for (const entry of demo.timeline) {
+    const prev = latestTimelineByEvent.get(entry.event_id);
+    if (!prev || entry.at > prev.at) {
+      latestTimelineByEvent.set(entry.event_id, entry);
+    }
+  }
+
+  const rows = filteredEvents
+    .map((event) => {
+      const latestTimeline = latestTimelineByEvent.get(event.id);
+      const ackAt = ackAtByEvent.get(event.id);
+      const resolvedAt = resolvedAtByEvent.get(event.id);
+      const derivedLane: DispatchBoardLane =
+        event.incident_status === "resolved"
+          ? "resolved"
+          : event.incident_status === "ack"
+            ? "dispatch"
+            : "attention";
+      const ackSlaState: "met" | "missed" | "pending" =
+        ackAt === undefined ? "pending" : ackAt - event.detected_at <= ACK_SLA_MS ? "met" : "missed";
+      const resolveStart = ackAt ?? event.detected_at;
+      const resolveSlaState: "met" | "missed" | "pending" =
+        resolvedAt === undefined
+          ? "pending"
+          : resolvedAt - resolveStart <= RESOLVE_SLA_MS
+            ? "met"
+            : "missed";
+      return {
+        id: event.id,
+        lane: derivedLane,
+        severity: event.severity,
+        type: event.type,
+        zone_id: event.zone_id,
+        incident_status: event.incident_status,
+        latest_action: latestTimeline?.action ?? "detected",
+        ack_at: ackAt ? new Date(ackAt).toISOString() : null,
+        resolved_at: resolvedAt ? new Date(resolvedAt).toISOString() : null,
+        ack_sla_state: ackSlaState,
+        resolve_sla_state: resolveSlaState,
+        note: event.note ?? null,
+        detected_at: event.detected_at,
+      };
+    })
+    .filter((row) => lane === "all" || row.lane === lane)
+    .sort((left, right) => {
+      if (left.lane !== right.lane) {
+        const rank: Record<DispatchBoardLane, number> = {
+          all: 99,
+          attention: 0,
+          dispatch: 1,
+          resolved: 2,
+        };
+        return rank[left.lane] - rank[right.lane];
+      }
+      if (right.severity !== left.severity) return right.severity - left.severity;
+      return right.detected_at - left.detected_at;
+    });
+
+  const items = rows.map(({ detected_at: _detectedAt, ...row }) => row);
+  const spotlight = items[0]
+    ? {
+        id: items[0].id,
+        lane: items[0].lane,
+        severity: items[0].severity,
+        zone_id: items[0].zone_id,
+        incident_status: items[0].incident_status,
+      }
+    : null;
+
+  return {
+    service: "twincity-ui",
+    status: "ok",
+    generated_at: new Date(now).toISOString(),
+    schema: "twincity-dispatch-board-v1",
+    filters: {
+      ...filters,
+      lane,
+    },
+    summary: {
+      visible_incidents: items.length,
+      attention_count: items.filter((item) => item.lane === "attention").length,
+      dispatch_count: items.filter((item) => item.lane === "dispatch").length,
+      resolved_count: items.filter((item) => item.lane === "resolved").length,
+      critical_visible_count: items.filter((item) => item.severity === 3).length,
+    },
+    spotlight,
+    items,
+    review_actions: [
+      "Start with attention incidents before reviewing dispatched or resolved rows.",
+      "Keep report summary and dispatch board filters aligned during reviewer walkthroughs.",
+      "Validate export payloads only after the dispatch board matches the expected operator queue.",
+    ],
+    route_bundle: {
+      dispatch_board: "/api/reports/dispatch-board",
+      report_summary: "/api/reports/summary",
+      report_export: "/api/reports/export",
+      reports: "/reports",
+    },
+  };
 }
