@@ -100,7 +100,7 @@ AdSense crawl helpers are provided in `public/ads.txt`, `public/robots.txt`, `pu
 - `twincity-report-v1` report schema surfaced through `/api/schema/report`
 - reviewer flow: `health -> runtime brief -> meta -> dispatch board -> events -> reports`
 
-## 2-Minute Review Path
+## Quick Review Path
 
 1. Open `/api/health` to confirm whether the control tower is demo-first or live-wired.
 2. Read `/api/meta` for trust boundary, stage ownership, and review artifacts.
@@ -121,7 +121,6 @@ AdSense crawl helpers are provided in `public/ads.txt`, `public/robots.txt`, `pu
 - SSE: Server-Sent Events
 - SLA: Service Level Agreement (time-to-ack / time-to-resolve targets)
 
-<!-- codex:local-verification:start -->
 ## Local Verification
 ```bash
 npm install
@@ -134,6 +133,3 @@ npm run build
 ## Repository Hygiene
 - Keep runtime artifacts out of commits (`.codex_runs/`, cache folders, temporary venvs).
 - Prefer running verification commands above before opening a PR.
-
-_Last updated: 2026-03-04_
-<!-- codex:local-verification:end -->
