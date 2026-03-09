@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from "vitest";
 
 import { GET as getHealthRoute } from "@/app/api/health/route";
 import { GET as getMetaRoute } from "@/app/api/meta/route";
+import { GET as getReportExportRoute } from "@/app/api/reports/export/route";
 import { GET as getReportSummaryRoute } from "@/app/api/reports/summary/route";
 import { GET as getRuntimeBriefRoute } from "@/app/api/runtime-brief/route";
 import { GET as getReportSchemaRoute } from "@/app/api/schema/report/route";
@@ -81,12 +82,14 @@ describe("runtime routes", () => {
             runtime_brief: "/api/runtime-brief",
             report_schema: "/api/schema/report",
             report_summary: "/api/reports/summary",
+            report_export: "/api/reports/export",
           },
           links: {
             meta: "/api/meta",
             runtime_brief: "/api/runtime-brief",
             report_schema: "/api/schema/report",
             report_summary: "/api/reports/summary",
+            report_export: "/api/reports/export",
             reports: "/reports",
           },
         });
@@ -128,14 +131,16 @@ describe("runtime routes", () => {
         expect(body.routes).toContain("/api/runtime-brief");
         expect(body.routes).toContain("/api/schema/report");
         expect(body.routes).toContain("/api/reports/summary");
+        expect(body.routes).toContain("/api/reports/export");
         expect(body.ops_contract.schema).toBe("ops-envelope-v1");
         expect(body.diagnostics.next_action).toContain("/api/3d-test/status");
         expect(body.report_contract.schema).toBe("twincity-report-v1");
         expect(Array.isArray(body.trust_boundary)).toBe(true);
-        expect(body.two_minute_review).toHaveLength(5);
+        expect(body.two_minute_review).toHaveLength(6);
         expect(body.proof_assets[0].href).toBe("/api/health");
         expect(body.links.runtime_brief).toBe("/api/runtime-brief");
         expect(body.links.report_summary).toBe("/api/reports/summary");
+        expect(body.links.report_export).toBe("/api/reports/export");
         expect(response.headers.get("x-request-id")).toBe(body.request_id);
       }
     );
@@ -158,12 +163,13 @@ describe("runtime routes", () => {
       links: {
         runtime_brief: "/api/runtime-brief",
         report_summary: "/api/reports/summary",
+        report_export: "/api/reports/export",
         reports: "/reports",
       },
     });
     expect(body.route_count).toBeGreaterThanOrEqual(7);
     expect(body.review_flow[0]).toContain("/api/health");
-    expect(body.two_minute_review).toHaveLength(5);
+    expect(body.two_minute_review).toHaveLength(6);
     expect(body.proof_assets[0].href).toBe("/api/health");
     expect(response.headers.get("x-request-id")).toBe(body.request_id);
   });
@@ -218,5 +224,35 @@ describe("runtime routes", () => {
       "Always separate ACK SLA from resolve SLA."
     );
     expect(response.headers.get("x-request-id")).toBe(body.request_id);
+  });
+
+  test("report export route exposes JSON and CSV snapshot contracts", async () => {
+    const jsonResponse = await getReportExportRoute(
+      new Request("https://example.com/api/reports/export?range=60m&severity=3&format=json")
+    );
+    const jsonBody = await jsonResponse.json();
+
+    expect(jsonResponse.status).toBe(200);
+    expect(jsonBody).toMatchObject({
+      ok: true,
+      service: "twincity-ui",
+      schema: "twincity-report-export-v1",
+      format: "json",
+      filters: {
+        range: "60m",
+        severity: "3",
+      },
+    });
+    expect(jsonBody.review_routes).toContain("/api/reports/export");
+    expect(jsonBody.download_name.endsWith(".json")).toBe(true);
+
+    const csvResponse = await getReportExportRoute(
+      new Request("https://example.com/api/reports/export?range=60m&severity=3&format=csv")
+    );
+    const csvBody = await csvResponse.text();
+
+    expect(csvResponse.status).toBe(200);
+    expect(csvResponse.headers.get("content-type")).toContain("text/csv");
+    expect(csvBody.split("\n")[0]).toContain("id,detected_at,zone_id,type,severity");
   });
 });

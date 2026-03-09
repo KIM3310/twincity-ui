@@ -4,6 +4,14 @@ const ACK_SLA_MS = 2 * 60 * 1000;
 const RESOLVE_SLA_MS = 10 * 60 * 1000;
 
 export type ReportRangeKey = "30m" | "60m" | "120m" | "24h" | "all";
+export type ReportSeverityFilter = "all" | "1" | "2" | "3";
+export type ReportIncidentStatusFilter = "all" | "new" | "ack" | "resolved";
+export type ReportFilters = {
+  range: ReportRangeKey;
+  severity: ReportSeverityFilter;
+  incident_status: ReportIncidentStatusFilter;
+  zone: string;
+};
 
 export type ControlTowerReportSummary = {
   service: string;
@@ -38,6 +46,27 @@ export type ControlTowerReportSummary = {
     zone_id: string;
   }>;
   operator_notes: string[];
+};
+
+export type ControlTowerReportExport = {
+  service: string;
+  status: "ok";
+  generated_at: string;
+  schema: "twincity-report-export-v1";
+  format: "json";
+  filters: ReportFilters;
+  summary: ControlTowerReportSummary["summary"];
+  spotlight_incidents: ControlTowerReportSummary["spotlight_incidents"];
+  top_types: ControlTowerReportSummary["top_types"];
+  top_zones: ControlTowerReportSummary["top_zones"];
+  operator_snapshot: {
+    headline: string;
+    top_zone: string | null;
+    top_type: string | null;
+    spotlight_id: string | null;
+  };
+  review_routes: string[];
+  download_name: string;
 };
 
 export function buildDemoReportState() {
@@ -190,13 +219,13 @@ function rangeMs(range: ReportRangeKey) {
   return Number.POSITIVE_INFINITY;
 }
 
-function clampSeverityFilter(value: string | null): "all" | "1" | "2" | "3" {
+function clampSeverityFilter(value: string | null): ReportSeverityFilter {
   return value === "1" || value === "2" || value === "3" ? value : "all";
 }
 
 function clampIncidentStatusFilter(
   value: string | null
-): "all" | "new" | "ack" | "resolved" {
+): ReportIncidentStatusFilter {
   return value === "new" || value === "ack" || value === "resolved"
     ? value
     : "all";
@@ -221,12 +250,40 @@ export function parseReportSummaryFilters(url: URL) {
   };
 }
 
+function buildFilteredReportRows(filters: ReportFilters, now?: number) {
+  const demo = buildDemoReportState();
+  const referenceNow = now ?? demo.now;
+  const since = Number.isFinite(rangeMs(filters.range))
+    ? referenceNow - rangeMs(filters.range)
+    : Number.NEGATIVE_INFINITY;
+  const filteredEvents = demo.events.filter((event) => {
+    if (event.detected_at < since) return false;
+    if (filters.severity !== "all" && String(event.severity) !== filters.severity) return false;
+    if (filters.incident_status !== "all" && event.incident_status !== filters.incident_status) return false;
+    if (filters.zone !== "all" && event.zone_id !== filters.zone) return false;
+    return true;
+  });
+  const ackAtByEvent = new Map<string, number>();
+  const resolvedAtByEvent = new Map<string, number>();
+  for (const entry of demo.timeline) {
+    if (entry.to_status === "ack") {
+      const prev = ackAtByEvent.get(entry.event_id) ?? 0;
+      if (entry.at > prev) ackAtByEvent.set(entry.event_id, entry.at);
+    }
+    if (entry.to_status === "resolved") {
+      const prev = resolvedAtByEvent.get(entry.event_id) ?? 0;
+      if (entry.at > prev) resolvedAtByEvent.set(entry.event_id, entry.at);
+    }
+  }
+  return { filteredEvents, ackAtByEvent, resolvedAtByEvent };
+}
+
 export function buildControlTowerReportSummary(input?: {
   events?: EventItem[];
   filters?: {
     range?: ReportRangeKey;
-    severity?: "all" | "1" | "2" | "3";
-    incident_status?: "all" | "new" | "ack" | "resolved";
+    severity?: ReportSeverityFilter;
+    incident_status?: ReportIncidentStatusFilter;
     zone?: string;
   };
   now?: number;
@@ -355,4 +412,95 @@ export function buildControlTowerReportSummary(input?: {
       "Use /reports for richer interactive slicing after validating this contract.",
     ],
   };
+}
+
+function toCsvValue(value: unknown) {
+  const text = value === null || value === undefined ? "" : String(value);
+  if (/[",\n]/.test(text)) return `"${text.replace(/"/g, '""')}"`;
+  return text;
+}
+
+export function buildControlTowerReportExport(input?: {
+  filters?: Partial<ReportFilters>;
+  now?: number;
+}): ControlTowerReportExport {
+  const filters: ReportFilters = {
+    range: input?.filters?.range ?? "120m",
+    severity: input?.filters?.severity ?? "all",
+    incident_status: input?.filters?.incident_status ?? "all",
+    zone: input?.filters?.zone ?? "all",
+  };
+  const summary = buildControlTowerReportSummary({ filters, now: input?.now });
+  return {
+    service: "twincity-ui",
+    status: "ok",
+    generated_at: summary.generated_at,
+    schema: "twincity-report-export-v1",
+    format: "json",
+    filters: summary.filters,
+    summary: summary.summary,
+    spotlight_incidents: summary.spotlight_incidents,
+    top_types: summary.top_types,
+    top_zones: summary.top_zones,
+    operator_snapshot: {
+      headline: "Deterministic control tower snapshot for reviewer export and downstream handoff.",
+      top_zone: summary.top_zones[0]?.zone_id ?? null,
+      top_type: summary.top_types[0]?.type ?? null,
+      spotlight_id: summary.spotlight_incidents[0]?.id ?? null,
+    },
+    review_routes: [
+      "/api/health",
+      "/api/meta",
+      "/api/runtime-brief",
+      "/api/schema/report",
+      "/api/reports/summary",
+      "/api/reports/export",
+      "/reports",
+    ],
+    download_name: `twincity-report-snapshot-${summary.generated_at.slice(0, 10)}.json`,
+  };
+}
+
+export function buildControlTowerReportCsv(input?: {
+  filters?: Partial<ReportFilters>;
+  now?: number;
+}): string {
+  const filters: ReportFilters = {
+    range: input?.filters?.range ?? "120m",
+    severity: input?.filters?.severity ?? "all",
+    incident_status: input?.filters?.incident_status ?? "all",
+    zone: input?.filters?.zone ?? "all",
+  };
+  const { filteredEvents, ackAtByEvent, resolvedAtByEvent } = buildFilteredReportRows(filters, input?.now);
+  const header = [
+    "id",
+    "detected_at",
+    "zone_id",
+    "type",
+    "severity",
+    "incident_status",
+    "camera_id",
+    "source",
+    "latency_ms",
+    "ack_at",
+    "resolved_at",
+    "note",
+  ];
+  const rows = filteredEvents.map((event) => [
+    event.id,
+    new Date(event.detected_at).toISOString(),
+    event.zone_id,
+    event.type,
+    event.severity,
+    event.incident_status,
+    event.camera_id ?? "",
+    event.source,
+    event.latency_ms,
+    ackAtByEvent.get(event.id) ? new Date(ackAtByEvent.get(event.id)!).toISOString() : "",
+    resolvedAtByEvent.get(event.id) ? new Date(resolvedAtByEvent.get(event.id)!).toISOString() : "",
+    event.note ?? "",
+  ]);
+  return [header, ...rows]
+    .map((row) => row.map(toCsvValue).join(","))
+    .join("\n");
 }
