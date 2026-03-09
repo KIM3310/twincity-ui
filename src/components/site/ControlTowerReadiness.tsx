@@ -158,7 +158,7 @@ export default function ControlTowerReadiness({
       {!compact ? (
         <article className="readinessListCard">
           <div className="readinessSectionHead">
-            <h3>Proof Assets</h3>
+            <h3>Supporting Files</h3>
             <small>short reviewer bundle for the first pass</small>
           </div>
           <div className="readinessList">
