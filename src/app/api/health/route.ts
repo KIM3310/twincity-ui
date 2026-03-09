@@ -26,6 +26,7 @@ export function GET(request: Request) {
           "runtime-scorecard-surface",
           "report-schema-surface",
           "report-summary-surface",
+          "dispatch-board-surface",
         ],
       service_grade: {
         readiness: serviceMeta.readiness_contract,
@@ -33,6 +34,7 @@ export function GET(request: Request) {
         runtime_scorecard: "/api/runtime-scorecard",
         report_schema: "/api/schema/report",
         report_summary: "/api/reports/summary",
+        dispatch_board: "/api/reports/dispatch-board",
         report_export: "/api/reports/export",
       },
       links: {
@@ -41,6 +43,7 @@ export function GET(request: Request) {
         runtime_scorecard: "/api/runtime-scorecard",
         report_schema: "/api/schema/report",
         report_summary: "/api/reports/summary",
+        dispatch_board: "/api/reports/dispatch-board",
         report_export: "/api/reports/export",
         reports: "/reports",
       },
