@@ -1,5 +1,8 @@
 import { apiError, apiJson, noStoreHeaders, resolveRequestId } from "@/lib/apiResponse";
-import { authorizeOperatorRequest, readOperatorAuthStatus } from "@/lib/operatorAccess";
+import {
+  readOperatorAuthStatus,
+  validateOperatorRequest,
+} from "@/lib/operatorAccess";
 import {
   buildControlTowerReportCsv,
   buildControlTowerReportExport,
@@ -20,14 +23,23 @@ export function GET(request: Request) {
     return apiError("format must be either 'json' or 'csv'", { status: 400, requestId });
   }
 
-  if (operatorAuth.enabled && !authorizeOperatorRequest(request)) {
-    return apiError("operator token required for export", {
-      status: 401,
-      requestId,
-      headers: {
-        "x-required-operator-header": operatorAuth.header,
-      },
-    });
+  if (operatorAuth.enabled) {
+    const authResult = validateOperatorRequest(request);
+    if (!authResult.ok) {
+      return apiError(
+        authResult.reason === "missing-role"
+          ? "required operator role missing for export"
+          : "operator token required for export",
+        {
+          status: authResult.reason === "missing-role" ? 403 : 401,
+          requestId,
+          headers: {
+            "x-required-operator-header": operatorAuth.header,
+            "x-required-operator-role-header": operatorAuth.role_headers.join(", "),
+          },
+        }
+      );
+    }
   }
 
   if (format === "csv") {
