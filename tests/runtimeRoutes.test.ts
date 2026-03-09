@@ -15,6 +15,7 @@ const ENV_KEYS = [
   "NEXT_PUBLIC_EVENT_API_URL",
   "NEXT_PUBLIC_EVENT_POLL_MS",
   "TWINCITY_EXPORT_OPERATOR_TOKEN",
+  "TWINCITY_EXPORT_OPERATOR_ALLOWED_ROLES",
 ] as const;
 
 function withEnv(values: Partial<Record<(typeof ENV_KEYS)[number], string>>, run: () => Promise<void>) {
@@ -318,6 +319,7 @@ describe("runtime routes", () => {
     await withEnv(
       {
         TWINCITY_EXPORT_OPERATOR_TOKEN: "twincity-secret",
+        TWINCITY_EXPORT_OPERATOR_ALLOWED_ROLES: "dispatcher,supervisor",
       },
       async () => {
         const unauthorized = await getReportExportRoute(
@@ -329,15 +331,56 @@ describe("runtime routes", () => {
         expect(unauthorizedBody.error.message).toContain("operator token required");
         expect(unauthorized.headers.get("x-required-operator-header")).toBe("x-operator-token");
 
+        const wrongRole = await getReportExportRoute(
+          new Request("https://example.com/api/reports/export?format=json", {
+            headers: {
+              "x-operator-token": "twincity-secret",
+              "x-operator-role": "observer",
+            },
+          })
+        );
+        const wrongRoleBody = await wrongRole.json();
+
+        expect(wrongRole.status).toBe(403);
+        expect(wrongRoleBody.error.message).toContain("required operator role missing");
+        expect(wrongRole.headers.get("x-required-operator-role-header")).toContain(
+          "x-operator-role"
+        );
+
         const authorized = await getReportExportRoute(
           new Request("https://example.com/api/reports/export?format=json", {
-            headers: { "x-operator-token": "twincity-secret" },
+            headers: {
+              "x-operator-token": "twincity-secret",
+              "x-operator-role": "dispatcher",
+            },
           })
         );
         const authorizedBody = await authorized.json();
 
         expect(authorized.status).toBe(200);
         expect(authorizedBody.operator_auth.enabled).toBe(true);
+      }
+    );
+  });
+
+  test("runtime scorecard exposes required export roles when configured", async () => {
+    await withEnv(
+      {
+        TWINCITY_EXPORT_OPERATOR_TOKEN: "twincity-secret",
+        TWINCITY_EXPORT_OPERATOR_ALLOWED_ROLES: "dispatcher,supervisor",
+      },
+      async () => {
+        const response = await getRuntimeScorecardRoute(
+          new Request("https://example.com/api/runtime-scorecard")
+        );
+        const body = await response.json();
+
+        expect(response.status).toBe(200);
+        expect(body.runtime.operator_auth.required_roles).toEqual([
+          "dispatcher",
+          "supervisor",
+        ]);
+        expect(body.runtime.operator_auth.role_headers).toContain("x-operator-role");
       }
     );
   });
