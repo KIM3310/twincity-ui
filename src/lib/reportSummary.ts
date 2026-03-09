@@ -13,6 +13,7 @@ export type ControlTowerReportSummary = {
   filters: {
     range: ReportRangeKey;
     severity: "all" | "1" | "2" | "3";
+    incident_status: "all" | "new" | "ack" | "resolved";
     zone: string;
   };
   summary: {
@@ -25,6 +26,7 @@ export type ControlTowerReportSummary = {
     ack_sla_total: number;
     resolve_sla_met: number;
     resolve_sla_total: number;
+    status_breakdown: Record<string, number>;
   };
   top_types: Array<{ type: string; count: number }>;
   top_zones: Array<{ zone_id: string; count: number }>;
@@ -192,6 +194,14 @@ function clampSeverityFilter(value: string | null): "all" | "1" | "2" | "3" {
   return value === "1" || value === "2" || value === "3" ? value : "all";
 }
 
+function clampIncidentStatusFilter(
+  value: string | null
+): "all" | "new" | "ack" | "resolved" {
+  return value === "new" || value === "ack" || value === "resolved"
+    ? value
+    : "all";
+}
+
 function clampRangeFilter(value: string | null): ReportRangeKey {
   return value === "30m" ||
     value === "60m" ||
@@ -206,6 +216,7 @@ export function parseReportSummaryFilters(url: URL) {
   return {
     range: clampRangeFilter(url.searchParams.get("range")),
     severity: clampSeverityFilter(url.searchParams.get("severity")),
+    incident_status: clampIncidentStatusFilter(url.searchParams.get("incident_status")),
     zone: url.searchParams.get("zone")?.trim() || "all",
   };
 }
@@ -215,6 +226,7 @@ export function buildControlTowerReportSummary(input?: {
   filters?: {
     range?: ReportRangeKey;
     severity?: "all" | "1" | "2" | "3";
+    incident_status?: "all" | "new" | "ack" | "resolved";
     zone?: string;
   };
   now?: number;
@@ -224,6 +236,7 @@ export function buildControlTowerReportSummary(input?: {
   const now = input?.now ?? demo.now;
   const range = input?.filters?.range ?? "120m";
   const severity = input?.filters?.severity ?? "all";
+  const incidentStatus = input?.filters?.incident_status ?? "all";
   const zone = input?.filters?.zone ?? "all";
   const events = input?.events ?? demo.events;
   const timeline = input?.timeline ?? demo.timeline;
@@ -234,6 +247,7 @@ export function buildControlTowerReportSummary(input?: {
   const filteredEvents = events.filter((event) => {
     if (event.detected_at < since) return false;
     if (severity !== "all" && String(event.severity) !== severity) return false;
+    if (incidentStatus !== "all" && event.incident_status !== incidentStatus) return false;
     if (zone !== "all" && event.zone_id !== zone) return false;
     return true;
   });
@@ -267,9 +281,14 @@ export function buildControlTowerReportSummary(input?: {
 
   const topTypes = new Map<string, number>();
   const topZones = new Map<string, number>();
+  const statusBreakdown = new Map<string, number>();
   for (const event of filteredEvents) {
     topTypes.set(event.type, (topTypes.get(event.type) ?? 0) + 1);
     topZones.set(event.zone_id, (topZones.get(event.zone_id) ?? 0) + 1);
+    statusBreakdown.set(
+      event.incident_status,
+      (statusBreakdown.get(event.incident_status) ?? 0) + 1
+    );
   }
 
   const spotlight = filteredEvents
@@ -305,6 +324,7 @@ export function buildControlTowerReportSummary(input?: {
     filters: {
       range,
       severity,
+      incident_status: incidentStatus,
       zone,
     },
     summary: {
@@ -317,6 +337,7 @@ export function buildControlTowerReportSummary(input?: {
       ack_sla_total: ackDurations.length,
       resolve_sla_met: resolveDurations.filter((value) => value <= RESOLVE_SLA_MS).length,
       resolve_sla_total: resolveDurations.length,
+      status_breakdown: Object.fromEntries(statusBreakdown.entries()),
     },
     top_types: Array.from(topTypes.entries())
       .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
@@ -329,6 +350,7 @@ export function buildControlTowerReportSummary(input?: {
     spotlight_incidents: spotlight,
     operator_notes: [
       "ACK SLA and resolve SLA are calculated separately to keep dispatch latency visible.",
+      "incident_status filtering lets reviewers isolate unresolved queue posture before opening the full reports surface.",
       "Summary reflects deterministic demo state so reviewers can compare route output without browser storage.",
       "Use /reports for richer interactive slicing after validating this contract.",
     ],
