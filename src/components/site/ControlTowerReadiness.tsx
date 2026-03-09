@@ -106,7 +106,7 @@ export default function ControlTowerReadiness({
 
         <article className="readinessListCard">
           <div className="readinessSectionHead">
-            <h3>2-Minute Review</h3>
+            <h3>Quick Review</h3>
             <small>fast reviewer path through the product</small>
           </div>
           <div className="readinessList">
