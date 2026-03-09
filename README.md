@@ -85,7 +85,7 @@ AdSense crawl helpers are provided in `public/ads.txt`, `public/robots.txt`, `pu
 - Korean: `README.ko.md`
 - Live integration (API contract + payload examples + fallbacks): `docs/LIVE_INTEGRATION.md`
 
-## Ops Artifacts (Portfolio)
+## Key Endpoints
 - `RUNBOOK.md`
 - `POSTMORTEM_TEMPLATE.md`
 - `src/app/api/meta/route.ts`
@@ -108,7 +108,7 @@ AdSense crawl helpers are provided in `public/ads.txt`, `public/robots.txt`, `pu
 4. Open `/reports` to validate SLA proof and export posture.
 5. Use `/events` to inspect one alert through triage, dispatch, and timeline state.
 
-## Proof Assets
+## Supporting Files
 
 - `/api/health`
 - `/api/meta`
