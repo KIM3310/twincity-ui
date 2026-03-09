@@ -1,4 +1,5 @@
 import { apiError, apiJson, noStoreHeaders, resolveRequestId } from "@/lib/apiResponse";
+import { authorizeOperatorRequest, readOperatorAuthStatus } from "@/lib/operatorAccess";
 import {
   buildControlTowerReportCsv,
   buildControlTowerReportExport,
@@ -13,9 +14,20 @@ export function GET(request: Request) {
   const url = new URL(request.url);
   const filters = parseReportSummaryFilters(url);
   const format = String(url.searchParams.get("format") || "json").trim().toLowerCase();
+  const operatorAuth = readOperatorAuthStatus();
 
   if (format !== "json" && format !== "csv") {
     return apiError("format must be either 'json' or 'csv'", { status: 400, requestId });
+  }
+
+  if (operatorAuth.enabled && !authorizeOperatorRequest(request)) {
+    return apiError("operator token required for export", {
+      status: 401,
+      requestId,
+      headers: {
+        "x-required-operator-header": operatorAuth.header,
+      },
+    });
   }
 
   if (format === "csv") {
@@ -32,6 +44,7 @@ export function GET(request: Request) {
     {
       ok: true,
       request_id: requestId,
+      operator_auth: operatorAuth,
       ...buildControlTowerReportExport({ filters }),
     },
     { requestId }

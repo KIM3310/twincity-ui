@@ -5,6 +5,7 @@ import { GET as getMetaRoute } from "@/app/api/meta/route";
 import { GET as getReportExportRoute } from "@/app/api/reports/export/route";
 import { GET as getReportSummaryRoute } from "@/app/api/reports/summary/route";
 import { GET as getRuntimeBriefRoute } from "@/app/api/runtime-brief/route";
+import { GET as getRuntimeScorecardRoute } from "@/app/api/runtime-scorecard/route";
 import { GET as getReportSchemaRoute } from "@/app/api/schema/report/route";
 
 const ENV_KEYS = [
@@ -12,6 +13,7 @@ const ENV_KEYS = [
   "NEXT_PUBLIC_EVENT_STREAM_URL",
   "NEXT_PUBLIC_EVENT_API_URL",
   "NEXT_PUBLIC_EVENT_POLL_MS",
+  "TWINCITY_EXPORT_OPERATOR_TOKEN",
 ] as const;
 
 function withEnv(values: Partial<Record<(typeof ENV_KEYS)[number], string>>, run: () => Promise<void>) {
@@ -74,12 +76,14 @@ describe("runtime routes", () => {
           capabilities: [
             "service-metadata-surface",
             "runtime-brief-surface",
+            "runtime-scorecard-surface",
             "report-schema-surface",
             "report-summary-surface",
           ],
           service_grade: {
             readiness: "control-tower-readiness-v1",
             runtime_brief: "/api/runtime-brief",
+            runtime_scorecard: "/api/runtime-scorecard",
             report_schema: "/api/schema/report",
             report_summary: "/api/reports/summary",
             report_export: "/api/reports/export",
@@ -87,6 +91,7 @@ describe("runtime routes", () => {
           links: {
             meta: "/api/meta",
             runtime_brief: "/api/runtime-brief",
+            runtime_scorecard: "/api/runtime-scorecard",
             report_schema: "/api/schema/report",
             report_summary: "/api/reports/summary",
             report_export: "/api/reports/export",
@@ -139,6 +144,7 @@ describe("runtime routes", () => {
         expect(body.two_minute_review).toHaveLength(6);
         expect(body.proof_assets[0].href).toBe("/api/health");
         expect(body.links.runtime_brief).toBe("/api/runtime-brief");
+        expect(body.links.runtime_scorecard).toBe("/api/runtime-scorecard");
         expect(body.links.report_summary).toBe("/api/reports/summary");
         expect(body.links.report_export).toBe("/api/reports/export");
         expect(response.headers.get("x-request-id")).toBe(body.request_id);
@@ -162,6 +168,7 @@ describe("runtime routes", () => {
       },
       links: {
         runtime_brief: "/api/runtime-brief",
+        runtime_scorecard: "/api/runtime-scorecard",
         report_summary: "/api/reports/summary",
         report_export: "/api/reports/export",
         reports: "/reports",
@@ -171,6 +178,20 @@ describe("runtime routes", () => {
     expect(body.review_flow[0]).toContain("/api/health");
     expect(body.two_minute_review).toHaveLength(6);
     expect(body.proof_assets[0].href).toBe("/api/health");
+    expect(response.headers.get("x-request-id")).toBe(body.request_id);
+  });
+
+  test("runtime scorecard exposes export auth and deterministic SLA snapshot", async () => {
+    const response = await getRuntimeScorecardRoute(
+      new Request("https://example.com/api/runtime-scorecard")
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.readiness_contract).toBe("twincity-runtime-scorecard-v1");
+    expect(body.summary.total_incidents).toBeGreaterThanOrEqual(1);
+    expect(body.runtime.operator_auth.enabled).toBe(false);
+    expect(body.links.runtime_scorecard).toBe("/api/runtime-scorecard");
     expect(response.headers.get("x-request-id")).toBe(body.request_id);
   });
 
@@ -254,5 +275,33 @@ describe("runtime routes", () => {
     expect(csvResponse.status).toBe(200);
     expect(csvResponse.headers.get("content-type")).toContain("text/csv");
     expect(csvBody.split("\n")[0]).toContain("id,detected_at,zone_id,type,severity");
+  });
+
+  test("report export route requires operator token when enabled", async () => {
+    await withEnv(
+      {
+        TWINCITY_EXPORT_OPERATOR_TOKEN: "twincity-secret",
+      },
+      async () => {
+        const unauthorized = await getReportExportRoute(
+          new Request("https://example.com/api/reports/export?format=json")
+        );
+        const unauthorizedBody = await unauthorized.json();
+
+        expect(unauthorized.status).toBe(401);
+        expect(unauthorizedBody.error.message).toContain("operator token required");
+        expect(unauthorized.headers.get("x-required-operator-header")).toBe("x-operator-token");
+
+        const authorized = await getReportExportRoute(
+          new Request("https://example.com/api/reports/export?format=json", {
+            headers: { "x-operator-token": "twincity-secret" },
+          })
+        );
+        const authorizedBody = await authorized.json();
+
+        expect(authorized.status).toBe(200);
+        expect(authorizedBody.operator_auth.enabled).toBe(true);
+      }
+    );
   });
 });
