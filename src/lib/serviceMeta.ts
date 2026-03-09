@@ -77,6 +77,7 @@ export type ControlTowerRuntimeBrief = {
     runtime_brief: string;
     meta: string;
     report_schema: string;
+    report_summary: string;
     reports: string;
   };
 };
@@ -151,6 +152,12 @@ const CONTROL_TOWER_ARTIFACTS: ServiceArtifact[] = [
     note: "SLA metrics, exports, replay summary",
   },
   {
+    label: "Report Summary API",
+    href: "/api/reports/summary",
+    kind: "route",
+    note: "deterministic SLA and spotlight summary contract",
+  },
+  {
     label: "Live Integration Guide",
     href: "docs/LIVE_INTEGRATION.md",
     kind: "doc",
@@ -200,6 +207,12 @@ const CONTROL_TOWER_PROOF_ASSETS: ServiceArtifact[] = [
     href: "/reports",
     kind: "route",
     note: "SLA metrics, exports, replay summary",
+  },
+  {
+    label: "Report Summary API",
+    href: "/api/reports/summary",
+    kind: "route",
+    note: "deterministic SLA and spotlight summary contract",
   },
   {
     label: "Ops Console Screenshot",
@@ -254,7 +267,7 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
     ingest_contract: runtimeMeta.ops_contract,
     report_contract: reportContract,
     evidence_counts: {
-      routes: 7,
+      routes: 8,
       docs: 4,
       tests: 5,
       assets: 4,
@@ -284,19 +297,21 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
     review_flow: [
       "Open /api/health to confirm ingest mode and review links.",
       "Read /api/meta to see trust boundary, stages, and evidence counts.",
+      "Use /api/reports/summary to verify a deterministic SLA snapshot before UI review.",
       "Use /events or / to exercise triage and timeline handling.",
       "Open /reports for SLA proof and exported summary paths.",
     ],
     two_minute_review: [
       "Open /api/health to confirm whether the control tower is demo-first or live-wired.",
       "Read /api/meta for trust boundary, stage ownership, and review artifacts.",
+      "Use /api/reports/summary to validate spotlight incidents and SLA posture via API.",
       "Open /reports to validate SLA proof and export posture.",
       "Use /events to inspect one alert through triage, dispatch, and timeline state.",
     ],
     stages: CONTROL_TOWER_STAGES,
     artifacts: CONTROL_TOWER_ARTIFACTS,
     proof_assets: CONTROL_TOWER_PROOF_ASSETS,
-    routes: [...runtimeMeta.routes, "/api/runtime-brief", "/api/schema/report", "/reports"],
+    routes: [...runtimeMeta.routes, "/api/runtime-brief", "/api/schema/report", "/api/reports/summary", "/reports"],
     features: runtimeMeta.features,
   };
 }
@@ -326,6 +341,7 @@ export function buildControlTowerRuntimeBrief(now = new Date()): ControlTowerRun
       runtime_brief: "/api/runtime-brief",
       meta: "/api/meta",
       report_schema: "/api/schema/report",
+      report_summary: "/api/reports/summary",
       reports: "/reports",
     },
   };
