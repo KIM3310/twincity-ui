@@ -402,6 +402,31 @@ export default function ReportsPage() {
     }
   };
 
+  const copyControlTowerClaim = async () => {
+    const target = spotlightEvents[0];
+    const text = [
+      `TwinCity control tower claim (${filterSummary})`,
+      `Headline: ${runtimeBrief.headline}`,
+      `Review routes: ${runtimeBrief.route_count}`,
+      `Open incidents: ${openCount}`,
+      `Critical incidents: ${criticalCount}`,
+      `ACK SLA: ${ackDurations.length > 0 ? `${ackSlaMet}/${ackDurations.length}` : "-"}`,
+      `Resolve SLA: ${resolveDurations.length > 0 ? `${resolveSlaMet}/${resolveDurations.length}` : "-"}`,
+      `Top zone: ${byZone[0] ? `${getZoneLabel(byZone[0][0])} (${byZone[0][1]})` : "-"}`,
+      `Spotlight: ${target ? `${target.id} / ${getZoneLabel(target.zone_id)} / S${target.severity}` : "-"}`,
+      "",
+      "Fast routes",
+      ...serviceMeta.routes.slice(0, 5).map((route) => `- ${route}`),
+    ].join("\n");
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setNotice("control tower claim을 클립보드에 복사했습니다.");
+    } catch {
+      setNotice("복사 권한이 없어서 실패했습니다.");
+    }
+  };
+
   const focusHighestRisk = () => {
     const target = inRangeEvents
       .slice()
@@ -562,6 +587,9 @@ export default function ReportsPage() {
             </button>
             <button type="button" className="button buttonGhost" onClick={copySlaSnapshot}>
               SLA 스냅샷 복사
+            </button>
+            <button type="button" className="button buttonGhost" onClick={copyControlTowerClaim}>
+              컨트롤타워 주장 복사
             </button>
             <button type="button" className="button buttonGhost" onClick={copySummary}>
               요약 복사
