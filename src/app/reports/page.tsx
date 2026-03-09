@@ -380,6 +380,28 @@ export default function ReportsPage() {
     }
   };
 
+  const copySlaSnapshot = async () => {
+    const target = spotlightEvents[0];
+    const text = [
+      `TwinCity SLA snapshot (${filterSummary})`,
+      `Open incidents: ${openCount}`,
+      `Critical incidents: ${criticalCount}`,
+      `ACK SLA: ${ackDurations.length > 0 ? `${ackSlaMet}/${ackDurations.length}` : "-"}`,
+      `Resolve SLA: ${resolveDurations.length > 0 ? `${resolveSlaMet}/${resolveDurations.length}` : "-"}`,
+      `Average ACK: ${ackDurations.length > 0 ? `${Math.round(avgAckMs / 1000)}s` : "-"}`,
+      `Average resolve: ${resolveDurations.length > 0 ? `${Math.round(avgResolveMs / 1000)}s` : "-"}`,
+      `Top zone: ${byZone[0] ? `${getZoneLabel(byZone[0][0])} (${byZone[0][1]})` : "-"}`,
+      `Spotlight: ${target ? `${target.id} / S${target.severity} / ${target.incident_status}` : "-"}`,
+    ].join("\n");
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setNotice("SLA snapshot을 클립보드에 복사했습니다.");
+    } catch {
+      setNotice("복사 권한이 없어서 실패했습니다.");
+    }
+  };
+
   const focusHighestRisk = () => {
     const target = inRangeEvents
       .slice()
@@ -537,6 +559,9 @@ export default function ReportsPage() {
             </button>
             <button type="button" className="button buttonGhost" onClick={copySpotlight} disabled={spotlightEvents.length === 0}>
               스포트라이트 복사
+            </button>
+            <button type="button" className="button buttonGhost" onClick={copySlaSnapshot}>
+              SLA 스냅샷 복사
             </button>
             <button type="button" className="button buttonGhost" onClick={copySummary}>
               요약 복사
