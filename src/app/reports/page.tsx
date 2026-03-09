@@ -17,6 +17,12 @@ const RESOLVE_SLA_MS = 10 * 60 * 1000;
 
 type RangeKey = "30m" | "60m" | "120m" | "24h" | "all";
 
+function deriveDispatchLane(status: EventItem["incident_status"]) {
+  if (status === "resolved") return "resolved";
+  if (status === "ack") return "dispatch";
+  return "attention";
+}
+
 function rangeLabel(range: RangeKey) {
   if (range === "30m") return "최근 30분";
   if (range === "60m") return "최근 60분";
@@ -209,6 +215,55 @@ export default function ReportsPage() {
         })
         .slice(0, 3),
     [focusedEvents, latestTimelineByEvent]
+  );
+
+  const dispatchBoardRows = useMemo(
+    () =>
+      focusedEvents
+        .slice()
+        .sort((a, b) => {
+          const laneRank = {
+            attention: 0,
+            dispatch: 1,
+            resolved: 2,
+          };
+          const aLane = deriveDispatchLane(a.incident_status);
+          const bLane = deriveDispatchLane(b.incident_status);
+          if (laneRank[aLane] !== laneRank[bLane]) {
+            return laneRank[aLane] - laneRank[bLane];
+          }
+          if (b.severity !== a.severity) return b.severity - a.severity;
+          const aTimelineAt = latestTimelineByEvent.get(a.id)?.at ?? a.detected_at;
+          const bTimelineAt = latestTimelineByEvent.get(b.id)?.at ?? b.detected_at;
+          return bTimelineAt - aTimelineAt;
+        })
+        .slice(0, 4)
+        .map((event) => {
+          const latestAction = latestTimelineByEvent.get(event.id);
+          const ackAt = ackAtByEvent.get(event.id);
+          const resolvedAt = resolvedAtByEvent.get(event.id);
+          return {
+            id: event.id,
+            lane: deriveDispatchLane(event.incident_status),
+            zoneLabel: getZoneLabel(event.zone_id),
+            typeLabel: getEventTypeLabel(event.type),
+            severity: event.severity,
+            latestAction: latestAction
+              ? `${latestAction.action.toUpperCase()} · ${latestAction.actor}`
+              : "DETECTED",
+            ackState: ackAt
+              ? ackAt - event.detected_at <= ACK_SLA_MS
+                ? "ACK met"
+                : "ACK missed"
+              : "ACK pending",
+            resolveState: resolvedAt
+              ? resolvedAt - (ackAt ?? event.detected_at) <= RESOLVE_SLA_MS
+                ? "Resolve met"
+                : "Resolve missed"
+              : "Resolve pending",
+          };
+        }),
+    [ackAtByEvent, focusedEvents, latestTimelineByEvent, resolvedAtByEvent]
   );
 
   const openCount = focusedEvents.filter((event) => event.incident_status !== "resolved").length;
@@ -427,6 +482,30 @@ export default function ReportsPage() {
     }
   };
 
+  const copyDispatchSnapshot = async () => {
+    const target = dispatchBoardRows[0];
+    const text = [
+      `TwinCity dispatch board (${filterSummary})`,
+      `Visible rows: ${dispatchBoardRows.length}`,
+      `Attention: ${dispatchBoardRows.filter((row) => row.lane === "attention").length}`,
+      `Dispatch: ${dispatchBoardRows.filter((row) => row.lane === "dispatch").length}`,
+      `Resolved: ${dispatchBoardRows.filter((row) => row.lane === "resolved").length}`,
+      `Top row: ${target ? `${target.id} / ${target.lane} / S${target.severity}` : "-"}`,
+      "",
+      "Fast routes",
+      "- /api/reports/dispatch-board",
+      "- /api/reports/summary",
+      "- /api/reports/export",
+    ].join("\n");
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setNotice("dispatch snapshot을 클립보드에 복사했습니다.");
+    } catch {
+      setNotice("복사 권한이 없어서 실패했습니다.");
+    }
+  };
+
   const focusHighestRisk = () => {
     const target = inRangeEvents
       .slice()
@@ -588,6 +667,9 @@ export default function ReportsPage() {
             <button type="button" className="button buttonGhost" onClick={copySlaSnapshot}>
               SLA 스냅샷 복사
             </button>
+            <button type="button" className="button buttonGhost" onClick={copyDispatchSnapshot}>
+              Dispatch 스냅샷 복사
+            </button>
             <button type="button" className="button buttonGhost" onClick={copyControlTowerClaim}>
               컨트롤타워 주장 복사
             </button>
@@ -658,6 +740,29 @@ export default function ReportsPage() {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </article>
+
+        <article className="panel reportCard">
+          <h2 className="panelTitle">Dispatch Board</h2>
+          {dispatchBoardRows.length === 0 ? (
+            <p className="reportEmpty">표시할 dispatch board row가 없습니다.</p>
+          ) : (
+            <div className="readinessList">
+              {dispatchBoardRows.map((row) => (
+                <div key={row.id} className="readinessListItem">
+                  <strong>
+                    {row.zoneLabel} · {row.typeLabel} · S{row.severity}
+                  </strong>
+                  <span className="mono" style={{ display: "block", marginTop: "0.35rem" }}>
+                    {row.id} · {row.lane}
+                  </span>
+                  <span style={{ display: "block", marginTop: "0.35rem" }}>
+                    {row.latestAction} · {row.ackState} · {row.resolveState}
+                  </span>
+                </div>
+              ))}
             </div>
           )}
         </article>

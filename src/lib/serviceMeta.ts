@@ -79,6 +79,7 @@ export type ControlTowerRuntimeBrief = {
     meta: string;
     report_schema: string;
     report_summary: string;
+    dispatch_board: string;
     report_export: string;
     reports: string;
   };
@@ -166,6 +167,12 @@ const CONTROL_TOWER_ARTIFACTS: ServiceArtifact[] = [
     note: "deterministic SLA and spotlight summary contract",
   },
   {
+    label: "Dispatch Board API",
+    href: "/api/reports/dispatch-board",
+    kind: "route",
+    note: "attention / dispatch / resolved queue snapshot for reviewers",
+  },
+  {
     label: "Report Export API",
     href: "/api/reports/export",
     kind: "route",
@@ -235,6 +242,12 @@ const CONTROL_TOWER_PROOF_ASSETS: ServiceArtifact[] = [
     note: "deterministic SLA and spotlight summary contract",
   },
   {
+    label: "Dispatch Board API",
+    href: "/api/reports/dispatch-board",
+    kind: "route",
+    note: "attention / dispatch / resolved queue snapshot for reviewers",
+  },
+  {
     label: "Report Export API",
     href: "/api/reports/export",
     kind: "route",
@@ -293,7 +306,7 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
     ingest_contract: runtimeMeta.ops_contract,
     report_contract: reportContract,
     evidence_counts: {
-      routes: 8,
+      routes: 9,
       docs: 4,
       tests: 5,
       assets: 4,
@@ -324,6 +337,7 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
       "Open /api/health to confirm ingest mode and review links.",
       "Read /api/meta to see trust boundary, stages, and evidence counts.",
       "Use /api/reports/summary to verify a deterministic SLA snapshot before UI review.",
+      "Use /api/reports/dispatch-board to isolate attention and dispatch lanes before opening exports.",
       "Use /api/reports/export to validate server-generated JSON or CSV handoff payloads.",
       "Use /events or / to exercise triage and timeline handling.",
       "Open /reports for SLA proof and exported summary paths.",
@@ -332,6 +346,7 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
       "Open /api/health to confirm whether the control tower is demo-first or live-wired.",
       "Read /api/meta for trust boundary, stage ownership, and review artifacts.",
       "Use /api/reports/summary to validate spotlight incidents and SLA posture via API.",
+      "Use /api/reports/dispatch-board to confirm unresolved queue posture and latest action lanes.",
       "Use /api/reports/export to validate server-side handoff payloads before sharing a report.",
       "Open /reports to validate SLA proof and export posture.",
       "Use /events to inspect one alert through triage, dispatch, and timeline state.",
@@ -339,7 +354,7 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
     stages: CONTROL_TOWER_STAGES,
     artifacts: CONTROL_TOWER_ARTIFACTS,
     proof_assets: CONTROL_TOWER_PROOF_ASSETS,
-    routes: [...runtimeMeta.routes, "/api/runtime-brief", "/api/runtime-scorecard", "/api/schema/report", "/api/reports/summary", "/api/reports/export", "/reports"],
+    routes: [...runtimeMeta.routes, "/api/runtime-brief", "/api/runtime-scorecard", "/api/schema/report", "/api/reports/summary", "/api/reports/dispatch-board", "/api/reports/export", "/reports"],
     features: runtimeMeta.features,
   };
 }
@@ -371,6 +386,7 @@ export function buildControlTowerRuntimeBrief(now = new Date()): ControlTowerRun
       meta: "/api/meta",
       report_schema: "/api/schema/report",
       report_summary: "/api/reports/summary",
+      dispatch_board: "/api/reports/dispatch-board",
       report_export: "/api/reports/export",
       reports: "/reports",
     },
