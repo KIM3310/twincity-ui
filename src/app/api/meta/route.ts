@@ -17,6 +17,7 @@ export function GET(request: Request) {
         health: "/api/health",
         runtime_brief: "/api/runtime-brief",
         report_schema: "/api/schema/report",
+        report_summary: "/api/reports/summary",
         reports: "/reports",
       },
     },
