@@ -94,13 +94,13 @@ AdSense crawl helpers are provided in `public/ads.txt`, `public/robots.txt`, `pu
 
 ## Service-Grade Surfaces
 - `Control Tower Readiness` board on `/`, `/brand`, `/reports`
-- `GET /api/runtime-brief` for reviewer-first ingest/export posture
+- `GET /api/runtime-brief` for ingest/export posture
 - `GET /api/reports/dispatch-board` for compact unresolved queue posture before export
 - `ops-envelope-v1` ingest contract surfaced through `/api/health` and `/api/meta`
 - `twincity-report-v1` report schema surfaced through `/api/schema/report`
 - reviewer flow: `health -> runtime brief -> meta -> dispatch board -> events -> reports`
 
-## Quick Review Path
+## Review Flow
 
 1. Open `/api/health` to confirm whether the control tower is demo-first or live-wired.
 2. Read `/api/meta` for trust boundary, stage ownership, and review artifacts.
