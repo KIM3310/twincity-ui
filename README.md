@@ -17,6 +17,12 @@ This project is in progress, but it is designed to be **reviewable end-to-end wi
 - Treat this repo as a demo-first ops console with optional live feed wiring.
 - `/api/health`, `/api/meta`, `/api/runtime-brief`, dispatch board, events, and reports together form the real proof surface.
 
+
+## Role signals
+- **AI / systems engineer:** real-time normalization, spatial mapping, and bulk operator actions all matter here.
+- **Solution architect:** live/demo feed modes, dispatch board, and reporting surfaces make the ops boundary easy to explain.
+- **Field / sales engineer:** map -> queue -> report 흐름이 자연스러워서 digital-twin story를 빠르게 보여줄 수 있습니다.
+
 ## What I Owned (Team Project)
 - End-to-end operator UX: Live/History views, filters, detail panel, action timeline, settings, and list ↔ map ↔ detail sync
 - Reliability work: WS → SSE → HTTP polling fallback, connection state + auto-retry, demo-first mock feeds + replay
