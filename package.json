@@ -1,7 +1,8 @@
 {
   "name": "twincity-ui",
-  "private": true,
   "version": "0.1.0",
+  "private": true,
+  "description": "Digital twin operations console with reviewable replay, dispatch, and live-ingest surfaces.",
   "type": "module",
   "scripts": {
     "dev": "next dev --webpack --hostname 127.0.0.1",

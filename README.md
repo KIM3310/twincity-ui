@@ -17,11 +17,15 @@ This project is in progress, but it is designed to be **reviewable end-to-end wi
 - Treat this repo as a demo-first ops console with optional live feed wiring.
 - `/api/health`, `/api/meta`, `/api/runtime-brief`, dispatch board, events, and reports together form the real proof surface.
 
-
 ## Role signals
 - **AI / systems engineer:** real-time normalization, spatial mapping, and bulk operator actions all matter here.
 - **Solution architect:** live/demo feed modes, dispatch board, and reporting surfaces make the ops boundary easy to explain.
 - **Field / solutions engineer:** map -> queue -> report 흐름이 자연스러워서 digital-twin 데모를 빠르게 보여줄 수 있습니다.
+
+## Runtime vs review/site surfaces
+- Primary runtime: the Next.js app in `src/` powers `/events`, `/reports`, and the `src/app/api/*` routes.
+- Review/site surfaces: `/about` plus the policy/compliance pages are public-facing review surfaces; `docs/` is supporting integration guidance.
+- Repo map: `public/` stores static assets, `tests/` covers verification, and `tools/` contains mock/replay helpers.
 
 ## What I Owned (Team Project)
 - End-to-end operator UX: Live/History views, filters, detail panel, action timeline, settings, and list ↔ map ↔ detail sync
