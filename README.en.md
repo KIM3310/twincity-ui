@@ -85,6 +85,6 @@ Open `http://127.0.0.1:3000/events`.
 For MVP, the UI can be deployed as a static site (or using standard Next.js hosting). Live data sources are configured by environment variables, so the same build can point to different feeds per environment.
 
 ## Ops Artifacts (Portfolio)
-- `RUNBOOK.md` (local demo runbook)
-- `POSTMORTEM_TEMPLATE.md` (incident postmortem template)
+- `docs/ops/RUNBOOK.md` (local demo runbook)
+- `docs/ops/POSTMORTEM_TEMPLATE.md` (incident postmortem template)
 - `.github/workflows/ci.yml` (CI: lint + build)

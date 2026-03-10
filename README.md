@@ -100,8 +100,8 @@ AdSense crawl helpers are provided in `public/ads.txt`, `public/robots.txt`, `pu
 - Live integration (API contract + payload examples + fallbacks): `docs/LIVE_INTEGRATION.md`
 
 ## Key Endpoints
-- `RUNBOOK.md`
-- `POSTMORTEM_TEMPLATE.md`
+- `docs/ops/RUNBOOK.md`
+- `docs/ops/POSTMORTEM_TEMPLATE.md`
 - `src/app/api/meta/route.ts`
 - `src/app/api/schema/report/route.ts`
 - `.github/workflows/ci.yml` (CI: lint + test + build)
