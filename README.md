@@ -13,6 +13,10 @@ This project is in progress, but it is designed to be **reviewable end-to-end wi
 
 ![Ops console screenshot](public/screenshots/ops_console.png)
 
+## Portfolio posture
+- Treat this repo as a demo-first ops console with optional live feed wiring.
+- `/api/health`, `/api/meta`, `/api/runtime-brief`, dispatch board, events, and reports together form the real proof surface.
+
 ## What I Owned (Team Project)
 - End-to-end operator UX: Live/History views, filters, detail panel, action timeline, settings, and list ↔ map ↔ detail sync
 - Reliability work: WS → SSE → HTTP polling fallback, connection state + auto-retry, demo-first mock feeds + replay
