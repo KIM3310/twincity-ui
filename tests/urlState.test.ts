@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import {
+  buildAbsoluteShareUrl,
   buildOpsUrlSearch,
   buildReportsUrlSearch,
   parseOpsUrlState,
@@ -85,5 +86,21 @@ describe("urlState", () => {
   test("ignores unsupported query values", () => {
     expect(parseOpsUrlState("?type=trash&sev=9&mode=ghost&role=owner")).toEqual({});
     expect(parseReportsUrlState("?range=7d&severity=9")).toEqual({});
+  });
+
+  test("builds absolute share urls for dashboard and reports views", () => {
+    expect(
+      buildAbsoluteShareUrl("type=fall&zone=zone-a", {
+        origin: "https://twincity.example",
+        pathname: "/",
+      })
+    ).toBe("https://twincity.example/?type=fall&zone=zone-a");
+
+    expect(
+      buildAbsoluteShareUrl("range=60m&severity=3", {
+        origin: "https://twincity.example",
+        pathname: "/reports",
+      })
+    ).toBe("https://twincity.example/reports?range=60m&severity=3");
   });
 });
