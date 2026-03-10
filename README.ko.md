@@ -192,6 +192,6 @@ NEXT_PUBLIC_EVENT_POLL_MS=4000
 ---
 
 ## 🧰 Ops Artifacts (Portfolio)
-- `RUNBOOK.md` (local demo runbook)
-- `POSTMORTEM_TEMPLATE.md` (incident postmortem template)
+- `docs/ops/RUNBOOK.md` (local demo runbook)
+- `docs/ops/POSTMORTEM_TEMPLATE.md` (incident postmortem template)
 - `.github/workflows/ci.yml` (CI: lint + build)

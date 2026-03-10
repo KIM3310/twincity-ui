@@ -186,13 +186,13 @@ const CONTROL_TOWER_ARTIFACTS: ServiceArtifact[] = [
   },
   {
     label: "Runbook",
-    href: "RUNBOOK.md",
+    href: "docs/ops/RUNBOOK.md",
     kind: "doc",
     note: "operator and release guidance",
   },
   {
     label: "Postmortem Template",
-    href: "POSTMORTEM_TEMPLATE.md",
+    href: "docs/ops/POSTMORTEM_TEMPLATE.md",
     kind: "doc",
     note: "incident follow-up surface",
   },
