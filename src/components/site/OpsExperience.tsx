@@ -28,6 +28,11 @@ import {
   type SignalChecksState,
   type SignalTone,
 } from "@/lib/signalChecks";
+import {
+  buildOpsUrlSearch,
+  parseOpsUrlState,
+  replaceUrlSearch,
+} from "@/lib/urlState";
 import type {
   EventItem,
   EventTypeFilter,
@@ -1018,10 +1023,42 @@ export default function OpsExperience() {
             liveWindowMs: DEFAULT_LIVE_WINDOW_MS,
             historyRatio: 0.32,
           });
+    const urlState =
+      typeof window === "undefined"
+        ? {}
+        : parseOpsUrlState(window.location.search);
+
+    const applyUrlState = () => {
+      if (typeof urlState.liveWindowMin === "number") {
+        setLiveWindowMin(clampRange(Math.round(urlState.liveWindowMin), 10, 240));
+      }
+      if (EVENT_TYPE_FILTERS.has(urlState.typeFilter as EventTypeFilter)) {
+        setTypeFilter(urlState.typeFilter as EventTypeFilter);
+      }
+      if (typeof urlState.zoneFilter === "string") {
+        setZoneFilter(urlState.zoneFilter);
+      }
+      if (urlState.minSeverity === 1 || urlState.minSeverity === 2 || urlState.minSeverity === 3) {
+        setMinSeverity(urlState.minSeverity);
+      }
+      if (typeof urlState.openOnly === "boolean") {
+        setOpenOnly(urlState.openOnly);
+      }
+      if (urlState.feedMode === "live" || urlState.feedMode === "demo") {
+        setFeedMode(HAS_LIVE_SOURCE ? urlState.feedMode : "demo");
+      }
+      if (urlState.role === "viewer" || urlState.role === "operator" || urlState.role === "admin") {
+        setRole(urlState.role);
+      }
+      if (typeof urlState.selectedId === "string") {
+        setSelectedId(urlState.selectedId);
+      }
+    };
 
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (!raw) {
+        applyUrlState();
         setEvents(fallback);
         setHydrated(true);
         return;
@@ -1066,6 +1103,8 @@ export default function OpsExperience() {
       if (parsed.role === "viewer" || parsed.role === "operator" || parsed.role === "admin") {
         setRole(parsed.role);
       }
+
+      applyUrlState();
 
       const restoredEvents = normalizeEventFeed(parsed.events, {
         maxEvents: restoredMaxEvents,
@@ -1143,6 +1182,37 @@ export default function OpsExperience() {
     showDiagnostics,
     speed,
     timeline,
+    typeFilter,
+    zoneFilter,
+  ]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    replaceUrlSearch(
+      buildOpsUrlSearch(
+        {
+          selectedId,
+          typeFilter,
+          zoneFilter,
+          minSeverity,
+          openOnly,
+          feedMode,
+          role,
+          liveWindowMin,
+        },
+        {
+          defaultFeedMode: HAS_LIVE_SOURCE ? "live" : "demo",
+        }
+      )
+    );
+  }, [
+    feedMode,
+    hydrated,
+    liveWindowMin,
+    minSeverity,
+    openOnly,
+    role,
+    selectedId,
     typeFilter,
     zoneFilter,
   ]);

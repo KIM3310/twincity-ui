@@ -9,13 +9,20 @@ import {
   buildControlTowerRuntimeBrief,
   buildControlTowerServiceMeta,
 } from "@/lib/serviceMeta";
+import {
+  buildReportsUrlSearch,
+  parseReportsUrlState,
+  replaceUrlSearch,
+  type TwincityRangeKey,
+  type TwincitySeverityFilter,
+} from "@/lib/urlState";
 import type { EventItem, IncidentTimelineEntry } from "@/lib/types";
 
 const STORAGE_KEY = "twincity-ops-experience-v2";
 const ACK_SLA_MS = 2 * 60 * 1000;
 const RESOLVE_SLA_MS = 10 * 60 * 1000;
 
-type RangeKey = "30m" | "60m" | "120m" | "24h" | "all";
+type RangeKey = TwincityRangeKey;
 
 function deriveDispatchLane(status: EventItem["incident_status"]) {
   if (status === "resolved") return "resolved";
@@ -88,8 +95,9 @@ export default function ReportsPage() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [timeline, setTimeline] = useState<IncidentTimelineEntry[]>([]);
   const [range, setRange] = useState<RangeKey>("120m");
-  const [severityFilter, setSeverityFilter] = useState<"all" | "1" | "2" | "3">("all");
+  const [severityFilter, setSeverityFilter] = useState<TwincitySeverityFilter>("all");
   const [zoneFilter, setZoneFilter] = useState("all");
+  const [queryHydrated, setQueryHydrated] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
   const runtimeBrief = useMemo(() => buildControlTowerRuntimeBrief(), []);
@@ -127,6 +135,14 @@ export default function ReportsPage() {
   }, [load]);
 
   useEffect(() => {
+    const urlState = parseReportsUrlState(window.location.search);
+    if (urlState.range) setRange(urlState.range);
+    if (urlState.severityFilter) setSeverityFilter(urlState.severityFilter);
+    if (urlState.zoneFilter) setZoneFilter(urlState.zoneFilter);
+    setQueryHydrated(true);
+  }, []);
+
+  useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 5000);
     return () => window.clearInterval(timer);
   }, []);
@@ -136,6 +152,17 @@ export default function ReportsPage() {
     const timer = window.setTimeout(() => setNotice(null), 2400);
     return () => window.clearTimeout(timer);
   }, [notice]);
+
+  useEffect(() => {
+    if (!queryHydrated) return;
+    replaceUrlSearch(
+      buildReportsUrlSearch({
+        range,
+        severityFilter,
+        zoneFilter,
+      })
+    );
+  }, [queryHydrated, range, severityFilter, zoneFilter]);
 
   const since = useMemo(() => {
     const ms = rangeMs(range);
@@ -521,7 +548,7 @@ export default function ReportsPage() {
       return;
     }
 
-    setSeverityFilter(String(target.severity) as "1" | "2" | "3");
+    setSeverityFilter(String(target.severity) as TwincitySeverityFilter);
     setZoneFilter(target.zone_id);
     setNotice(`가장 위험한 incident 기준으로 필터를 맞췄습니다: ${getZoneLabel(target.zone_id)} · S${target.severity}`);
   };
@@ -631,7 +658,7 @@ export default function ReportsPage() {
             <select
               className="opsSelect"
               value={severityFilter}
-              onChange={(e) => setSeverityFilter(e.target.value as "all" | "1" | "2" | "3")}
+              onChange={(e) => setSeverityFilter(e.target.value as TwincitySeverityFilter)}
             >
               <option value="all">전체</option>
               <option value="3">S3</option>
