@@ -10,6 +10,7 @@ import {
   buildControlTowerServiceMeta,
 } from "@/lib/serviceMeta";
 import {
+  buildAbsoluteShareUrl,
   buildReportsUrlSearch,
   parseReportsUrlState,
   replaceUrlSearch,
@@ -89,6 +90,33 @@ function toCsvValue(value: unknown) {
   const text = value === null || value === undefined ? "" : String(value);
   if (/[",\n]/.test(text)) return `"${text.replace(/"/g, '""')}"`;
   return text;
+}
+
+async function copyTextValue(text: string) {
+  if (typeof navigator === "undefined" || !text) return false;
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // Fallback below.
+  }
+
+  try {
+    const temp = document.createElement("textarea");
+    temp.value = text;
+    temp.style.position = "fixed";
+    temp.style.opacity = "0";
+    document.body.appendChild(temp);
+    temp.focus();
+    temp.select();
+    const success = document.execCommand("copy");
+    document.body.removeChild(temp);
+    return Boolean(success);
+  } catch {
+    return false;
+  }
 }
 
 export default function ReportsPage() {
@@ -195,6 +223,11 @@ export default function ReportsPage() {
     ];
     return parts.join(" · ");
   }, [range, severityFilter, zoneFilter]);
+  const activeFilterChips = [
+    rangeLabel(range),
+    severityFilter === "all" ? "전체 severity" : `S${severityFilter}`,
+    zoneFilter === "all" ? "전체 zone" : getZoneLabel(zoneFilter),
+  ];
 
   const ackAtByEvent = useMemo(() => {
     const index = new Map<string, number>();
@@ -426,6 +459,26 @@ export default function ReportsPage() {
     } catch {
       setNotice("복사 권한이 없어서 실패했습니다.");
     }
+  };
+
+  const copyCurrentViewLink = async () => {
+    const shareUrl = buildAbsoluteShareUrl(
+      buildReportsUrlSearch({
+        range,
+        severityFilter,
+        zoneFilter,
+      })
+    );
+
+    const copied = await copyTextValue(shareUrl);
+    setNotice(copied ? "현재 리포트 링크를 복사했습니다." : "복사 권한이 없어서 실패했습니다.");
+  };
+
+  const resetFilters = () => {
+    setRange("120m");
+    setSeverityFilter("all");
+    setZoneFilter("all");
+    setNotice("리포트 필터를 기본값으로 되돌렸습니다.");
   };
 
   const copySpotlight = async () => {
@@ -680,6 +733,12 @@ export default function ReportsPage() {
             <button type="button" className="button buttonGhost" onClick={load}>
               새로고침
             </button>
+            <button type="button" className="button buttonGhost" onClick={copyCurrentViewLink}>
+              현재 뷰 링크 복사
+            </button>
+            <button type="button" className="button buttonGhost" onClick={resetFilters}>
+              필터 초기화
+            </button>
             <button type="button" className="button buttonGhost" onClick={copyReviewRoutes}>
               리뷰 경로 복사
             </button>
@@ -705,6 +764,14 @@ export default function ReportsPage() {
               CSV 다운로드
             </button>
           </div>
+        </div>
+
+        <div className="reportChipRow" aria-label="현재 리포트 필터">
+          {activeFilterChips.map((chip) => (
+            <span key={chip} className="reportChip">
+              {chip}
+            </span>
+          ))}
         </div>
 
         {notice && <div className="reportNotice mono">{notice}</div>}

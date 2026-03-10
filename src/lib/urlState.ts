@@ -146,3 +146,25 @@ export function replaceUrlSearch(nextSearch: string) {
   const nextUrl = `${window.location.pathname}${search}${window.location.hash}`;
   window.history.replaceState(window.history.state, "", nextUrl);
 }
+
+export function buildAbsoluteShareUrl(
+  nextSearch: string,
+  options?: {
+    origin?: string;
+    pathname?: string;
+    hash?: string;
+  }
+) {
+  const origin =
+    options?.origin ??
+    (typeof window !== "undefined" ? window.location.origin : "");
+  const pathname =
+    options?.pathname ??
+    (typeof window !== "undefined" ? window.location.pathname : "/");
+  const hash =
+    options?.hash ??
+    (typeof window !== "undefined" ? window.location.hash : "");
+
+  const search = nextSearch ? `?${nextSearch}` : "";
+  return `${origin}${pathname}${search}${hash}`;
+}

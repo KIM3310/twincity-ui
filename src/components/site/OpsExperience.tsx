@@ -29,6 +29,7 @@ import {
   type SignalTone,
 } from "@/lib/signalChecks";
 import {
+  buildAbsoluteShareUrl,
   buildOpsUrlSearch,
   parseOpsUrlState,
   replaceUrlSearch,
@@ -131,6 +132,33 @@ function uid() {
 
 function clampRange(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
+}
+
+async function copyTextValue(text: string) {
+  if (typeof navigator === "undefined" || !text) return false;
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // Fallback below.
+  }
+
+  try {
+    const temp = document.createElement("textarea");
+    temp.value = text;
+    temp.style.position = "fixed";
+    temp.style.opacity = "0";
+    document.body.appendChild(temp);
+    temp.focus();
+    temp.select();
+    const success = document.execCommand("copy");
+    document.body.removeChild(temp);
+    return Boolean(success);
+  } catch {
+    return false;
+  }
 }
 
 function sortByDetectedAtDesc(a: EventItem, b: EventItem) {
@@ -1983,6 +2011,57 @@ export default function OpsExperience() {
   const crowdTone = getSignalToneDisplay(signalChecks.crowd.tone);
   const safetyTone = getSignalToneDisplay(signalChecks.safety.tone);
   const trashTone = getSignalToneDisplay(signalChecks.trash.tone);
+  const activeViewChips = [
+    `${feedMode === "live" ? meta.modeLiveLabel : meta.modeDemoLabel}`,
+    `${typeFilter === "all" ? "전체 유형" : getEventTypeLabel(typeFilter)}`,
+    `${zoneFilter === "all" ? "전체 구역" : getZoneLabel(zoneFilter)}`,
+    `S${minSeverity}+`,
+    openOnly ? "미해결만" : "전체 상태",
+    `${liveWindowMin}분`,
+    `권한 ${ROLE_LABEL[role]}`,
+  ];
+
+  const copyCurrentViewLink = useCallback(async () => {
+    const search = buildOpsUrlSearch(
+      {
+        selectedId,
+        typeFilter,
+        zoneFilter,
+        minSeverity,
+        openOnly,
+        feedMode,
+        role,
+        liveWindowMin,
+      },
+      {
+        defaultFeedMode: HAS_LIVE_SOURCE ? "live" : "demo",
+      }
+    );
+    const shareUrl = buildAbsoluteShareUrl(search);
+    const copied = await copyTextValue(shareUrl);
+    setToast(copied ? "현재 뷰 링크를 복사했어요." : "링크 복사 권한이 없어서 실패했습니다.");
+  }, [
+    feedMode,
+    liveWindowMin,
+    minSeverity,
+    openOnly,
+    role,
+    selectedId,
+    typeFilter,
+    zoneFilter,
+  ]);
+
+  const resetCurrentView = useCallback(() => {
+    setSelectedId(undefined);
+    setTypeFilter("all");
+    setZoneFilter("all");
+    setMinSeverity(1);
+    setOpenOnly(false);
+    setFeedMode(HAS_LIVE_SOURCE ? "live" : "demo");
+    setRole("operator");
+    setLiveWindowMin(60);
+    setToast("현재 뷰 필터를 기본값으로 되돌렸어요.");
+  }, []);
 
   return (
     <section className="opsShell reveal delay-1">
@@ -2298,6 +2377,24 @@ export default function OpsExperience() {
         <span>{connectionNote}</span>
         <span className="mono">마지막 갱신 {lastSyncLabel}</span>
         <span className="opsFeedHint mono">단축키 [ / ] 이동 · Esc 해제</span>
+      </div>
+
+      <div className="opsShareBar" aria-label="현재 운영 뷰 공유 상태">
+        <div className="opsShareChips">
+          {activeViewChips.map((chip) => (
+            <span key={chip} className="opsShareChip">
+              {chip}
+            </span>
+          ))}
+        </div>
+        <div className="opsShareActions">
+          <button type="button" className="opsPill" onClick={copyCurrentViewLink}>
+            현재 뷰 링크 복사
+          </button>
+          <button type="button" className="opsPill" onClick={resetCurrentView}>
+            필터 초기화
+          </button>
+        </div>
       </div>
 
       <section className="opsSignalGrid" aria-label="실시간 3대 상황">
