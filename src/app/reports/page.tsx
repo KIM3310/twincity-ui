@@ -92,12 +92,18 @@ function toCsvValue(value: unknown) {
 }
 
 export default function ReportsPage() {
+  const initialUrlState =
+    typeof window === "undefined"
+      ? null
+      : parseReportsUrlState(window.location.search);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [timeline, setTimeline] = useState<IncidentTimelineEntry[]>([]);
-  const [range, setRange] = useState<RangeKey>("120m");
-  const [severityFilter, setSeverityFilter] = useState<TwincitySeverityFilter>("all");
-  const [zoneFilter, setZoneFilter] = useState("all");
-  const [queryHydrated, setQueryHydrated] = useState(false);
+  const [range, setRange] = useState<RangeKey>(() => initialUrlState?.range ?? "120m");
+  const [severityFilter, setSeverityFilter] = useState<TwincitySeverityFilter>(
+    () => initialUrlState?.severityFilter ?? "all"
+  );
+  const [zoneFilter, setZoneFilter] = useState(() => initialUrlState?.zoneFilter ?? "all");
+  const [queryHydrated] = useState(() => typeof window !== "undefined");
   const [notice, setNotice] = useState<string | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
   const runtimeBrief = useMemo(() => buildControlTowerRuntimeBrief(), []);
@@ -133,14 +139,6 @@ export default function ReportsPage() {
     const timer = window.setTimeout(() => load(), 0);
     return () => window.clearTimeout(timer);
   }, [load]);
-
-  useEffect(() => {
-    const urlState = parseReportsUrlState(window.location.search);
-    if (urlState.range) setRange(urlState.range);
-    if (urlState.severityFilter) setSeverityFilter(urlState.severityFilter);
-    if (urlState.zoneFilter) setZoneFilter(urlState.zoneFilter);
-    setQueryHydrated(true);
-  }, []);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 5000);
