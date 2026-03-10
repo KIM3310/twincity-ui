@@ -9,13 +9,21 @@ import {
   buildControlTowerRuntimeBrief,
   buildControlTowerServiceMeta,
 } from "@/lib/serviceMeta";
+import {
+  buildAbsoluteShareUrl,
+  buildReportsUrlSearch,
+  parseReportsUrlState,
+  replaceUrlSearch,
+  type TwincityRangeKey,
+  type TwincitySeverityFilter,
+} from "@/lib/urlState";
 import type { EventItem, IncidentTimelineEntry } from "@/lib/types";
 
 const STORAGE_KEY = "twincity-ops-experience-v2";
 const ACK_SLA_MS = 2 * 60 * 1000;
 const RESOLVE_SLA_MS = 10 * 60 * 1000;
 
-type RangeKey = "30m" | "60m" | "120m" | "24h" | "all";
+type RangeKey = TwincityRangeKey;
 
 function deriveDispatchLane(status: EventItem["incident_status"]) {
   if (status === "resolved") return "resolved";
@@ -84,12 +92,46 @@ function toCsvValue(value: unknown) {
   return text;
 }
 
+async function copyTextValue(text: string) {
+  if (typeof navigator === "undefined" || !text) return false;
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // Fallback below.
+  }
+
+  try {
+    const temp = document.createElement("textarea");
+    temp.value = text;
+    temp.style.position = "fixed";
+    temp.style.opacity = "0";
+    document.body.appendChild(temp);
+    temp.focus();
+    temp.select();
+    const success = document.execCommand("copy");
+    document.body.removeChild(temp);
+    return Boolean(success);
+  } catch {
+    return false;
+  }
+}
+
 export default function ReportsPage() {
+  const initialUrlState =
+    typeof window === "undefined"
+      ? null
+      : parseReportsUrlState(window.location.search);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [timeline, setTimeline] = useState<IncidentTimelineEntry[]>([]);
-  const [range, setRange] = useState<RangeKey>("120m");
-  const [severityFilter, setSeverityFilter] = useState<"all" | "1" | "2" | "3">("all");
-  const [zoneFilter, setZoneFilter] = useState("all");
+  const [range, setRange] = useState<RangeKey>(() => initialUrlState?.range ?? "120m");
+  const [severityFilter, setSeverityFilter] = useState<TwincitySeverityFilter>(
+    () => initialUrlState?.severityFilter ?? "all"
+  );
+  const [zoneFilter, setZoneFilter] = useState(() => initialUrlState?.zoneFilter ?? "all");
+  const [queryHydrated] = useState(() => typeof window !== "undefined");
   const [notice, setNotice] = useState<string | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
   const runtimeBrief = useMemo(() => buildControlTowerRuntimeBrief(), []);
@@ -137,6 +179,17 @@ export default function ReportsPage() {
     return () => window.clearTimeout(timer);
   }, [notice]);
 
+  useEffect(() => {
+    if (!queryHydrated) return;
+    replaceUrlSearch(
+      buildReportsUrlSearch({
+        range,
+        severityFilter,
+        zoneFilter,
+      })
+    );
+  }, [queryHydrated, range, severityFilter, zoneFilter]);
+
   const since = useMemo(() => {
     const ms = rangeMs(range);
     return Number.isFinite(ms) ? now - ms : Number.NEGATIVE_INFINITY;
@@ -170,6 +223,11 @@ export default function ReportsPage() {
     ];
     return parts.join(" · ");
   }, [range, severityFilter, zoneFilter]);
+  const activeFilterChips = [
+    rangeLabel(range),
+    severityFilter === "all" ? "전체 severity" : `S${severityFilter}`,
+    zoneFilter === "all" ? "전체 zone" : getZoneLabel(zoneFilter),
+  ];
 
   const ackAtByEvent = useMemo(() => {
     const index = new Map<string, number>();
@@ -363,7 +421,7 @@ export default function ReportsPage() {
     setNotice("CSV를 다운로드했습니다.");
   };
 
-  const copySummary = async () => {
+  const copySummary = useCallback(async () => {
     const text = [
       `TwinCity 운영 리포트 (${filterSummary})`,
       `총 알림: ${focusedEvents.length}`,
@@ -384,9 +442,21 @@ export default function ReportsPage() {
     } catch {
       setNotice("복사 권한이 없어서 실패했습니다.");
     }
-  };
+  }, [
+    ackDurations,
+    ackSlaMet,
+    avgAckMs,
+    avgResolveMs,
+    byZone,
+    criticalCount,
+    filterSummary,
+    focusedEvents.length,
+    openCount,
+    resolveDurations,
+    resolveSlaMet,
+  ]);
 
-  const copyReviewRoutes = async () => {
+  const copyReviewRoutes = useCallback(async () => {
     const text = [
       `TwinCity review routes (${filterSummary})`,
       ...serviceMeta.review_flow.map((item) => `- ${item}`),
@@ -401,9 +471,29 @@ export default function ReportsPage() {
     } catch {
       setNotice("복사 권한이 없어서 실패했습니다.");
     }
+  }, [filterSummary, serviceMeta.review_flow, serviceMeta.routes]);
+
+  const copyCurrentViewLink = useCallback(async () => {
+    const shareUrl = buildAbsoluteShareUrl(
+      buildReportsUrlSearch({
+        range,
+        severityFilter,
+        zoneFilter,
+      })
+    );
+
+    const copied = await copyTextValue(shareUrl);
+    setNotice(copied ? "현재 리포트 링크를 복사했습니다." : "복사 권한이 없어서 실패했습니다.");
+  }, [range, severityFilter, zoneFilter]);
+
+  const resetFilters = () => {
+    setRange("120m");
+    setSeverityFilter("all");
+    setZoneFilter("all");
+    setNotice("리포트 필터를 기본값으로 되돌렸습니다.");
   };
 
-  const copySpotlight = async () => {
+  const copySpotlight = useCallback(async () => {
     const target = spotlightEvents[0];
     if (!target) {
       setNotice("복사할 spotlight incident가 없습니다.");
@@ -433,7 +523,7 @@ export default function ReportsPage() {
     } catch {
       setNotice("복사 권한이 없어서 실패했습니다.");
     }
-  };
+  }, [latestTimelineByEvent, serviceMeta.review_flow, spotlightEvents]);
 
   const copySlaSnapshot = async () => {
     const target = spotlightEvents[0];
@@ -457,7 +547,7 @@ export default function ReportsPage() {
     }
   };
 
-  const copyControlTowerClaim = async () => {
+  const copyControlTowerClaim = useCallback(async () => {
     const target = spotlightEvents[0];
     const text = [
       `TwinCity control tower claim (${filterSummary})`,
@@ -480,9 +570,22 @@ export default function ReportsPage() {
     } catch {
       setNotice("복사 권한이 없어서 실패했습니다.");
     }
-  };
+  }, [
+    ackDurations.length,
+    ackSlaMet,
+    byZone,
+    criticalCount,
+    filterSummary,
+    openCount,
+    resolveDurations.length,
+    resolveSlaMet,
+    runtimeBrief.headline,
+    runtimeBrief.route_count,
+    serviceMeta.routes,
+    spotlightEvents,
+  ]);
 
-  const copyDispatchSnapshot = async () => {
+  const copyDispatchSnapshot = useCallback(async () => {
     const target = dispatchBoardRows[0];
     const text = [
       `TwinCity dispatch board (${filterSummary})`,
@@ -504,9 +607,53 @@ export default function ReportsPage() {
     } catch {
       setNotice("복사 권한이 없어서 실패했습니다.");
     }
-  };
+  }, [dispatchBoardRows, filterSummary]);
 
-  const focusHighestRisk = () => {
+  const copyOpsBundle = useCallback(async () => {
+    const target = spotlightEvents[0];
+    const text = [
+      `TwinCity ops bundle (${filterSummary})`,
+      `Share link: ${buildAbsoluteShareUrl(
+        buildReportsUrlSearch({
+          range,
+          severityFilter,
+          zoneFilter,
+        })
+      )}`,
+      `Open incidents: ${openCount}`,
+      `Critical incidents: ${criticalCount}`,
+      `Top zone: ${byZone[0] ? `${getZoneLabel(byZone[0][0])} (${byZone[0][1]})` : "-"}`,
+      `Spotlight: ${target ? `${target.id} / ${getZoneLabel(target.zone_id)} / S${target.severity}` : "-"}`,
+      "",
+      "Review routes",
+      ...serviceMeta.routes.slice(0, 5).map((route) => `- ${route}`),
+      "",
+      "Dispatch lanes",
+      `- Attention: ${dispatchBoardRows.filter((row) => row.lane === "attention").length}`,
+      `- Dispatch: ${dispatchBoardRows.filter((row) => row.lane === "dispatch").length}`,
+      `- Resolved: ${dispatchBoardRows.filter((row) => row.lane === "resolved").length}`,
+    ].join("\n");
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setNotice("ops bundle을 클립보드에 복사했습니다.");
+    } catch {
+      setNotice("복사 권한이 없어서 실패했습니다.");
+    }
+  }, [
+    byZone,
+    criticalCount,
+    dispatchBoardRows,
+    filterSummary,
+    openCount,
+    range,
+    serviceMeta.routes,
+    severityFilter,
+    spotlightEvents,
+    zoneFilter,
+  ]);
+
+  const focusHighestRisk = useCallback(() => {
     const target = inRangeEvents
       .slice()
       .sort((a, b) => {
@@ -521,10 +668,77 @@ export default function ReportsPage() {
       return;
     }
 
-    setSeverityFilter(String(target.severity) as "1" | "2" | "3");
+    setSeverityFilter(String(target.severity) as TwincitySeverityFilter);
     setZoneFilter(target.zone_id);
     setNotice(`가장 위험한 incident 기준으로 필터를 맞췄습니다: ${getZoneLabel(target.zone_id)} · S${target.severity}`);
-  };
+  }, [inRangeEvents, latestTimelineByEvent]);
+
+  useEffect(() => {
+    const handleKeyboardShortcuts = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const tagName = String(target?.tagName || "").toLowerCase();
+      const isTypingTarget =
+        Boolean(target?.isContentEditable) ||
+        tagName === "input" ||
+        tagName === "textarea" ||
+        tagName === "select";
+      if (isTypingTarget || event.metaKey || event.ctrlKey || event.altKey || !event.shiftKey) {
+        return;
+      }
+
+      const key = event.key.toLowerCase();
+      if (key === "l") {
+        event.preventDefault();
+        void copyCurrentViewLink();
+      } else if (key === "r") {
+        event.preventDefault();
+        void copyReviewRoutes();
+      } else if (key === "s") {
+        event.preventDefault();
+        void copySummary();
+      } else if (key === "f") {
+        event.preventDefault();
+        focusHighestRisk();
+      } else if (key === "d") {
+        event.preventDefault();
+        void copyDispatchSnapshot();
+      } else if (key === "b") {
+        event.preventDefault();
+        void copyOpsBundle();
+      } else if (key === "c") {
+        event.preventDefault();
+        void copyControlTowerClaim();
+      } else if (key === "k") {
+        event.preventDefault();
+        void copySpotlight();
+      } else if (key === "?") {
+        event.preventDefault();
+        setNotice("Shortcuts: ⇧L link · ⇧R routes · ⇧S summary · ⇧F highest risk · ⇧D dispatch · ⇧B ops bundle · ⇧C control tower claim · ⇧K spotlight");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyboardShortcuts);
+    return () => window.removeEventListener("keydown", handleKeyboardShortcuts);
+  }, [
+    byZone,
+    copyCurrentViewLink,
+    copyDispatchSnapshot,
+    copyOpsBundle,
+    copyControlTowerClaim,
+    copyReviewRoutes,
+    copySpotlight,
+    copySummary,
+    criticalCount,
+    dispatchBoardRows,
+    filterSummary,
+    focusHighestRisk,
+    openCount,
+    range,
+    serviceMeta.routes,
+    severityFilter,
+    spotlightEvents,
+    zoneFilter,
+  ]);
 
   return (
     <div className="pageStack">
@@ -631,7 +845,7 @@ export default function ReportsPage() {
             <select
               className="opsSelect"
               value={severityFilter}
-              onChange={(e) => setSeverityFilter(e.target.value as "all" | "1" | "2" | "3")}
+              onChange={(e) => setSeverityFilter(e.target.value as TwincitySeverityFilter)}
             >
               <option value="all">전체</option>
               <option value="3">S3</option>
@@ -655,6 +869,12 @@ export default function ReportsPage() {
             <button type="button" className="button buttonGhost" onClick={load}>
               새로고침
             </button>
+            <button type="button" className="button buttonGhost" onClick={copyCurrentViewLink}>
+              현재 뷰 링크 복사
+            </button>
+            <button type="button" className="button buttonGhost" onClick={resetFilters}>
+              필터 초기화
+            </button>
             <button type="button" className="button buttonGhost" onClick={copyReviewRoutes}>
               리뷰 경로 복사
             </button>
@@ -676,13 +896,27 @@ export default function ReportsPage() {
             <button type="button" className="button buttonGhost" onClick={copySummary}>
               요약 복사
             </button>
+            <button type="button" className="button buttonGhost" onClick={copyOpsBundle}>
+              Ops 번들 복사
+            </button>
             <button type="button" className="button" onClick={downloadCsv} disabled={focusedEvents.length === 0}>
               CSV 다운로드
             </button>
           </div>
         </div>
 
+        <div className="reportChipRow" aria-label="현재 리포트 필터">
+          {activeFilterChips.map((chip) => (
+            <span key={chip} className="reportChip">
+              {chip}
+            </span>
+          ))}
+        </div>
+
         {notice && <div className="reportNotice mono">{notice}</div>}
+        <div className="reportNotice mono">
+          Shortcuts: ⇧L 링크 · ⇧R 리뷰 경로 · ⇧S 요약 · ⇧F 최고 위험 · ⇧D dispatch · ⇧B ops bundle · ⇧C control tower claim · ⇧K spotlight
+        </div>
       </section>
 
       <section className="reveal delay-4">
