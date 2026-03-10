@@ -1568,35 +1568,6 @@ export default function OpsExperience() {
     setSelectedId(undefined);
   }, []);
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      const tag = target?.tagName?.toLowerCase();
-      if (
-        target &&
-        (target.isContentEditable || tag === "input" || tag === "textarea" || tag === "select")
-      ) {
-        return;
-      }
-      if (event.key === "Escape") {
-        clearSelection();
-        return;
-      }
-      if (event.key === "[" || event.key === "ArrowUp") {
-        event.preventDefault();
-        moveSelection(-1);
-        return;
-      }
-      if (event.key === "]" || event.key === "ArrowDown") {
-        event.preventDefault();
-        moveSelection(1);
-      }
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [clearSelection, moveSelection]);
-
   const appendTimelineEntry = (
     item: Omit<IncidentTimelineEntry, "id" | "at"> & { at?: number }
   ) => {
@@ -2063,6 +2034,126 @@ export default function OpsExperience() {
     setToast("현재 뷰 필터를 기본값으로 되돌렸어요.");
   }, []);
 
+  const copyQueueSnapshot = useCallback(async () => {
+    const lines = [
+      "TwinCity operator queue snapshot",
+      `Mode: ${feedMode === "live" ? meta.modeLiveLabel : meta.modeDemoLabel}`,
+      `Filter: ${typeFilter === "all" ? "전체 유형" : getEventTypeLabel(typeFilter)} / ${zoneFilter === "all" ? "전체 구역" : getZoneLabel(zoneFilter)} / S${minSeverity}+ / ${openOnly ? "미해결만" : "전체 상태"}`,
+      `Visible events: ${visibleEvents.length}`,
+      `Critical open: ${visibleEvents.filter((event) => event.incident_status !== "resolved" && event.severity === 3).length}`,
+      ...visibleEvents.slice(0, 10).map((event) => {
+        const zoneLabel = getZoneLabel(event.zone_id);
+        return `- ${getEventTypeLabel(event.type)} · ${zoneLabel} · ${event.incident_status.toUpperCase()} · ${getEventIdLabel(event.id)}`;
+      }),
+    ];
+    const copied = await copyTextValue(lines.join("\n"));
+    setToast(copied ? "현재 운영 큐 스냅샷을 복사했어요." : "큐 스냅샷 복사에 실패했어요.");
+  }, [feedMode, meta.modeDemoLabel, meta.modeLiveLabel, minSeverity, openOnly, typeFilter, visibleEvents, zoneFilter]);
+
+  const bulkAcknowledgeVisible = useCallback(() => {
+    if (!canOperate) {
+      setToast("보기 권한에서는 일괄 확인 처리를 할 수 없어요.");
+      return;
+    }
+    const targets = visibleEvents.filter((event) => event.incident_status === "new");
+    if (targets.length === 0) {
+      setToast("일괄 확인 처리할 신규 이벤트가 없어요.");
+      return;
+    }
+    const targetIds = new Set(targets.map((event) => event.id));
+    setEvents((prev) =>
+      prev.map((event) =>
+        targetIds.has(event.id) ? { ...event, incident_status: "ack" } : event
+      )
+    );
+    targets.forEach((event) => {
+      appendTimelineEntry({
+        event_id: event.id,
+        zone_id: event.zone_id,
+        action: "ack",
+        actor: OPERATOR_ID,
+        from_status: event.incident_status,
+        to_status: "ack",
+        note: "현재 필터에 보이는 신규 이벤트를 일괄 확인 처리했습니다.",
+      });
+    });
+    setToast(`${targets.length}건을 일괄 확인 처리했어요.`);
+  }, [canOperate, visibleEvents]);
+
+  const bulkResolveVisible = useCallback(() => {
+    if (!canOperate) {
+      setToast("보기 권한에서는 일괄 종료를 할 수 없어요.");
+      return;
+    }
+    const targets = visibleEvents.filter((event) => event.incident_status === "ack");
+    if (targets.length === 0) {
+      setToast("일괄 종료할 확인 상태 이벤트가 없어요.");
+      return;
+    }
+    const targetIds = new Set(targets.map((event) => event.id));
+    setEvents((prev) =>
+      prev.map((event) =>
+        targetIds.has(event.id) ? { ...event, incident_status: "resolved" } : event
+      )
+    );
+    targets.forEach((event) => {
+      appendTimelineEntry({
+        event_id: event.id,
+        zone_id: event.zone_id,
+        action: "resolved",
+        actor: OPERATOR_ID,
+        from_status: event.incident_status,
+        to_status: "resolved",
+        note: "현재 필터에 보이는 확인 상태 이벤트를 일괄 종료했습니다.",
+      });
+    });
+    setToast(`${targets.length}건을 일괄 종료했어요.`);
+  }, [canOperate, visibleEvents]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName?.toLowerCase();
+      if (
+        target &&
+        (target.isContentEditable || tag === "input" || tag === "textarea" || tag === "select")
+      ) {
+        return;
+      }
+      if (event.key === "Escape") {
+        clearSelection();
+        return;
+      }
+      if (event.key === "[" || event.key === "ArrowUp") {
+        event.preventDefault();
+        moveSelection(-1);
+        return;
+      }
+      if (event.key === "]" || event.key === "ArrowDown") {
+        event.preventDefault();
+        moveSelection(1);
+        return;
+      }
+      if (event.shiftKey && event.key.toLowerCase() === "c") {
+        event.preventDefault();
+        void copyQueueSnapshot();
+        return;
+      }
+      if (event.shiftKey && event.key.toLowerCase() === "a") {
+        event.preventDefault();
+        bulkAcknowledgeVisible();
+        return;
+      }
+      if (event.shiftKey && event.key.toLowerCase() === "x") {
+        event.preventDefault();
+        bulkResolveVisible();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [bulkAcknowledgeVisible, bulkResolveVisible, clearSelection, copyQueueSnapshot, moveSelection]);
+
   return (
     <section className="opsShell reveal delay-1">
       <div className="opsTop">
@@ -2391,11 +2482,24 @@ export default function OpsExperience() {
           <button type="button" className="opsPill" onClick={copyCurrentViewLink}>
             현재 뷰 링크 복사
           </button>
+          <button type="button" className="opsPill" onClick={copyQueueSnapshot}>
+            큐 스냅샷 복사
+          </button>
+          <button type="button" className="opsPill" onClick={bulkAcknowledgeVisible} disabled={!canOperate}>
+            신규 일괄 확인
+          </button>
+          <button type="button" className="opsPill" onClick={bulkResolveVisible} disabled={!canOperate}>
+            확인건 일괄 종료
+          </button>
           <button type="button" className="opsPill" onClick={resetCurrentView}>
             필터 초기화
           </button>
         </div>
       </div>
+
+      <p className="opsFeedStatus" role="status" aria-live="polite">
+        Shortcuts: ⇧C 큐 스냅샷 · ⇧A 신규 일괄 확인 · ⇧X 확인건 일괄 종료 · [ / ] 선택 이동 · Esc 선택 해제
+      </p>
 
       <section className="opsSignalGrid" aria-label="실시간 3대 상황">
         <article className="opsSignalCard">
