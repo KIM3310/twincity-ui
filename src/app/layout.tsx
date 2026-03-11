@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   other: {
-    "google-adsense-account": "ca-pub-0000000000000000",
+    "google-adsense-account": "",
   },
 };
 
