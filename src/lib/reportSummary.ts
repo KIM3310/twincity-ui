@@ -115,6 +115,131 @@ export type ControlTowerDispatchBoard = {
   };
 };
 
+export type ControlTowerHandoffBrief = {
+  service: string;
+  status: "ok";
+  generated_at: string;
+  schema: "twincity-handoff-brief-v1";
+  filters: ReportFilters;
+  summary: {
+    visible_incidents: number;
+    open_incidents: number;
+    critical_incidents: number;
+    attention_count: number;
+    dispatch_count: number;
+    resolved_count: number;
+    ack_overdue_count: number;
+    resolve_overdue_count: number;
+  };
+  handoff: {
+    headline: string;
+    focus_lane: "attention" | "dispatch" | "resolved" | "clear";
+    suggested_owner: "dispatch-lead" | "floor-ops" | "review-only";
+    top_zone: string | null;
+    top_type: string | null;
+  };
+  priorities: Array<{
+    id: string;
+    lane: DispatchBoardLane;
+    severity: number;
+    type: string;
+    zone_id: string;
+    incident_status: string;
+    latest_action: string;
+    next_action: string;
+    ack_sla_state: "met" | "missed" | "pending";
+    resolve_sla_state: "met" | "missed" | "pending";
+    minutes_open: number;
+    note: string | null;
+  }>;
+  operator_notes: string[];
+  route_bundle: {
+    report_summary: string;
+    dispatch_board: string;
+    report_handoff: string;
+    report_export: string;
+    reports: string;
+  };
+};
+
+type TimelineIndexes = {
+  ackAtByEvent: Map<string, number>;
+  resolvedAtByEvent: Map<string, number>;
+  latestTimelineByEvent: Map<string, IncidentTimelineEntry>;
+};
+
+type DispatchBoardRow = ControlTowerDispatchBoard["items"][number] & {
+  detected_at: number;
+};
+
+function buildTimelineIndexes(timeline: IncidentTimelineEntry[]): TimelineIndexes {
+  const ackAtByEvent = new Map<string, number>();
+  const resolvedAtByEvent = new Map<string, number>();
+  const latestTimelineByEvent = new Map<string, IncidentTimelineEntry>();
+
+  for (const entry of timeline) {
+    const latest = latestTimelineByEvent.get(entry.event_id);
+    if (!latest || entry.at > latest.at) {
+      latestTimelineByEvent.set(entry.event_id, entry);
+    }
+
+    if (entry.to_status === "ack") {
+      const prev = ackAtByEvent.get(entry.event_id) ?? 0;
+      if (entry.at > prev) ackAtByEvent.set(entry.event_id, entry.at);
+    }
+
+    if (entry.to_status === "resolved") {
+      const prev = resolvedAtByEvent.get(entry.event_id) ?? 0;
+      if (entry.at > prev) resolvedAtByEvent.set(entry.event_id, entry.at);
+    }
+  }
+
+  return {
+    ackAtByEvent,
+    resolvedAtByEvent,
+    latestTimelineByEvent,
+  };
+}
+
+function deriveCompletionSlaState(input: {
+  startedAt?: number;
+  completedAt?: number;
+  now: number;
+  thresholdMs: number;
+}): "met" | "missed" | "pending" {
+  if (input.startedAt === undefined) return "pending";
+  if (input.completedAt !== undefined) {
+    return input.completedAt - input.startedAt <= input.thresholdMs ? "met" : "missed";
+  }
+  return input.now - input.startedAt > input.thresholdMs ? "missed" : "pending";
+}
+
+function deriveAckSlaState(
+  eventDetectedAt: number,
+  ackAt: number | undefined,
+  now: number
+) {
+  return deriveCompletionSlaState({
+    startedAt: eventDetectedAt,
+    completedAt: ackAt,
+    now,
+    thresholdMs: ACK_SLA_MS,
+  });
+}
+
+function deriveResolveSlaState(
+  ackAt: number | undefined,
+  resolvedAt: number | undefined,
+  now: number
+) {
+  return deriveCompletionSlaState({
+    startedAt: ackAt,
+    completedAt: resolvedAt,
+    now,
+    thresholdMs: RESOLVE_SLA_MS,
+  });
+}
+
 export function deriveDispatchNextAction(input: {
   lane: DispatchBoardLane;
   severity: number;
@@ -337,30 +462,34 @@ export function parseDispatchBoardFilters(url: URL) {
 
 function buildFilteredReportRows(filters: ReportFilters, now?: number) {
   const demo = buildDemoReportState();
-  const referenceNow = now ?? demo.now;
+  return buildFilteredReportRowsFromState({
+    filters,
+    now,
+    events: demo.events,
+    timeline: demo.timeline,
+  });
+}
+
+function buildFilteredReportRowsFromState(input: {
+  filters: ReportFilters;
+  now?: number;
+  events: EventItem[];
+  timeline: IncidentTimelineEntry[];
+}) {
+  const { filters, events, timeline } = input;
+  const referenceNow = input.now ?? buildDemoReportState().now;
   const since = Number.isFinite(rangeMs(filters.range))
     ? referenceNow - rangeMs(filters.range)
     : Number.NEGATIVE_INFINITY;
-  const filteredEvents = demo.events.filter((event) => {
+  const filteredEvents = events.filter((event) => {
     if (event.detected_at < since) return false;
     if (filters.severity !== "all" && String(event.severity) !== filters.severity) return false;
     if (filters.incident_status !== "all" && event.incident_status !== filters.incident_status) return false;
     if (filters.zone !== "all" && event.zone_id !== filters.zone) return false;
     return true;
   });
-  const ackAtByEvent = new Map<string, number>();
-  const resolvedAtByEvent = new Map<string, number>();
-  for (const entry of demo.timeline) {
-    if (entry.to_status === "ack") {
-      const prev = ackAtByEvent.get(entry.event_id) ?? 0;
-      if (entry.at > prev) ackAtByEvent.set(entry.event_id, entry.at);
-    }
-    if (entry.to_status === "resolved") {
-      const prev = resolvedAtByEvent.get(entry.event_id) ?? 0;
-      if (entry.at > prev) resolvedAtByEvent.set(entry.event_id, entry.at);
-    }
-  }
-  return { filteredEvents, ackAtByEvent, resolvedAtByEvent };
+  const indexes = buildTimelineIndexes(timeline);
+  return { filteredEvents, ...indexes, now: referenceNow };
 }
 
 export function buildControlTowerReportSummary(input?: {
@@ -382,30 +511,18 @@ export function buildControlTowerReportSummary(input?: {
   const zone = input?.filters?.zone ?? "all";
   const events = input?.events ?? demo.events;
   const timeline = input?.timeline ?? demo.timeline;
-  const since = Number.isFinite(rangeMs(range))
-    ? now - rangeMs(range)
-    : Number.NEGATIVE_INFINITY;
-
-  const filteredEvents = events.filter((event) => {
-    if (event.detected_at < since) return false;
-    if (severity !== "all" && String(event.severity) !== severity) return false;
-    if (incidentStatus !== "all" && event.incident_status !== incidentStatus) return false;
-    if (zone !== "all" && event.zone_id !== zone) return false;
-    return true;
-  });
-
-  const ackAtByEvent = new Map<string, number>();
-  const resolvedAtByEvent = new Map<string, number>();
-  for (const entry of timeline) {
-    if (entry.to_status === "ack") {
-      const prev = ackAtByEvent.get(entry.event_id) ?? 0;
-      if (entry.at > prev) ackAtByEvent.set(entry.event_id, entry.at);
-    }
-    if (entry.to_status === "resolved") {
-      const prev = resolvedAtByEvent.get(entry.event_id) ?? 0;
-      if (entry.at > prev) resolvedAtByEvent.set(entry.event_id, entry.at);
-    }
-  }
+  const { filteredEvents, ackAtByEvent, resolvedAtByEvent } =
+    buildFilteredReportRowsFromState({
+      filters: {
+        range,
+        severity,
+        incident_status: incidentStatus,
+        zone,
+      },
+      now,
+      events,
+      timeline,
+    });
 
   const ackDurations: number[] = [];
   const resolveDurations: number[] = [];
@@ -556,7 +673,10 @@ export function buildControlTowerReportCsv(input?: {
     incident_status: input?.filters?.incident_status ?? "all",
     zone: input?.filters?.zone ?? "all",
   };
-  const { filteredEvents, ackAtByEvent, resolvedAtByEvent } = buildFilteredReportRows(filters, input?.now);
+  const { filteredEvents, ackAtByEvent, resolvedAtByEvent } = buildFilteredReportRows(
+    filters,
+    input?.now
+  );
   const header = [
     "id",
     "detected_at",
@@ -590,30 +710,22 @@ export function buildControlTowerReportCsv(input?: {
     .join("\n");
 }
 
-export function buildControlTowerDispatchBoard(input?: {
-  filters?: Partial<ReportFilters> & { lane?: DispatchBoardLane };
-  now?: number;
-}): ControlTowerDispatchBoard {
-  const filters: ReportFilters = {
-    range: input?.filters?.range ?? "120m",
-    severity: input?.filters?.severity ?? "all",
-    incident_status: input?.filters?.incident_status ?? "all",
-    zone: input?.filters?.zone ?? "all",
-  };
-  const lane = input?.filters?.lane ?? "all";
-  const demo = buildDemoReportState();
-  const now = input?.now ?? demo.now;
-  const { filteredEvents, ackAtByEvent, resolvedAtByEvent } = buildFilteredReportRows(filters, now);
+function buildDispatchBoardRows(input: {
+  filters: ReportFilters;
+  lane: DispatchBoardLane;
+  now: number;
+  events: EventItem[];
+  timeline: IncidentTimelineEntry[];
+}): DispatchBoardRow[] {
+  const { filteredEvents, ackAtByEvent, resolvedAtByEvent, latestTimelineByEvent } =
+    buildFilteredReportRowsFromState({
+      filters: input.filters,
+      now: input.now,
+      events: input.events,
+      timeline: input.timeline,
+    });
 
-  const latestTimelineByEvent = new Map<string, IncidentTimelineEntry>();
-  for (const entry of demo.timeline) {
-    const prev = latestTimelineByEvent.get(entry.event_id);
-    if (!prev || entry.at > prev.at) {
-      latestTimelineByEvent.set(entry.event_id, entry);
-    }
-  }
-
-  const rows = filteredEvents
+  return filteredEvents
     .map((event) => {
       const latestTimeline = latestTimelineByEvent.get(event.id);
       const ackAt = ackAtByEvent.get(event.id);
@@ -624,15 +736,8 @@ export function buildControlTowerDispatchBoard(input?: {
           : event.incident_status === "ack"
             ? "dispatch"
             : "attention";
-      const ackSlaState: "met" | "missed" | "pending" =
-        ackAt === undefined ? "pending" : ackAt - event.detected_at <= ACK_SLA_MS ? "met" : "missed";
-      const resolveStart = ackAt ?? event.detected_at;
-      const resolveSlaState: "met" | "missed" | "pending" =
-        resolvedAt === undefined
-          ? "pending"
-          : resolvedAt - resolveStart <= RESOLVE_SLA_MS
-            ? "met"
-            : "missed";
+      const ackSlaState = deriveAckSlaState(event.detected_at, ackAt, input.now);
+      const resolveSlaState = deriveResolveSlaState(ackAt, resolvedAt, input.now);
       return {
         id: event.id,
         lane: derivedLane,
@@ -655,7 +760,7 @@ export function buildControlTowerDispatchBoard(input?: {
         detected_at: event.detected_at,
       };
     })
-    .filter((row) => lane === "all" || row.lane === lane)
+    .filter((row) => input.lane === "all" || row.lane === input.lane)
     .sort((left, right) => {
       if (left.lane !== right.lane) {
         const rank: Record<DispatchBoardLane, number> = {
@@ -669,6 +774,28 @@ export function buildControlTowerDispatchBoard(input?: {
       if (right.severity !== left.severity) return right.severity - left.severity;
       return right.detected_at - left.detected_at;
     });
+}
+
+export function buildControlTowerDispatchBoard(input?: {
+  filters?: Partial<ReportFilters> & { lane?: DispatchBoardLane };
+  now?: number;
+}): ControlTowerDispatchBoard {
+  const filters: ReportFilters = {
+    range: input?.filters?.range ?? "120m",
+    severity: input?.filters?.severity ?? "all",
+    incident_status: input?.filters?.incident_status ?? "all",
+    zone: input?.filters?.zone ?? "all",
+  };
+  const lane = input?.filters?.lane ?? "all";
+  const demo = buildDemoReportState();
+  const now = input?.now ?? demo.now;
+  const rows = buildDispatchBoardRows({
+    filters,
+    lane,
+    now,
+    events: demo.events,
+    timeline: demo.timeline,
+  });
 
   const items = rows.map(({ detected_at: _detectedAt, ...row }) => row);
   const spotlight = items[0]
@@ -707,6 +834,109 @@ export function buildControlTowerDispatchBoard(input?: {
     route_bundle: {
       dispatch_board: "/api/reports/dispatch-board",
       report_summary: "/api/reports/summary",
+      report_export: "/api/reports/export",
+      reports: "/reports",
+    },
+  };
+}
+
+export function buildControlTowerHandoffBrief(input?: {
+  events?: EventItem[];
+  filters?: Partial<ReportFilters>;
+  now?: number;
+  timeline?: IncidentTimelineEntry[];
+}): ControlTowerHandoffBrief {
+  const demo = buildDemoReportState();
+  const now = input?.now ?? demo.now;
+  const filters: ReportFilters = {
+    range: input?.filters?.range ?? "120m",
+    severity: input?.filters?.severity ?? "all",
+    incident_status: input?.filters?.incident_status ?? "all",
+    zone: input?.filters?.zone ?? "all",
+  };
+  const events = input?.events ?? demo.events;
+  const timeline = input?.timeline ?? demo.timeline;
+  const rows = buildDispatchBoardRows({
+    filters,
+    lane: "all",
+    now,
+    events,
+    timeline,
+  });
+  const priorities = rows.slice(0, 3).map((row) => ({
+    id: row.id,
+    lane: row.lane,
+    severity: row.severity,
+    type: row.type,
+    zone_id: row.zone_id,
+    incident_status: row.incident_status,
+    latest_action: row.latest_action,
+    next_action: row.next_action,
+    ack_sla_state: row.ack_sla_state,
+    resolve_sla_state: row.resolve_sla_state,
+    minutes_open: Math.max(0, Math.round((now - row.detected_at) / 60_000)),
+    note: row.note,
+  }));
+
+  const attentionCount = rows.filter((row) => row.lane === "attention").length;
+  const dispatchCount = rows.filter((row) => row.lane === "dispatch").length;
+  const resolvedCount = rows.filter((row) => row.lane === "resolved").length;
+  const ackOverdueCount = rows.filter((row) => row.ack_sla_state === "missed").length;
+  const resolveOverdueCount = rows.filter((row) => row.resolve_sla_state === "missed").length;
+  const focusLane =
+    attentionCount > 0
+      ? "attention"
+      : dispatchCount > 0
+        ? "dispatch"
+        : resolvedCount > 0
+          ? "resolved"
+          : "clear";
+
+  return {
+    service: "twincity-ui",
+    status: "ok",
+    generated_at: new Date(now).toISOString(),
+    schema: "twincity-handoff-brief-v1",
+    filters,
+    summary: {
+      visible_incidents: rows.length,
+      open_incidents: rows.filter((row) => row.incident_status !== "resolved").length,
+      critical_incidents: rows.filter((row) => row.severity === 3).length,
+      attention_count: attentionCount,
+      dispatch_count: dispatchCount,
+      resolved_count: resolvedCount,
+      ack_overdue_count: ackOverdueCount,
+      resolve_overdue_count: resolveOverdueCount,
+    },
+    handoff: {
+      headline:
+        ackOverdueCount > 0
+          ? `${ackOverdueCount} incident is past ACK SLA. Start the handoff with the attention lane.`
+          : dispatchCount > 0
+            ? `${dispatchCount} active dispatch incident needs a clean blocker/ETA handoff.`
+            : rows.length > 0
+              ? "Queue is stable enough for a reviewer-safe handoff summary."
+              : "No visible incidents match the current handoff filter.",
+      focus_lane: focusLane,
+      suggested_owner:
+        focusLane === "attention"
+          ? "dispatch-lead"
+          : focusLane === "dispatch"
+            ? "floor-ops"
+            : "review-only",
+      top_zone: priorities[0]?.zone_id ?? null,
+      top_type: priorities[0]?.type ?? null,
+    },
+    priorities,
+    operator_notes: [
+      "Pending ACKs that are already beyond the SLA are surfaced as missed to make shift risk explicit.",
+      "Resolve SLA starts only after ACK so attention-lane incidents do not inflate resolve risk prematurely.",
+      "Use the handoff brief before export so the next operator sees the same deterministic queue posture.",
+    ],
+    route_bundle: {
+      report_summary: "/api/reports/summary",
+      dispatch_board: "/api/reports/dispatch-board",
+      report_handoff: "/api/reports/handoff",
       report_export: "/api/reports/export",
       reports: "/reports",
     },
