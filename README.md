@@ -7,7 +7,7 @@ TwinCity UI is a Next.js (React/TypeScript) operations console that overlays **Z
 - Workflow context (acknowledge, dispatch, resolve + timeline)
 - Dispatch board context (attention / dispatch / resolved queue posture)
 
-This project is still expanding, but it is already **reviewable end-to-end without external infrastructure**:
+The feature surface is still expanding, but the repo is already **reviewable end-to-end without external infrastructure**:
 - Demo mode includes local mock feeds + replay tools.
 - Live sources can be wired via WebSocket / SSE / HTTP polling (with graceful fallback).
 
@@ -19,7 +19,7 @@ This project is still expanding, but it is already **reviewable end-to-end witho
 
 ## Role signals
 - **AI / systems engineer:** real-time normalization, spatial mapping, and bulk operator actions all matter here.
-- **Solution architect:** live/demo feed modes, dispatch board, and reporting surfaces make the ops boundary easy to explain.
+- **Solution / cloud architect:** live/demo feed modes, dispatch board, and reporting surfaces make the ops boundary easy to explain.
 - **Field / solutions engineer:** map -> queue -> report 흐름이 자연스러워서 digital-twin 데모를 빠르게 보여줄 수 있습니다.
 
 ## Runtime vs review/site surfaces
