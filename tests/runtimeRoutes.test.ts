@@ -262,6 +262,7 @@ describe("runtime routes", () => {
       },
     });
     expect(body.items[0].lane).toBe("attention");
+    expect(body.items[0].next_action).toContain("Acknowledge");
     expect(body.route_bundle.dispatch_board).toBe("/api/reports/dispatch-board");
     expect(response.headers.get("x-request-id")).toBe(body.request_id);
   });
