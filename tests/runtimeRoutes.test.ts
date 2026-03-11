@@ -4,6 +4,7 @@ import { GET as getHealthRoute } from "@/app/api/health/route";
 import { GET as getMetaRoute } from "@/app/api/meta/route";
 import { GET as getDispatchBoardRoute } from "@/app/api/reports/dispatch-board/route";
 import { GET as getReportExportRoute } from "@/app/api/reports/export/route";
+import { GET as getReportHandoffRoute } from "@/app/api/reports/handoff/route";
 import { GET as getReportSummaryRoute } from "@/app/api/reports/summary/route";
 import { GET as getRuntimeBriefRoute } from "@/app/api/runtime-brief/route";
 import { GET as getRuntimeScorecardRoute } from "@/app/api/runtime-scorecard/route";
@@ -82,6 +83,7 @@ describe("runtime routes", () => {
             "report-schema-surface",
             "report-summary-surface",
             "dispatch-board-surface",
+            "handoff-brief-surface",
           ],
           service_grade: {
             readiness: "control-tower-readiness-v1",
@@ -90,6 +92,7 @@ describe("runtime routes", () => {
             report_schema: "/api/schema/report",
             report_summary: "/api/reports/summary",
             dispatch_board: "/api/reports/dispatch-board",
+            report_handoff: "/api/reports/handoff",
             report_export: "/api/reports/export",
           },
           links: {
@@ -99,6 +102,7 @@ describe("runtime routes", () => {
             report_schema: "/api/schema/report",
             report_summary: "/api/reports/summary",
             dispatch_board: "/api/reports/dispatch-board",
+            report_handoff: "/api/reports/handoff",
             report_export: "/api/reports/export",
             reports: "/reports",
           },
@@ -142,17 +146,19 @@ describe("runtime routes", () => {
         expect(body.routes).toContain("/api/schema/report");
         expect(body.routes).toContain("/api/reports/summary");
         expect(body.routes).toContain("/api/reports/dispatch-board");
+        expect(body.routes).toContain("/api/reports/handoff");
         expect(body.routes).toContain("/api/reports/export");
         expect(body.ops_contract.schema).toBe("ops-envelope-v1");
         expect(body.diagnostics.next_action).toContain("/api/3d-test/status");
         expect(body.report_contract.schema).toBe("twincity-report-v1");
         expect(Array.isArray(body.trust_boundary)).toBe(true);
-        expect(body.two_minute_review).toHaveLength(7);
+        expect(body.two_minute_review).toHaveLength(8);
         expect(body.proof_assets[0].href).toBe("/api/health");
         expect(body.links.runtime_brief).toBe("/api/runtime-brief");
         expect(body.links.runtime_scorecard).toBe("/api/runtime-scorecard");
         expect(body.links.report_summary).toBe("/api/reports/summary");
         expect(body.links.dispatch_board).toBe("/api/reports/dispatch-board");
+        expect(body.links.report_handoff).toBe("/api/reports/handoff");
         expect(body.links.report_export).toBe("/api/reports/export");
         expect(response.headers.get("x-request-id")).toBe(body.request_id);
       }
@@ -178,13 +184,14 @@ describe("runtime routes", () => {
         runtime_scorecard: "/api/runtime-scorecard",
         report_summary: "/api/reports/summary",
         dispatch_board: "/api/reports/dispatch-board",
+        report_handoff: "/api/reports/handoff",
         report_export: "/api/reports/export",
         reports: "/reports",
       },
     });
     expect(body.route_count).toBeGreaterThanOrEqual(7);
     expect(body.review_flow[0]).toContain("/api/health");
-    expect(body.two_minute_review).toHaveLength(7);
+    expect(body.two_minute_review).toHaveLength(8);
     expect(body.proof_assets[0].href).toBe("/api/health");
     expect(response.headers.get("x-request-id")).toBe(body.request_id);
   });
@@ -264,6 +271,41 @@ describe("runtime routes", () => {
     expect(body.items[0].lane).toBe("attention");
     expect(body.items[0].next_action).toContain("Acknowledge");
     expect(body.route_bundle.dispatch_board).toBe("/api/reports/dispatch-board");
+    expect(response.headers.get("x-request-id")).toBe(body.request_id);
+  });
+
+  test("handoff route exposes deterministic shift handoff priorities", async () => {
+    const response = await getReportHandoffRoute(
+      new Request("https://example.com/api/reports/handoff?range=120m&severity=all")
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      ok: true,
+      service: "twincity-ui",
+      schema: "twincity-handoff-brief-v1",
+      filters: {
+        range: "120m",
+        severity: "all",
+        incident_status: "all",
+        zone: "all",
+      },
+      summary: {
+        visible_incidents: 4,
+        open_incidents: 2,
+        critical_incidents: 2,
+        attention_count: 1,
+        dispatch_count: 1,
+        ack_overdue_count: 1,
+        resolve_overdue_count: 0,
+      },
+    });
+    expect(body.priorities[0].id).toBe("evt-seoul-03");
+    expect(body.priorities[0].lane).toBe("attention");
+    expect(body.priorities[0].next_action).toContain("Acknowledge immediately");
+    expect(body.route_bundle.report_handoff).toBe("/api/reports/handoff");
+    expect(Array.isArray(body.operator_notes)).toBe(true);
     expect(response.headers.get("x-request-id")).toBe(body.request_id);
   });
 

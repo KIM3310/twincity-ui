@@ -20,6 +20,7 @@ export function GET(request: Request) {
         report_schema: "/api/schema/report",
         report_summary: "/api/reports/summary",
         dispatch_board: "/api/reports/dispatch-board",
+        report_handoff: "/api/reports/handoff",
         report_export: "/api/reports/export",
         reports: "/reports",
       },

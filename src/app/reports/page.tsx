@@ -4,7 +4,10 @@ import { useMemo, useState, useEffect, useCallback } from "react";
 import ControlTowerReadiness from "@/components/site/ControlTowerReadiness";
 import { normalizeEventFeed } from "@/lib/eventAdapter";
 import { getEventTypeLabel, getZoneLabel } from "@/lib/labels";
-import { deriveDispatchNextAction } from "@/lib/reportSummary";
+import {
+  buildControlTowerHandoffBrief,
+  deriveDispatchNextAction,
+} from "@/lib/reportSummary";
 import {
   buildControlTowerReportSchema,
   buildControlTowerRuntimeBrief,
@@ -385,6 +388,22 @@ export default function ReportsPage() {
     return Array.from(map.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8);
   }, [focusedEvents]);
 
+  const handoffBrief = useMemo(
+    () =>
+      buildControlTowerHandoffBrief({
+        events,
+        timeline,
+        now,
+        filters: {
+          range,
+          severity: severityFilter,
+          incident_status: "all",
+          zone: zoneFilter,
+        },
+      }),
+    [events, timeline, now, range, severityFilter, zoneFilter]
+  );
+
   const downloadCsv = () => {
     const header = [
       "id",
@@ -653,6 +672,35 @@ export default function ReportsPage() {
     }
   }, [dispatchBoardRows, filterSummary]);
 
+  const copyHandoffBrief = useCallback(async () => {
+    const text = [
+      `TwinCity shift handoff (${filterSummary})`,
+      `Headline: ${handoffBrief.handoff.headline}`,
+      `Focus lane: ${handoffBrief.handoff.focus_lane}`,
+      `Suggested owner: ${handoffBrief.handoff.suggested_owner}`,
+      `Open incidents: ${handoffBrief.summary.open_incidents}`,
+      `ACK overdue: ${handoffBrief.summary.ack_overdue_count}`,
+      `Resolve overdue: ${handoffBrief.summary.resolve_overdue_count}`,
+      "",
+      ...(
+        handoffBrief.priorities.length > 0
+          ? handoffBrief.priorities.map(
+              (item, index) =>
+                `${index + 1}. ${item.id} / ${getZoneLabel(item.zone_id)} / ${getEventTypeLabel(item.type as EventItem["type"])} / ${item.lane.toUpperCase()} / S${item.severity} / ${item.minutes_open}m -> ${item.next_action}`
+            )
+          : ["- No visible incidents for the current handoff filter."]
+      ),
+      "",
+      "Fast routes",
+      "- /api/reports/handoff",
+      "- /api/reports/dispatch-board",
+      "- /api/reports/export",
+    ].join("\n");
+
+    const copied = await copyTextValue(text);
+    setNotice(copied ? "인수인계 요약을 클립보드에 복사했습니다." : "복사 권한이 없어서 실패했습니다.");
+  }, [filterSummary, handoffBrief]);
+
   const copyOpsBundle = useCallback(async () => {
     const target = spotlightEvents[0];
     const text = [
@@ -749,6 +797,9 @@ export default function ReportsPage() {
       } else if (key === "n") {
         event.preventDefault();
         void copyNextActions();
+      } else if (key === "h") {
+        event.preventDefault();
+        void copyHandoffBrief();
       } else if (key === "b") {
         event.preventDefault();
         void copyOpsBundle();
@@ -760,7 +811,7 @@ export default function ReportsPage() {
         void copySpotlight();
       } else if (key === "?") {
         event.preventDefault();
-        setNotice("Shortcuts: ⇧L link · ⇧R routes · ⇧S summary · ⇧F highest risk · ⇧D dispatch · ⇧N next actions · ⇧B ops bundle · ⇧C control tower claim · ⇧K spotlight");
+        setNotice("Shortcuts: ⇧L link · ⇧R routes · ⇧S summary · ⇧F highest risk · ⇧D dispatch · ⇧N next actions · ⇧H handoff · ⇧B ops bundle · ⇧C control tower claim · ⇧K spotlight");
       }
     };
 
@@ -770,6 +821,7 @@ export default function ReportsPage() {
     byZone,
     copyCurrentViewLink,
     copyDispatchSnapshot,
+    copyHandoffBrief,
     copyNextActions,
     copyOpsBundle,
     copyControlTowerClaim,
@@ -941,6 +993,9 @@ export default function ReportsPage() {
             <button type="button" className="button buttonGhost" onClick={copyNextActions}>
               다음 조치 복사
             </button>
+            <button type="button" className="button buttonGhost" onClick={copyHandoffBrief}>
+              인수인계 요약 복사
+            </button>
             <button type="button" className="button buttonGhost" onClick={copyControlTowerClaim}>
               컨트롤타워 주장 복사
             </button>
@@ -966,7 +1021,7 @@ export default function ReportsPage() {
 
         {notice && <div className="reportNotice mono">{notice}</div>}
         <div className="reportNotice mono">
-          Shortcuts: ⇧L 링크 · ⇧R 리뷰 경로 · ⇧S 요약 · ⇧F 최고 위험 · ⇧D dispatch · ⇧N 다음 조치 · ⇧B ops bundle · ⇧C control tower claim · ⇧K spotlight
+          Shortcuts: ⇧L 링크 · ⇧R 리뷰 경로 · ⇧S 요약 · ⇧F 최고 위험 · ⇧D dispatch · ⇧N 다음 조치 · ⇧H handoff · ⇧B ops bundle · ⇧C control tower claim · ⇧K spotlight
         </div>
       </section>
 
@@ -1048,6 +1103,53 @@ export default function ReportsPage() {
                   </span>
                   <span style={{ display: "block", marginTop: "0.35rem" }}>
                     Next: {row.nextAction}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </article>
+
+        <article className="panel reportCard">
+          <h2 className="panelTitle">Shift Handoff</h2>
+          <p className="pageLead" style={{ maxWidth: "unset" }}>
+            {handoffBrief.handoff.headline}
+          </p>
+          <div className="reportTable">
+            <div className="reportRow">
+              <span>Focus lane</span>
+              <span className="mono">{handoffBrief.handoff.focus_lane}</span>
+            </div>
+            <div className="reportRow">
+              <span>Suggested owner</span>
+              <span className="mono">{handoffBrief.handoff.suggested_owner}</span>
+            </div>
+            <div className="reportRow">
+              <span>ACK overdue</span>
+              <span className="mono">{handoffBrief.summary.ack_overdue_count}</span>
+            </div>
+            <div className="reportRow">
+              <span>Resolve overdue</span>
+              <span className="mono">{handoffBrief.summary.resolve_overdue_count}</span>
+            </div>
+          </div>
+          {handoffBrief.priorities.length === 0 ? (
+            <p className="reportEmpty">현재 필터에서 인수인계할 항목이 없습니다.</p>
+          ) : (
+            <div className="readinessList">
+              {handoffBrief.priorities.map((item) => (
+                <div key={item.id} className="readinessListItem">
+                  <strong>
+                    {getZoneLabel(item.zone_id)} · {getEventTypeLabel(item.type as EventItem["type"])} · S{item.severity}
+                  </strong>
+                  <span className="mono" style={{ display: "block", marginTop: "0.35rem" }}>
+                    {item.id} · {item.lane} · {item.minutes_open}m
+                  </span>
+                  <span style={{ display: "block", marginTop: "0.35rem" }}>
+                    {item.latest_action} · ACK {item.ack_sla_state} · Resolve {item.resolve_sla_state}
+                  </span>
+                  <span style={{ display: "block", marginTop: "0.35rem" }}>
+                    Next: {item.next_action}
                   </span>
                 </div>
               ))}

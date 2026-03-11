@@ -48,6 +48,7 @@ export function buildControlTowerRuntimeScorecard(now = new Date()) {
         "/api/runtime-scorecard",
         "/api/reports/summary",
         "/api/reports/dispatch-board",
+        "/api/reports/handoff",
         "/api/reports/export",
       ],
     },
@@ -67,6 +68,7 @@ export function buildControlTowerRuntimeScorecard(now = new Date()) {
         ? "Use the operator token before exporting JSON or CSV snapshots for reviewer handoff."
         : "Exports are open in demo mode; keep them tied to deterministic report summary output.",
       "Use the dispatch board to confirm unresolved queue posture before sharing a report snapshot.",
+      "Use the shift handoff brief to highlight overdue queue risk before reviewer handoff.",
       "Verify report summary before sharing export artifacts with reviewers.",
       "Keep ingest-mode posture and SLA snapshot paired during walkthroughs.",
     ],
@@ -77,6 +79,7 @@ export function buildControlTowerRuntimeScorecard(now = new Date()) {
       runtime_scorecard: "/api/runtime-scorecard",
       report_summary: "/api/reports/summary",
       dispatch_board: "/api/reports/dispatch-board",
+      report_handoff: "/api/reports/handoff",
       report_export: "/api/reports/export",
       reports: "/reports",
     },
