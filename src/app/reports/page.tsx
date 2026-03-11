@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect, useCallback } from "react";
 import ControlTowerReadiness from "@/components/site/ControlTowerReadiness";
 import { normalizeEventFeed } from "@/lib/eventAdapter";
 import { getEventTypeLabel, getZoneLabel } from "@/lib/labels";
+import { deriveDispatchNextAction } from "@/lib/reportSummary";
 import {
   buildControlTowerReportSchema,
   buildControlTowerRuntimeBrief,
@@ -319,6 +320,20 @@ export default function ReportsPage() {
                 ? "Resolve met"
                 : "Resolve missed"
               : "Resolve pending",
+            nextAction: deriveDispatchNextAction({
+              lane: deriveDispatchLane(event.incident_status),
+              severity: event.severity,
+              ackSlaState: ackAt
+                ? ackAt - event.detected_at <= ACK_SLA_MS
+                  ? "met"
+                  : "missed"
+                : "pending",
+              resolveSlaState: resolvedAt
+                ? resolvedAt - (ackAt ?? event.detected_at) <= RESOLVE_SLA_MS
+                  ? "met"
+                  : "missed"
+                : "pending",
+            }),
           };
         }),
     [ackAtByEvent, focusedEvents, latestTimelineByEvent, resolvedAtByEvent]
@@ -609,6 +624,35 @@ export default function ReportsPage() {
     }
   }, [dispatchBoardRows, filterSummary]);
 
+  const copyNextActions = useCallback(async () => {
+    const targetRows = dispatchBoardRows.slice(0, 3);
+    const text = [
+      `TwinCity next operator actions (${filterSummary})`,
+      `Visible rows: ${dispatchBoardRows.length}`,
+      "",
+      ...(
+        targetRows.length > 0
+          ? targetRows.map(
+              (row, index) =>
+                `${index + 1}. ${row.id} / ${row.zoneLabel} / ${row.lane.toUpperCase()} / S${row.severity} -> ${row.nextAction}`
+            )
+          : ["- No active dispatch rows in the current filter."]
+      ),
+      "",
+      "Fast routes",
+      "- /api/runtime-scorecard",
+      "- /api/reports/dispatch-board",
+      "- /api/reports/export",
+    ].join("\n");
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setNotice("다음 조치 요약을 클립보드에 복사했습니다.");
+    } catch {
+      setNotice("복사 권한이 없어서 실패했습니다.");
+    }
+  }, [dispatchBoardRows, filterSummary]);
+
   const copyOpsBundle = useCallback(async () => {
     const target = spotlightEvents[0];
     const text = [
@@ -702,6 +746,9 @@ export default function ReportsPage() {
       } else if (key === "d") {
         event.preventDefault();
         void copyDispatchSnapshot();
+      } else if (key === "n") {
+        event.preventDefault();
+        void copyNextActions();
       } else if (key === "b") {
         event.preventDefault();
         void copyOpsBundle();
@@ -713,7 +760,7 @@ export default function ReportsPage() {
         void copySpotlight();
       } else if (key === "?") {
         event.preventDefault();
-        setNotice("Shortcuts: ⇧L link · ⇧R routes · ⇧S summary · ⇧F highest risk · ⇧D dispatch · ⇧B ops bundle · ⇧C control tower claim · ⇧K spotlight");
+        setNotice("Shortcuts: ⇧L link · ⇧R routes · ⇧S summary · ⇧F highest risk · ⇧D dispatch · ⇧N next actions · ⇧B ops bundle · ⇧C control tower claim · ⇧K spotlight");
       }
     };
 
@@ -723,6 +770,7 @@ export default function ReportsPage() {
     byZone,
     copyCurrentViewLink,
     copyDispatchSnapshot,
+    copyNextActions,
     copyOpsBundle,
     copyControlTowerClaim,
     copyReviewRoutes,
@@ -890,6 +938,9 @@ export default function ReportsPage() {
             <button type="button" className="button buttonGhost" onClick={copyDispatchSnapshot}>
               Dispatch 스냅샷 복사
             </button>
+            <button type="button" className="button buttonGhost" onClick={copyNextActions}>
+              다음 조치 복사
+            </button>
             <button type="button" className="button buttonGhost" onClick={copyControlTowerClaim}>
               컨트롤타워 주장 복사
             </button>
@@ -915,7 +966,7 @@ export default function ReportsPage() {
 
         {notice && <div className="reportNotice mono">{notice}</div>}
         <div className="reportNotice mono">
-          Shortcuts: ⇧L 링크 · ⇧R 리뷰 경로 · ⇧S 요약 · ⇧F 최고 위험 · ⇧D dispatch · ⇧B ops bundle · ⇧C control tower claim · ⇧K spotlight
+          Shortcuts: ⇧L 링크 · ⇧R 리뷰 경로 · ⇧S 요약 · ⇧F 최고 위험 · ⇧D dispatch · ⇧N 다음 조치 · ⇧B ops bundle · ⇧C control tower claim · ⇧K spotlight
         </div>
       </section>
 
@@ -994,6 +1045,9 @@ export default function ReportsPage() {
                   </span>
                   <span style={{ display: "block", marginTop: "0.35rem" }}>
                     {row.latestAction} · {row.ackState} · {row.resolveState}
+                  </span>
+                  <span style={{ display: "block", marginTop: "0.35rem" }}>
+                    Next: {row.nextAction}
                   </span>
                 </div>
               ))}

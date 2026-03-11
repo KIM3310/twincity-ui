@@ -99,6 +99,7 @@ export type ControlTowerDispatchBoard = {
     zone_id: string;
     incident_status: string;
     latest_action: string;
+    next_action: string;
     ack_at: string | null;
     resolved_at: string | null;
     ack_sla_state: "met" | "missed" | "pending";
@@ -113,6 +114,32 @@ export type ControlTowerDispatchBoard = {
     reports: string;
   };
 };
+
+export function deriveDispatchNextAction(input: {
+  lane: DispatchBoardLane;
+  severity: number;
+  ackSlaState: "met" | "missed" | "pending";
+  resolveSlaState: "met" | "missed" | "pending";
+}): string {
+  if (input.lane === "attention") {
+    if (input.ackSlaState === "missed") {
+      return "Acknowledge immediately and dispatch the closest operator before the queue drifts further.";
+    }
+    if (input.severity >= 3) {
+      return "Acknowledge now and confirm a dispatch owner for the critical incident.";
+    }
+    return "Acknowledge and assign an operator before the ACK SLA expires.";
+  }
+
+  if (input.lane === "dispatch") {
+    if (input.resolveSlaState === "missed") {
+      return "Escalate the active dispatch, record the blocker, and recover the lane before export.";
+    }
+    return "Confirm operator ETA, record the blocker note, and resolve once the lane is stable.";
+  }
+
+  return "Capture the resolution note and keep the export snapshot aligned with the final timeline.";
+}
 
 export function buildDemoReportState() {
   const base = Date.UTC(2026, 2, 8, 3, 0, 0);
@@ -614,6 +641,12 @@ export function buildControlTowerDispatchBoard(input?: {
         zone_id: event.zone_id,
         incident_status: event.incident_status,
         latest_action: latestTimeline?.action ?? "detected",
+        next_action: deriveDispatchNextAction({
+          lane: derivedLane,
+          severity: event.severity,
+          ackSlaState,
+          resolveSlaState,
+        }),
         ack_at: ackAt ? new Date(ackAt).toISOString() : null,
         resolved_at: resolvedAt ? new Date(resolvedAt).toISOString() : null,
         ack_sla_state: ackSlaState,
