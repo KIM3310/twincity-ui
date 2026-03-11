@@ -1,4 +1,4 @@
-# TwinCity UI — Store Digital Twin Ops Console (WIP)
+# TwinCity UI — Store Digital Twin Ops Console
 
 TwinCity UI is a Next.js (React/TypeScript) operations dashboard that overlays **Zones (polygons)** and **Events (points)** on a floorplan. The primary goal is to help an operator quickly **search, filter, and resolve** real-time alerts by combining:
 
@@ -6,7 +6,7 @@ TwinCity UI is a Next.js (React/TypeScript) operations dashboard that overlays *
 - Event context (what happened, severity, status)
 - Operational workflow (acknowledge, dispatch, resolve + timeline)
 
-This project is **in progress**. To keep it reviewable without depending on external infrastructure, it includes **demo tools and local mock endpoints** so the UI runs end-to-end with no live data sources.
+This project is still expanding. To keep it reviewable without depending on external infrastructure, it includes **demo tools and local mock endpoints** so the UI runs end-to-end with no live data sources.
 
 ## Key UX Features
 - Live / Demo mode toggle (data transport priority: **WS -> SSE -> HTTP polling**)

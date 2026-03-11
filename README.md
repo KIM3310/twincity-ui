@@ -1,4 +1,4 @@
-# TwinCity UI — Digital Twin Ops Console (WIP)
+# TwinCity UI — Digital Twin Ops Console
 
 TwinCity UI is a Next.js (React/TypeScript) operations console that overlays **Zones (polygons)** and **Events (points)** on a floorplan, so an operator can triage alerts faster by combining:
 
@@ -7,7 +7,7 @@ TwinCity UI is a Next.js (React/TypeScript) operations console that overlays **Z
 - Workflow context (acknowledge, dispatch, resolve + timeline)
 - Dispatch board context (attention / dispatch / resolved queue posture)
 
-This project is in progress, but it is designed to be **reviewable end-to-end without external infrastructure**:
+This project is still expanding, but it is already **reviewable end-to-end without external infrastructure**:
 - Demo mode includes local mock feeds + replay tools.
 - Live sources can be wired via WebSocket / SSE / HTTP polling (with graceful fallback).
 
@@ -83,7 +83,7 @@ NEXT_PUBLIC_ADSENSE_SLOT=1234567890
 
 ## Key Routes
 - `/events`: main operator console
-- `/reports`: replay + aggregation view (WIP)
+- `/reports`: replay + aggregation view
 - `/api/health`: ingest mode + readiness links
 - `/api/runtime-brief`: review-first contract for exports, live source posture, and route count
 - `/api/meta`: control tower trust boundary + evidence surface

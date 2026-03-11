@@ -1,9 +1,9 @@
-# TwinCity UI — 매장 Digital Twin 관제 화면 (WIP)
+# TwinCity UI — 매장 Digital Twin 관제 화면
 
 이 레포는 **평면도 이미지 위에 Zone(다각형) + Event(포인트)** 를 실시간으로 시각화하고,
 운영자가 Live/History 흐름에서 이벤트를 빠르게 탐색·판단할 수 있도록 만든 Next.js(React/TypeScript) UI입니다.
 
-현재는 **진행 중(WIP)** 이며, 실서버가 없어도 데모/검증이 가능하도록 **로컬 Mock 이벤트 + 더미 재생기**를 함께 제공합니다.
+현재도 확장 중이지만, 실서버가 없어도 데모/검증이 가능하도록 **로컬 Mock 이벤트 + 더미 재생기**를 함께 제공합니다.
 
 ## 현재 포함 기능(핵심)
 - 실시간 / 연습(Demo) 모드 전환 (WS -> SSE -> HTTP Polling 우선순위)
