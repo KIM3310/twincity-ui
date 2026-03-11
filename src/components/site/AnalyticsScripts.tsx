@@ -6,7 +6,7 @@ import { useEffect, useSyncExternalStore } from "react";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "";
 const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID ?? "";
-const GTM_ID = process.env.NEXT_PUBLIC_GTM_CONTAINER_ID ?? "GTM-MHK4C4D7";
+const GTM_ID = process.env.NEXT_PUBLIC_GTM_CONTAINER_ID ?? "";
 const ANALYTICS_ENABLED = (process.env.NEXT_PUBLIC_ANALYTICS_ENABLED ?? "true").toLowerCase() !== "false";
 const REQUIRE_CONSENT = (process.env.NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT ?? "false").toLowerCase() === "true";
 
