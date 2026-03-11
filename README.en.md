@@ -6,7 +6,7 @@ TwinCity UI is a Next.js (React/TypeScript) operations dashboard that overlays *
 - Event context (what happened, severity, status)
 - Operational workflow (acknowledge, dispatch, resolve + timeline)
 
-The feature surface is still expanding. To keep it reviewable without depending on external infrastructure, it includes **demo tools and local mock endpoints** so the UI runs end-to-end with no live data sources.
+The repo is already reviewable without depending on external infrastructure, and it keeps expanding through the same operator workflow with **demo tools and local mock endpoints**.
 
 ## Key UX Features
 - Live / Demo mode toggle (data transport priority: **WS -> SSE -> HTTP polling**)
