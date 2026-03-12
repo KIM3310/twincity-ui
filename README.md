@@ -6,6 +6,7 @@ TwinCity UI is a Next.js (React/TypeScript) operations console that overlays **Z
 - Event context (what happened, severity, status)
 - Workflow context (acknowledge, dispatch, resolve + timeline)
 - Dispatch board context (attention / dispatch / resolved queue posture)
+- Shift handoff context (next-shift digest, overdue ACK/resolve risk, copy-ready handoff brief)
 
 The repo is already **reviewable end-to-end without external infrastructure**, and the feature surface keeps expanding through the same operator workflow:
 - Demo mode includes local mock feeds + replay tools.
@@ -15,7 +16,7 @@ The repo is already **reviewable end-to-end without external infrastructure**, a
 
 ## Portfolio posture
 - Treat this repo as a demo-first ops console with optional live feed wiring.
-- `/api/health`, `/api/meta`, `/api/runtime-brief`, dispatch board, events, and reports together form the real proof surface.
+- `/api/health`, `/api/meta`, `/api/runtime-brief`, `/api/reports/dispatch-board`, `/api/reports/handoff`, events, and reports together form the real proof surface.
 
 ## Role signals
 - **AI / systems engineer:** real-time normalization, spatial mapping, and bulk operator actions all matter here.
@@ -43,12 +44,13 @@ Open `http://127.0.0.1:3000/events`.
 ## Current Demo Scope (Works Today)
 - Demo-first: runs locally with mock feeds (no backend required)
 - Operator workflow: list/map selection sync, timeline actions (ACK/dispatch/resolve), local state restore, keyboard navigation
+- Shift handoff workflow: deterministic next-shift digest, overdue queue posture, and copy-ready handoff brief
 - Payload normalization: multiple provider shapes → one `EventItem` schema (adapter)
 - Coordinate mapping + snapping: percent/world/bbox → normalized (0..1) and snapped to valid walkable areas
 - Engineering rigor: CI (lint/test/build), runbook, postmortem template
 
 ## Next (In Progress)
-- Expand “Reports” view for replay + aggregation
+- Expand “Reports” view beyond handoff + replay into deeper aggregation
 - More adapters for edge-device/VLM payload variants
 - Additional calibration tooling for camera homography
 
