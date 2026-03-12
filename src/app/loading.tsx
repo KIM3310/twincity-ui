@@ -1,34 +1,50 @@
+import Link from "next/link";
+
+const LOADING_PATHS = [
+  ["상태 먼저 확인", "/api/health"],
+  ["리포트 proof 보기", "/reports"],
+  ["운영 콘솔로 이동", "/events"],
+] as const;
+
 export default function Loading() {
   return (
-    <div
-      className="pageStack"
-      style={{ minHeight: "78vh", alignContent: "start", padding: "min(5vw, 40px) 0" }}
-    >
-      <section
-        className="panel reveal in-view"
-        style={{
-          maxWidth: 760,
-          margin: "0 auto",
-          padding: "1.4rem",
-          background: "rgba(255,255,255,0.9)",
-          border: "1px solid rgba(34,44,58,0.12)",
-          boxShadow: "0 20px 44px rgba(22, 30, 43, 0.12)",
-        }}
-      >
-        <p className="kicker">Loading</p>
-        <h1 className="pageTitle">화면을 준비하고 있어요</h1>
-        <p className="pageLead">지도를 불러오고 최근 알림을 정리하는 중입니다.</p>
-        <p
-          style={{
-            marginTop: "0.8rem",
-            fontSize: "0.92rem",
-            color: "rgba(53, 64, 79, 0.84)",
-            lineHeight: 1.6,
-          }}
-        >
-          첫 화면이 오래 비어 보이지 않도록, 기본 운영 계약과 최근 surface를 먼저 정리해두고
-          있습니다.
-        </p>
+    <div className="pageStack" style={{ minHeight: "78vh", alignContent: "start" }}>
+      <section className="hero heroLuxury landingHero">
+        <div className="heroCopy">
+          <div className="landingTrustRow" aria-label="loading landing guarantees">
+            <span className="chip" data-tone="watch">
+              Preparing live surface
+            </span>
+            <span className="chip" data-tone="calm">
+              Proof path stays visible
+            </span>
+          </div>
+          <p className="kicker">Loading</p>
+          <h1 className="heroTitle">운영 화면을 준비하는 동안에도 front door는 비워두지 않습니다</h1>
+          <p className="heroLead">
+            지도와 최근 알림을 정리하는 중입니다. 그동안 reviewer가 먼저 볼 수 있는 경로와 현재 제품
+            톤을 위에 고정해 두었습니다.
+          </p>
+          <div className="landingPulseRow" aria-hidden="true">
+            <span className="landingPulseBlock landingPulseBlockWide" />
+            <span className="landingPulseBlock" />
+            <span className="landingPulseBlock" />
+          </div>
+        </div>
+
+        <aside className="heroCopy landingProofRail">
+          <p className="kicker">Still useful while loading</p>
+          <h2 className="panelTitle">먼저 눌러볼 수 있는 경로</h2>
+          <div className="landingProofGrid">
+            {LOADING_PATHS.map(([label, href]) => (
+              <Link key={href} className="landingProofCard" href={href}>
+                <strong>{label}</strong>
+                <p>첫 화면이 길게 비어 보이지 않도록 proof-first 경로를 유지합니다.</p>
+                <span className="mono">{href}</span>
+              </Link>
+            ))}
+          </div>
+        </aside>
       </section>
     </div>
   );
