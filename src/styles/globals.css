@@ -1564,7 +1564,7 @@ body.is-gated {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.72rem;
-  width: min(100%, 460px);
+  width: min(100%, 520px);
 }
 
 .readinessMetricCard {
@@ -1600,6 +1600,40 @@ body.is-gated {
   flex-wrap: wrap;
 }
 
+.readinessQuickActions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.readinessQuickLink {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.62);
+  padding: 0.8rem 0.9rem;
+  display: grid;
+  gap: 0.3rem;
+  color: var(--ink);
+  text-decoration: none;
+  transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+
+.readinessQuickLink:hover {
+  transform: translateY(-1px);
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.readinessQuickLink strong {
+  font-size: 0.96rem;
+}
+
+.readinessQuickMeta {
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
 .readinessTag {
   display: inline-flex;
   align-items: center;
@@ -1613,8 +1647,9 @@ body.is-gated {
 
 .readinessSplit {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 0.9rem;
+  align-items: start;
 }
 
 .readinessListCard,
@@ -3493,6 +3528,7 @@ body.motion-ready .reveal.in-view .contactCard:nth-child(4) {
   }
 
   .readinessMetricStrip,
+  .readinessQuickActions,
   .readinessSplit,
   .readinessStageGrid {
     grid-template-columns: 1fr;
