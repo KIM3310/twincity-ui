@@ -23,6 +23,12 @@ The repo is already **reviewable end-to-end without external infrastructure**, a
 - **Solution / cloud architect:** live/demo feed modes, dispatch board, and reporting surfaces make the ops boundary easy to explain.
 - **Field / solutions engineer:** map -> queue -> report 흐름이 자연스러워서 digital-twin 데모를 빠르게 보여줄 수 있습니다.
 
+
+## Portfolio context
+- **Portfolio family:** governed ops and control towers
+- **This repo's role:** flagship physical-ops / dispatch / handoff control tower in the portfolio.
+- **Related repos:** `regulated-case-workbench`, `fab-ops-yield-control-tower`, `smallbiz-ops-copilot`
+
 ## Runtime vs review/site surfaces
 - Primary runtime: the Next.js app in `src/` powers `/events`, `/reports`, and the `src/app/api/*` routes.
 - Review/site surfaces: `/about` plus the policy/compliance pages are public-facing review surfaces; `docs/` is supporting integration guidance.
