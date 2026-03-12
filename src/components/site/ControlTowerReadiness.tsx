@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { buildControlTowerReportSchema, buildControlTowerServiceMeta } from "@/lib/serviceMeta";
 
 type ControlTowerReadinessProps = {
@@ -19,11 +20,41 @@ export default function ControlTowerReadiness({
 }: ControlTowerReadinessProps) {
   const meta = buildControlTowerServiceMeta();
   const schema = buildControlTowerReportSchema();
+  const [lens, setLens] = useState<"operator" | "reviewer" | "executive">("operator");
   const compact = variant === "compact";
   const stages = compact ? meta.stages.slice(0, 3) : meta.stages;
   const artifacts = compact ? meta.artifacts.slice(0, 4) : meta.artifacts;
   const proofAssets = compact ? meta.proof_assets.slice(0, 3) : meta.proof_assets;
   const twoMinuteReview = compact ? meta.two_minute_review.slice(0, 3) : meta.two_minute_review;
+  const lensCopy = {
+    operator: {
+      title: "운영자 관점",
+      summary: "실시간 알림 → 리포트 → 운영 계약 순으로 읽으면 현장 판단 루프가 가장 빨리 보입니다.",
+      cards: [
+        ["01 · 알림 우선", "이벤트와 triage 흐름부터 보고 현재 주의 포인트를 확인합니다."],
+        ["02 · 리포트 확인", "dispatch / handoff / export가 같은 이야기인지 바로 검토합니다."],
+        ["03 · 계약 확인", "runtime brief와 schema surface로 근거를 잠급니다."],
+      ],
+    },
+    reviewer: {
+      title: "리뷰어 관점",
+      summary: "health / meta / summary를 먼저 열고, 화면은 그 다음에 보는 편이 가장 설득력이 큽니다.",
+      cards: [
+        ["01 · health", "ingest mode와 review 링크를 가장 먼저 확인합니다."],
+        ["02 · meta + summary", "신뢰 경계와 SLA snapshot이 함께 읽혀야 합니다."],
+        ["03 · handoff", "마지막엔 다음 shift digest가 자연스럽게 이어지는지 확인합니다."],
+      ],
+    },
+    executive: {
+      title: "의사결정 관점",
+      summary: "한눈에 지금 상태, 위험, handoff까지 읽히는지 보는 렌즈입니다.",
+      cards: [
+        ["01 · readiness", "Demo-first인지 live-wired인지 한 장에서 바로 읽어냅니다."],
+        ["02 · evidence", "문서/테스트/route 근거가 실제 의사결정 surface로 이어지는지 봅니다."],
+        ["03 · continuity", "shift handoff가 그냥 복사가 아니라 운영 연속성으로 보이는지 확인합니다."],
+      ],
+    },
+  }[lens];
 
   return (
     <section className={"panel readinessBoard" + (compact ? " compact" : "")}>
@@ -69,6 +100,46 @@ export default function ControlTowerReadiness({
           <strong>운영 계약 확인</strong>
           <span className="readinessQuickMeta">reviewer가 바로 읽을 수 있는 JSON 근거 surface</span>
         </Link>
+      </div>
+
+      <div className="readinessLensPanel">
+        <div className="readinessLensTabs" role="tablist" aria-label="관점 전환">
+          <button
+            type="button"
+            className={"readinessLensBtn" + (lens === "operator" ? " active" : "")}
+            onClick={() => setLens("operator")}
+          >
+            운영자
+          </button>
+          <button
+            type="button"
+            className={"readinessLensBtn" + (lens === "reviewer" ? " active" : "")}
+            onClick={() => setLens("reviewer")}
+          >
+            리뷰어
+          </button>
+          <button
+            type="button"
+            className={"readinessLensBtn" + (lens === "executive" ? " active" : "")}
+            onClick={() => setLens("executive")}
+          >
+            의사결정
+          </button>
+        </div>
+        <div className="readinessSectionHead">
+          <div>
+            <h3>{lensCopy.title}</h3>
+            <small>{lensCopy.summary}</small>
+          </div>
+        </div>
+        <div className="readinessLensGrid">
+          {lensCopy.cards.map(([title, body]) => (
+            <article key={title} className="readinessListCard">
+              <h3>{title}</h3>
+              <p>{body}</p>
+            </article>
+          ))}
+        </div>
       </div>
 
       <div className="readinessTagRow">
