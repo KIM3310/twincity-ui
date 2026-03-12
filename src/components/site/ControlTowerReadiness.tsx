@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { buildControlTowerReportSchema, buildControlTowerServiceMeta } from "@/lib/serviceMeta";
 
 type ControlTowerReadinessProps = {
@@ -7,10 +8,10 @@ type ControlTowerReadinessProps = {
 };
 
 function artifactLabel(kind: "route" | "doc" | "test" | "asset") {
-  if (kind === "route") return "route";
-  if (kind === "doc") return "doc";
-  if (kind === "test") return "test";
-  return "asset";
+  if (kind === "route") return "경로";
+  if (kind === "doc") return "문서";
+  if (kind === "test") return "테스트";
+  return "화면";
 }
 
 export default function ControlTowerReadiness({
@@ -28,31 +29,46 @@ export default function ControlTowerReadiness({
     <section className={"panel readinessBoard" + (compact ? " compact" : "")}>
       <div className="readinessHead">
         <div className="readinessLead">
-          <p className="kicker">Control Tower Readiness</p>
-          <h2 className="panelTitle">Operator contract, trust boundary, and report proof</h2>
+          <p className="kicker">첫 화면 체크포인트</p>
+          <h2 className="panelTitle">운영 계약과 리포트 근거를 1분 안에 확인합니다</h2>
           <p>
-            TwinCity UI가 단순한 디지털 트윈 데모가 아니라, 이벤트 정규화부터 triage,
-            timeline, SLA 리포트까지 이어지는 운영 루프를 보여준다는 점을 먼저 드러냅니다.
+            처음 보는 사람도 ingest → triage → timeline → SLA proof 순서를 바로 읽을 수
+            있도록, 핵심 운영 루프를 한 보드에 압축해 보여줍니다.
           </p>
         </div>
 
         <div className="readinessMetricStrip" aria-label="service readiness metrics">
           <article className="readinessMetricCard">
-            <span>Mode</span>
+            <span>운영 모드</span>
             <strong>{meta.mode === "demo-first" ? "Demo-first" : "Live-wired"}</strong>
             <small>{meta.diagnostics.ingest_mode}</small>
           </article>
           <article className="readinessMetricCard">
-            <span>Evidence</span>
+            <span>검증 근거</span>
             <strong>{meta.evidence_counts.tests + meta.evidence_counts.docs}</strong>
             <small>{meta.evidence_counts.tests} tests + {meta.evidence_counts.docs} docs</small>
           </article>
           <article className="readinessMetricCard">
-            <span>Report Schema</span>
+            <span>리포트 구성</span>
             <strong>{schema.required_sections.length}</strong>
             <small>{schema.schema}</small>
           </article>
         </div>
+      </div>
+
+      <div className="readinessQuickActions" aria-label="빠른 이동">
+        <Link className="readinessQuickLink" href="/events">
+          <strong>실시간 알림 보기</strong>
+          <span className="readinessQuickMeta">지금 들어온 이벤트와 처리 기록을 바로 확인</span>
+        </Link>
+        <Link className="readinessQuickLink" href="/reports">
+          <strong>리포트 열기</strong>
+          <span className="readinessQuickMeta">handoff, dispatch, export 흐름을 빠르게 검토</span>
+        </Link>
+        <Link className="readinessQuickLink" href="/api/runtime-brief">
+          <strong>운영 계약 확인</strong>
+          <span className="readinessQuickMeta">reviewer가 바로 읽을 수 있는 JSON 근거 surface</span>
+        </Link>
       </div>
 
       <div className="readinessTagRow">
@@ -78,8 +94,8 @@ export default function ControlTowerReadiness({
       <div className="readinessSplit">
         <article className="readinessListCard">
           <div className="readinessSectionHead">
-            <h3>Review Flow</h3>
-            <small>what reviewers should do first</small>
+            <h3>처음 확인할 순서</h3>
+            <small>처음 보는 사람도 바로 따라갈 수 있는 흐름</small>
           </div>
           <div className="readinessList">
             {meta.review_flow.map((item) => (
@@ -92,8 +108,8 @@ export default function ControlTowerReadiness({
 
         <article className="readinessListCard">
           <div className="readinessSectionHead">
-            <h3>Operator Rules</h3>
-            <small>guardrails for decision surfaces</small>
+            <h3>운영 원칙</h3>
+            <small>판단 전에 꼭 지켜야 할 기준</small>
           </div>
           <div className="readinessList">
             {meta.operator_rules.map((item) => (
@@ -106,8 +122,8 @@ export default function ControlTowerReadiness({
 
         <article className="readinessListCard">
           <div className="readinessSectionHead">
-            <h3>Review Flow</h3>
-            <small>fast reviewer path through the product</small>
+            <h3>2분 빠른 검토</h3>
+            <small>핵심 화면만 빠르게 훑는 경로</small>
           </div>
           <div className="readinessList">
             {twoMinuteReview.map((item) => (
@@ -136,8 +152,8 @@ export default function ControlTowerReadiness({
 
       <div className="readinessArtifactCard">
         <div className="readinessSectionHead">
-          <h3>{compact ? "Key Artifacts" : "Evidence Artifacts"}</h3>
-          <small>{compact ? "first-pass review surfaces" : "routes, docs, tests, and UI proof"}</small>
+          <h3>{compact ? "핵심 근거" : "증거 묶음"}</h3>
+          <small>{compact ? "첫 검토에 필요한 surface" : "route, 문서, 테스트, 화면 근거"}</small>
         </div>
         <div className="readinessList">
           {artifacts.map((artifact) => (
@@ -158,8 +174,8 @@ export default function ControlTowerReadiness({
       {!compact ? (
         <article className="readinessListCard">
           <div className="readinessSectionHead">
-            <h3>Supporting Files</h3>
-            <small>short reviewer bundle for the first pass</small>
+            <h3>함께 보면 좋은 파일</h3>
+            <small>첫 검토 때 바로 열어볼 묶음</small>
           </div>
           <div className="readinessList">
             {proofAssets.map((artifact) => (
@@ -174,8 +190,8 @@ export default function ControlTowerReadiness({
       {!compact ? (
         <article className="readinessListCard">
           <div className="readinessSectionHead">
-            <h3>Current Watchouts</h3>
-            <small>scope boundaries reviewers should understand</small>
+            <h3>지금 알아둘 점</h3>
+            <small>범위와 한계를 먼저 공유합니다</small>
           </div>
           <div className="readinessList">
             {meta.watchouts.map((item) => (
