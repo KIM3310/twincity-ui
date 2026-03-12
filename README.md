@@ -15,7 +15,7 @@ The repo is already **reviewable end-to-end without external infrastructure**, a
 ![Ops console screenshot](public/screenshots/ops_console.png)
 
 ## Portfolio posture
-- Treat this repo as a physical-ops control tower with a demo-first feed, not as a map-only digital-twin showcase.
+- Read this repo like a physical-ops control tower with a demo-first feed, not like a map-only digital-twin showcase.
 - The strongest proof is the full operator loop: health/meta -> event triage -> dispatch board -> handoff/export.
 
 ## Role signals
