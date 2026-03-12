@@ -34,11 +34,14 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
     const body = document.body;
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const reveals = Array.from(document.querySelectorAll<HTMLElement>(".reveal"));
+    const revealAll = () => {
+      reveals.forEach((node) => node.classList.add("in-view"));
+    };
 
     reveals.forEach((node) => node.classList.remove("in-view"));
 
     if (prefersReducedMotion) {
-      reveals.forEach((node) => node.classList.add("in-view"));
+      revealAll();
       return;
     }
 
@@ -60,7 +63,12 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
 
     reveals.forEach((node) => observer.observe(node));
 
+    const fallbackTimer = window.setTimeout(() => {
+      revealAll();
+    }, 1800);
+
     return () => {
+      window.clearTimeout(fallbackTimer);
       observer.disconnect();
     };
   }, [pathname]);
