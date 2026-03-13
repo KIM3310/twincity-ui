@@ -64,9 +64,9 @@ export default function DashboardPage() {
           <p className="kicker">TwinCity operator front door</p>
           <h1 className="heroTitle">첫 화면에서 바로 운영 맥락과 검증 경로가 보이는 홈</h1>
           <p className="heroLead">
-            실시간 연결이 아직 비어 있어도 로딩 카드만 남기지 않고, 지금 제품이 무엇을 증명하는지 먼저
-            보여줍니다. 이 홈은 매장 운영 콘솔의 과장된 완성도를 포장하기보다, demo-first 운영 루프와
-            reviewer가 확인할 proof path를 앞에 둡니다.
+            실시간 연결이 비어 있어도 첫 화면을 빈 상태로 두지 않고, 지금 바로 확인할 수 있는 운영 맥락과
+            proof path를 먼저 보여줍니다. 과장된 control room 연출보다 reviewer가 바로 따라갈 수 있는
+            health → reports → events 순서를 앞세웠습니다.
           </p>
 
           <div className="landingStatGrid">
@@ -80,14 +80,14 @@ export default function DashboardPage() {
           </div>
 
           <div className="ctaRow">
-            <Link className="button" href="/reports">
-              proof path 열기
+            <Link className="button" href="/api/health">
+              상태 먼저 확인
+            </Link>
+            <Link className="button buttonGhost" href="/reports">
+              리포트 proof 보기
             </Link>
             <Link className="button buttonGhost" href="/events">
               운영 콘솔 보기
-            </Link>
-            <Link className="button buttonGhost" href="/api/runtime-brief">
-              runtime brief JSON
             </Link>
           </div>
         </div>
