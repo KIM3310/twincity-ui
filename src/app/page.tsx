@@ -46,6 +46,25 @@ const LANDING_SIGNALS = [
   },
 ] as const;
 
+
+const DECISION_SUPPORT = [
+  {
+    label: "연결 신호를 먼저 확인해야 할 때",
+    route: "/api/health",
+    note: "demo인지 live인지, reviewer-safe 링크가 무엇인지 먼저 확인한 뒤 다음 surface를 고릅니다.",
+  },
+  {
+    label: "handoff proof가 먼저 필요할 때",
+    route: "/reports",
+    note: "dispatch · SLA · export가 같은 이야기인지 한 화면에서 확인한 뒤 공유 artifact를 만듭니다.",
+  },
+  {
+    label: "실제 운영 큐를 바로 보여줘야 할 때",
+    route: "/events",
+    note: "첫 두 단계가 읽힌 뒤 queue와 timeline으로 내려가 operator action order를 보여줍니다.",
+  },
+] as const;
+
 export default function DashboardPage() {
   return (
     <div className="pageStack">
@@ -156,6 +175,25 @@ export default function DashboardPage() {
             <strong>제품 정직성</strong>
             <p>완전한 live 제어실처럼 포장하지 않고, 현재 강한 surface를 앞세웠습니다.</p>
           </article>
+        </div>
+
+        <div className="landingSupportHead">
+          <div>
+            <p className="kicker">Decision support</p>
+            <h2 className="panelTitle">무엇을 확인해야 하는지에 따라 첫 route를 바로 고를 수 있게 했습니다</h2>
+          </div>
+          <span className="chip" data-tone="watch">
+            choose by proof need
+          </span>
+        </div>
+        <div className="landingSupportGrid">
+          {DECISION_SUPPORT.map((item) => (
+            <article key={item.route} className="landingSupportCard">
+              <strong>{item.label}</strong>
+              <p>{item.note}</p>
+              <span className="mono">{item.route}</span>
+            </article>
+          ))}
         </div>
       </section>
     </div>
