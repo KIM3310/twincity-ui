@@ -18,6 +18,38 @@ function recommendedAction(event: EventItem) {
   return "기록해두고 상황이 변하는지 확인해 주세요.";
 }
 
+function getNextStepSummary(event: EventItem, readOnly: boolean) {
+  if (readOnly) {
+    return {
+      title: "다음 권장 단계",
+      body: "이 화면은 reviewer 보기 모드라서 상태 변경 대신 현재 판단 근거와 다음 담당자만 확인할 수 있어요.",
+      guard: "보기 권한에서는 상태 변경 버튼이 비활성화됩니다.",
+    };
+  }
+
+  if (event.incident_status === "resolved") {
+    return {
+      title: "다음 권장 단계",
+      body: "이미 처리 완료된 건이라면 메모와 timeline만 확인하고, 재발 우려가 있으면 새 이벤트로 다시 열어 주세요.",
+      guard: "상태 변경은 확인 → 직원 호출 → 처리 종료 순서로 맞추면 운영 설명이 깔끔해집니다.",
+    };
+  }
+
+  if (event.incident_status === "ack") {
+    return {
+      title: "다음 권장 단계",
+      body: "이미 담당자가 잡은 건이니 직원 호출과 현장 메모를 이어서 reviewer에게 handoff할 준비를 해 주세요.",
+      guard: "상태 변경은 확인 → 직원 호출 → 처리 종료 순서로 맞추면 운영 설명이 깔끔해집니다.",
+    };
+  }
+
+  return {
+    title: "다음 권장 단계",
+    body: "먼저 확인 처리로 담당자가 이 건을 잡았다는 신호를 남기고, 그다음 직원 호출 여부를 결정해 주세요.",
+    guard: "상태 변경은 확인 → 직원 호출 → 처리 종료 순서로 맞추면 운영 설명이 깔끔해집니다.",
+  };
+}
+
 export default function EventDetail({
   event,
   suggestedEvent,
@@ -78,6 +110,7 @@ export default function EventDetail({
   const canAck = !readOnly && event.incident_status === "new";
   const canResolve = !readOnly && event.incident_status !== "resolved";
   const canDispatch = !readOnly && event.incident_status !== "resolved";
+  const nextStep = getNextStepSummary(event, readOnly);
 
   return (
     <div className="detailRoot">
@@ -104,6 +137,12 @@ export default function EventDetail({
         <div className="detailField"><span className="detailLabel">신뢰도</span><span className="detailValue">{confidencePct}%</span></div>
         <div className="detailField"><span className="detailLabel">화면 위치</span><span className="detailValue">({event.x.toFixed(3)}, {event.y.toFixed(3)})</span></div>
         <div className="detailField"><span className="detailLabel">메모</span><span className="detailValue">{event.note ?? "-"}</span></div>
+      </div>
+
+      <div className="landingHonestyCard">
+        <p className="kicker">{nextStep.title}</p>
+        <strong>{nextStep.body}</strong>
+        <p className="landingFirstClickNote">{nextStep.guard}</p>
       </div>
 
       <div className="actionStrip">
