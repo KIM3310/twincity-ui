@@ -26,6 +26,8 @@ const PROOF_PATHS = [
   },
 ] as const;
 
+const DEFAULT_PROOF_PATH = PROOF_PATHS[0];
+
 const LANDING_SIGNALS = [
   {
     label: "기본 모드",
@@ -77,6 +79,13 @@ export default function DashboardPage() {
                 <p>{item.note}</p>
               </article>
             ))}
+          </div>
+
+          <div className="landingHonestyCard">
+            <p className="kicker">Recommended first click</p>
+            <strong>{DEFAULT_PROOF_PATH.title}</strong>
+            <p>{DEFAULT_PROOF_PATH.body}</p>
+            <span className="mono">{DEFAULT_PROOF_PATH.meta}</span>
           </div>
 
           <div className="ctaRow">
