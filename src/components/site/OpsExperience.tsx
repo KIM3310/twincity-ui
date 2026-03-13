@@ -1532,6 +1532,22 @@ export default function OpsExperience() {
     [selectedId, visibleEvents]
   );
 
+  const suggestedEvent = useMemo(() => {
+    if (visibleEvents.length === 0) return undefined;
+    return [...visibleEvents].sort((a, b) => {
+      const statusScore = a.incident_status === "resolved" ? 0 : 1;
+      const nextStatusScore = b.incident_status === "resolved" ? 0 : 1;
+      if (statusScore !== nextStatusScore) return nextStatusScore - statusScore;
+
+      const liveScore = now - a.detected_at <= liveWindowMs ? 1 : 0;
+      const nextLiveScore = now - b.detected_at <= liveWindowMs ? 1 : 0;
+      if (liveScore !== nextLiveScore) return nextLiveScore - liveScore;
+
+      if (a.severity !== b.severity) return b.severity - a.severity;
+      return b.detected_at - a.detected_at;
+    })[0];
+  }, [liveWindowMs, now, visibleEvents]);
+
   const selectedTimeline = useMemo(
     () =>
       selectedEvent
@@ -2702,11 +2718,13 @@ export default function OpsExperience() {
           <div className="opsDetailStack">
             <EventDetail
               event={selectedEvent}
+              suggestedEvent={suggestedEvent}
               liveWindowMs={liveWindowMs}
               readOnly={!canOperate}
               onAcknowledge={markAcknowledged}
               onDispatch={dispatchOperator}
               onResolve={markResolved}
+              onJumpToSuggested={setSelectedId}
             />
             <IncidentTimeline event={selectedEvent} entries={selectedTimeline} />
           </div>

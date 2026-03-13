@@ -20,23 +20,50 @@ function recommendedAction(event: EventItem) {
 
 export default function EventDetail({
   event,
+  suggestedEvent,
   liveWindowMs = DEFAULT_LIVE_WINDOW_MS,
   readOnly = false,
   onAcknowledge,
   onDispatch,
   onResolve,
+  onJumpToSuggested,
 }: {
   event?: EventItem;
+  suggestedEvent?: EventItem;
   liveWindowMs?: number;
   readOnly?: boolean;
   onAcknowledge?: (event: EventItem) => void;
   onDispatch?: (event: EventItem) => void;
   onResolve?: (event: EventItem) => void;
+  onJumpToSuggested?: (eventId: string) => void;
 }) {
   if (!event) {
+    if (!suggestedEvent) {
+      return (
+        <div className="detailEmpty">
+          필터에 맞는 알림이 아직 없어요. 지도에서 새 알림을 만들거나 필터를 넓혀 보세요.
+        </div>
+      );
+    }
+
     return (
       <div className="detailEmpty">
-        지도 마커를 선택하면 자세한 내용이 보여요.
+        <strong>첫 확인 후보가 준비되어 있어요.</strong>
+        <span>
+          {getZoneLabel(suggestedEvent.zone_id)} · {getEventTypeLabel(suggestedEvent.type)} · S{suggestedEvent.severity}
+        </span>
+        <span>
+          {suggestedEvent.incident_status === "resolved"
+            ? "이미 종료된 건이지만 최근 처리 흐름을 보기 좋아요."
+            : "아직 미해결이라 첫 클릭으로 운영 흐름을 설명하기 좋아요."}
+        </span>
+        <button
+          type="button"
+          className="opsBtn primary"
+          onClick={() => onJumpToSuggested?.(suggestedEvent.id)}
+        >
+          추천 알림 열기
+        </button>
       </div>
     );
   }
