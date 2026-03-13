@@ -3014,6 +3014,12 @@ body.is-gated {
   font-size: 0.9rem;
 }
 
+.detailEmpty {
+  display: grid;
+  gap: 0.55rem;
+  align-content: start;
+}
+
 .queueItem {
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
