@@ -85,6 +85,9 @@ export default function DashboardPage() {
             <p className="kicker">Recommended first click</p>
             <strong>{DEFAULT_PROOF_PATH.title}</strong>
             <p>{DEFAULT_PROOF_PATH.body}</p>
+            <p className="landingFirstClickNote">
+              health가 정상이면 reports로, 연결 신호가 비어 있으면 events로 바로 내려가 다음 확인 경로를 이어갑니다.
+            </p>
             <span className="mono">{DEFAULT_PROOF_PATH.meta}</span>
           </div>
 
