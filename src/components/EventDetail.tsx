@@ -19,6 +19,8 @@ function recommendedAction(event: EventItem) {
 }
 
 function getNextStepSummary(event: EventItem, readOnly: boolean) {
+  const lowConfidence = event.confidence < 0.8;
+
   if (readOnly) {
     return {
       title: "다음 권장 단계",
@@ -40,6 +42,15 @@ function getNextStepSummary(event: EventItem, readOnly: boolean) {
       title: "다음 권장 단계",
       body: "이미 담당자가 잡은 건이니 직원 호출과 현장 메모를 이어서 reviewer에게 handoff할 준비를 해 주세요.",
       guard: "상태 변경은 확인 → 직원 호출 → 처리 종료 순서로 맞추면 운영 설명이 깔끔해집니다.",
+    };
+  }
+
+  if (lowConfidence) {
+    return {
+      title: "다음 권장 단계",
+      body: "신뢰도가 낮아서 먼저 현장 확인이나 추가 화면 근거를 붙인 뒤에 확인 처리로 넘기는 편이 안전해요.",
+      guard:
+        "reviewer handoff는 현장 확인 뒤에 하고, 상태 변경은 확인 → 직원 호출 → 처리 종료 순서로 맞추면 설명이 깔끔해집니다.",
     };
   }
 
