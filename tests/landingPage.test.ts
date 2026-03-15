@@ -12,4 +12,12 @@ describe("landing page front door", () => {
     expect(source).toContain("handoff proof가 먼저 필요할 때");
     expect(source).toContain("실제 운영 큐를 바로 보여줘야 할 때");
   });
+
+  test("surfaces role-fit signals and reviewer-ready kit copy", () => {
+    expect(source).toContain("Role-fit signals");
+    expect(source).toContain("AI engineer signal");
+    expect(source).toContain("Systems engineer signal");
+    expect(source).toContain("Solution architect signal");
+    expect(source).toContain("Reviewer-ready kit");
+  });
 });

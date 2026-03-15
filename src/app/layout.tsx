@@ -8,11 +8,44 @@ import "../styles/globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://twincity-ui.pages.dev"),
+  applicationName: "TwinCity UI",
   title: {
-    default: "TwinCity 매장 관제",
-    template: "%s | TwinCity 매장 관제",
+    default: "TwinCity UI — Proof-first Ops Control Tower",
+    template: "%s | TwinCity UI",
   },
-  description: "매장 상황을 쉽게 보고 빠르게 대응할 수 있는 TwinCity 운영 화면",
+  description:
+    "Demo-first digital twin ops console with reviewer-safe runtime, dispatch, handoff, and export proof surfaces.",
+  keywords: [
+    "digital twin",
+    "operations console",
+    "dispatch board",
+    "incident triage",
+    "shift handoff",
+    "next.js portfolio",
+    "ai systems engineering",
+  ],
+  openGraph: {
+    title: "TwinCity UI — Proof-first Ops Control Tower",
+    description:
+      "Review ingest posture, runtime contract, dispatch lanes, handoff risk, and operator proof in one pass.",
+    url: "https://twincity-ui.pages.dev",
+    siteName: "TwinCity UI",
+    images: [
+      {
+        url: "/screenshots/ops_console.png",
+        alt: "TwinCity UI operator console screenshot",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "TwinCity UI — Proof-first Ops Control Tower",
+    description:
+      "Demo-first digital twin ops console with reviewable runtime, dispatch, handoff, and export surfaces.",
+    images: ["/screenshots/ops_console.png"],
+  },
   robots: {
     index: true,
     follow: true,

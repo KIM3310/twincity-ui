@@ -124,7 +124,7 @@ const CONTROL_TOWER_STAGES: ServiceStage[] = [
   },
 ];
 
-const CONTROL_TOWER_ARTIFACTS: ServiceArtifact[] = [
+const CONTROL_TOWER_EVIDENCE: ServiceArtifact[] = [
   {
     label: "Health API",
     href: "/api/health",
@@ -186,6 +186,18 @@ const CONTROL_TOWER_ARTIFACTS: ServiceArtifact[] = [
     note: "server-generated JSON and CSV report snapshots",
   },
   {
+    label: "README",
+    href: "README.md",
+    kind: "doc",
+    note: "repo entry point, review path, and local verification commands",
+  },
+  {
+    label: "Portfolio Review Guide",
+    href: "docs/PORTFOLIO_REVIEW_GUIDE.md",
+    kind: "doc",
+    note: "2-minute reviewer path and role-fit evidence map",
+  },
+  {
     label: "Live Integration Guide",
     href: "docs/LIVE_INTEGRATION.md",
     kind: "doc",
@@ -210,69 +222,111 @@ const CONTROL_TOWER_ARTIFACTS: ServiceArtifact[] = [
     note: "route contract verification",
   },
   {
+    label: "Landing Page Tests",
+    href: "tests/landingPage.test.ts",
+    kind: "test",
+    note: "front-door proof copy stays anchored",
+  },
+  {
+    label: "Event Adapter Tests",
+    href: "tests/eventAdapter.test.ts",
+    kind: "test",
+    note: "payload normalization regression coverage",
+  },
+  {
+    label: "Signal Check Tests",
+    href: "tests/signalChecks.test.ts",
+    kind: "test",
+    note: "ingest/readiness signal guardrails",
+  },
+  {
+    label: "URL State Tests",
+    href: "tests/urlState.test.ts",
+    kind: "test",
+    note: "shareable report filters and route state",
+  },
+  {
     label: "Ops Console Screenshot",
     href: "public/screenshots/ops_console.png",
     kind: "asset",
     note: "reviewable operator UI proof",
+  },
+  {
+    label: "Floorplan Reference",
+    href: "public/floorplan_s001.png",
+    kind: "asset",
+    note: "spatial context used by the control tower surface",
   },
 ];
 
-const CONTROL_TOWER_PROOF_ASSETS: ServiceArtifact[] = [
-  {
-    label: "Health API",
-    href: "/api/health",
-    kind: "route",
-    note: "ingest mode, readiness, review links",
-  },
-  {
-    label: "Service Meta",
-    href: "/api/meta",
-    kind: "route",
-    note: "control tower posture and trust boundary",
-  },
-  {
-    label: "Runtime Scorecard",
-    href: "/api/runtime-scorecard",
-    kind: "route",
-    note: "ingest posture, export auth, and SLA snapshot in one compact contract",
-  },
-  {
-    label: "Reports View",
-    href: "/reports",
-    kind: "route",
-    note: "SLA metrics, exports, replay summary",
-  },
-  {
-    label: "Report Summary API",
-    href: "/api/reports/summary",
-    kind: "route",
-    note: "deterministic SLA and spotlight summary contract",
-  },
-  {
-    label: "Dispatch Board API",
-    href: "/api/reports/dispatch-board",
-    kind: "route",
-    note: "attention / dispatch / resolved queue snapshot for reviewers",
-  },
-  {
-    label: "Shift Handoff API",
-    href: "/api/reports/handoff",
-    kind: "route",
-    note: "deterministic shift handoff digest with overdue queue risk",
-  },
-  {
-    label: "Report Export API",
-    href: "/api/reports/export",
-    kind: "route",
-    note: "server-generated JSON and CSV report snapshots",
-  },
-  {
-    label: "Ops Console Screenshot",
-    href: "public/screenshots/ops_console.png",
-    kind: "asset",
-    note: "reviewable operator UI proof",
-  },
-];
+const CONTROL_TOWER_ARTIFACT_HREFS = [
+  "/api/health",
+  "/api/meta",
+  "/api/runtime-brief",
+  "/api/runtime-scorecard",
+  "/api/schema/report",
+  "/reports",
+  "/api/reports/summary",
+  "/api/reports/dispatch-board",
+  "/api/reports/handoff",
+  "/api/reports/export",
+  "README.md",
+  "docs/PORTFOLIO_REVIEW_GUIDE.md",
+  "docs/LIVE_INTEGRATION.md",
+  "docs/ops/RUNBOOK.md",
+  "tests/runtimeRoutes.test.ts",
+  "tests/landingPage.test.ts",
+  "public/screenshots/ops_console.png",
+] as const;
+
+const CONTROL_TOWER_PROOF_ASSET_HREFS = [
+  "/api/health",
+  "/api/meta",
+  "/api/runtime-scorecard",
+  "/api/reports/summary",
+  "/api/reports/dispatch-board",
+  "/api/reports/handoff",
+  "/api/reports/export",
+  "docs/PORTFOLIO_REVIEW_GUIDE.md",
+  "tests/runtimeRoutes.test.ts",
+  "public/screenshots/ops_console.png",
+] as const;
+
+function pickServiceArtifacts(hrefs: readonly string[]) {
+  const evidenceByHref = new Map(
+    CONTROL_TOWER_EVIDENCE.map((artifact) => [artifact.href, artifact] as const)
+  );
+
+  return hrefs.flatMap((href) => {
+    const artifact = evidenceByHref.get(href);
+    return artifact ? [artifact] : [];
+  });
+}
+
+export function listControlTowerEvidenceArtifacts() {
+  return CONTROL_TOWER_EVIDENCE;
+}
+
+export function countServiceArtifactsByKind(artifacts: readonly ServiceArtifact[]) {
+  return artifacts.reduce(
+    (counts, artifact) => {
+      if (artifact.kind === "route") counts.routes += 1;
+      if (artifact.kind === "doc") counts.docs += 1;
+      if (artifact.kind === "test") counts.tests += 1;
+      if (artifact.kind === "asset") counts.assets += 1;
+      return counts;
+    },
+    {
+      routes: 0,
+      docs: 0,
+      tests: 0,
+      assets: 0,
+    }
+  );
+}
+
+const CONTROL_TOWER_ARTIFACTS = pickServiceArtifacts(CONTROL_TOWER_ARTIFACT_HREFS);
+const CONTROL_TOWER_PROOF_ASSETS = pickServiceArtifacts(CONTROL_TOWER_PROOF_ASSET_HREFS);
 
 export function buildControlTowerReportSchema(): ReportSchema {
   return {
@@ -318,12 +372,7 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
     ops_contract: runtimeMeta.ops_contract,
     ingest_contract: runtimeMeta.ops_contract,
     report_contract: reportContract,
-    evidence_counts: {
-      routes: 10,
-      docs: 4,
-      tests: 5,
-      assets: 4,
-    },
+    evidence_counts: countServiceArtifactsByKind(CONTROL_TOWER_EVIDENCE),
     trust_boundary: [
       `ingest: ${ingestModeLabel}`,
       "normalize: provider payloads converge into EventItem",
@@ -369,7 +418,17 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
     stages: CONTROL_TOWER_STAGES,
     artifacts: CONTROL_TOWER_ARTIFACTS,
     proof_assets: CONTROL_TOWER_PROOF_ASSETS,
-    routes: [...runtimeMeta.routes, "/api/runtime-brief", "/api/runtime-scorecard", "/api/schema/report", "/api/reports/summary", "/api/reports/dispatch-board", "/api/reports/handoff", "/api/reports/export", "/reports"],
+    routes: [
+      ...runtimeMeta.routes,
+      "/api/runtime-brief",
+      "/api/runtime-scorecard",
+      "/api/schema/report",
+      "/api/reports/summary",
+      "/api/reports/dispatch-board",
+      "/api/reports/handoff",
+      "/api/reports/export",
+      "/reports",
+    ],
     features: runtimeMeta.features,
   };
 }

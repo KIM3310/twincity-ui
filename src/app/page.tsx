@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { buildControlTowerServiceMeta } from "@/lib/serviceMeta";
 
 export const metadata: Metadata = {
-  title: "상황판",
+  title: "Proof-first control tower",
+  description:
+    "Review TwinCity UI through its ingest posture, runtime contract, dispatch board, handoff brief, and operator console.",
 };
 
 const PROOF_PATHS = [
@@ -46,7 +49,6 @@ const LANDING_SIGNALS = [
   },
 ] as const;
 
-
 const DECISION_SUPPORT = [
   {
     label: "연결 신호를 먼저 확인해야 할 때",
@@ -65,7 +67,38 @@ const DECISION_SUPPORT = [
   },
 ] as const;
 
+const ROLE_SIGNAL_CARDS = [
+  {
+    title: "AI engineer signal",
+    body: "이기종 provider payload를 EventItem 계약으로 정규화하고, summary/export contract까지 reviewer-safe surface로 연결합니다.",
+    proof: "eventAdapter.ts → /api/reports/summary → /api/schema/report",
+  },
+  {
+    title: "Systems engineer signal",
+    body: "UI를 보기 전에 ingest posture, trust boundary, export auth posture를 먼저 검토할 수 있게 runtime surface를 분리했습니다.",
+    proof: "/api/health → /api/meta → /api/runtime-scorecard",
+  },
+  {
+    title: "Solution architect signal",
+    body: "dispatch lane, shift handoff, export payload를 같은 이야기로 읽게 해서 운영 continuity와 rollout 대화를 쉽게 만듭니다.",
+    proof: "/api/runtime-brief → /api/reports/handoff → /api/reports/export",
+  },
+] as const;
+
+const REVIEW_KIT_HREFS = [
+  "/api/meta",
+  "/api/runtime-scorecard",
+  "/api/reports/handoff",
+  "/api/reports/export",
+] as const;
+
 export default function DashboardPage() {
+  const serviceMeta = buildControlTowerServiceMeta();
+  const reviewKit = REVIEW_KIT_HREFS.flatMap((href) => {
+    const item = serviceMeta.proof_assets.find((candidate) => candidate.href === href);
+    return item ? [item] : [];
+  });
+
   return (
     <div className="pageStack">
       <section className="hero heroLuxury reveal in-view landingHero">
@@ -105,7 +138,8 @@ export default function DashboardPage() {
             <strong>{DEFAULT_PROOF_PATH.title}</strong>
             <p>{DEFAULT_PROOF_PATH.body}</p>
             <p className="landingFirstClickNote">
-              health가 정상이면 reports로, 연결 신호가 비어 있으면 events로 바로 내려가 다음 확인 경로를 이어갑니다.
+              health가 정상이면 reports로, 연결 신호가 비어 있으면 events로 바로 내려가 다음 확인 경로를
+              이어갑니다.
             </p>
             <span className="mono">{DEFAULT_PROOF_PATH.meta}</span>
           </div>
@@ -158,9 +192,17 @@ export default function DashboardPage() {
             <p className="kicker">Why this landing exists</p>
             <h2 className="panelTitle">빈 첫 화면 대신, 읽히는 front door를 남겼습니다</h2>
           </div>
-          <span className="chip" data-tone="calm">
-            bounded Wave A
-          </span>
+          <div className="landingTrustRow" aria-label="evidence counts">
+            <span className="chip" data-tone="calm">
+              {serviceMeta.evidence_counts.routes} proof routes
+            </span>
+            <span className="chip" data-tone="watch">
+              {serviceMeta.evidence_counts.docs} docs
+            </span>
+            <span className="chip" data-tone="critical">
+              {serviceMeta.evidence_counts.tests} tests
+            </span>
+          </div>
         </div>
         <div className="landingSupportGrid">
           <article className="landingSupportCard">
@@ -191,8 +233,46 @@ export default function DashboardPage() {
             <article key={item.route} className="landingSupportCard">
               <strong>{item.label}</strong>
               <p>{item.note}</p>
-              <span className="mono">{item.route}</span>
+              <span className="landingSupportMeta mono">{item.route}</span>
             </article>
+          ))}
+        </div>
+
+        <div className="landingSupportHead">
+          <div>
+            <p className="kicker">Role-fit signals</p>
+            <h2 className="panelTitle">채용 렌즈별로 무엇을 읽어야 하는지 바로 보이게 정리했습니다</h2>
+          </div>
+          <span className="chip" data-tone="calm">
+            recruiter scanable
+          </span>
+        </div>
+        <div className="landingSupportGrid">
+          {ROLE_SIGNAL_CARDS.map((item) => (
+            <article key={item.title} className="landingSupportCard">
+              <strong>{item.title}</strong>
+              <p>{item.body}</p>
+              <span className="landingSupportMeta mono">{item.proof}</span>
+            </article>
+          ))}
+        </div>
+
+        <div className="landingSupportHead">
+          <div>
+            <p className="kicker">Reviewer-ready kit</p>
+            <h2 className="panelTitle">route contract만 열어도 control tower story를 따라갈 수 있습니다</h2>
+          </div>
+          <span className="chip" data-tone="critical">
+            review pack
+          </span>
+        </div>
+        <div className="landingSupportGrid">
+          {reviewKit.map((item) => (
+            <Link key={item.href} className="landingProofCard" href={item.href}>
+              <strong>{item.label}</strong>
+              <p>{item.note}</p>
+              <span className="mono">{item.href}</span>
+            </Link>
           ))}
         </div>
       </section>

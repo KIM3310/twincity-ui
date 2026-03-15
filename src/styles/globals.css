@@ -891,6 +891,12 @@ body.is-gated {
   color: var(--ink-muted);
 }
 
+.landingSupportMeta {
+  display: block;
+  color: color-mix(in srgb, var(--accent), var(--ink) 42%);
+  font-size: 0.78rem;
+}
+
 .landingProofRail {
   gap: 1rem;
 }

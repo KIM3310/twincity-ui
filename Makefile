@@ -1,6 +1,6 @@
 .SHELLFLAGS := -eu -o pipefail -c
 
-.PHONY: install dev open-local lint test build ci
+.PHONY: install dev open-local lint typecheck test build verify ci
 
 install:
 	npm ci
@@ -14,10 +14,16 @@ open-local:
 lint:
 	npm run lint
 
+typecheck:
+	npm run typecheck
+
 test:
 	npm run test
 
 build:
 	npm run build
 
-ci: install lint test build
+verify:
+	npm run verify
+
+ci: install lint typecheck test build
