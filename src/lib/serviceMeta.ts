@@ -82,6 +82,8 @@ export type ControlTowerRuntimeBrief = {
     dispatch_board: string;
     report_handoff: string;
     report_export: string;
+    reviewer_bundle: string;
+    reviewer_bundle_verify: string;
     reports: string;
   };
 };
@@ -186,6 +188,18 @@ const CONTROL_TOWER_EVIDENCE: ServiceArtifact[] = [
     note: "server-generated JSON and CSV report snapshots",
   },
   {
+    label: "Reviewer Bundle API",
+    href: "/api/reports/reviewer-bundle",
+    kind: "route",
+    note: "digest-backed reviewer handoff bundle for export-safe review",
+  },
+  {
+    label: "Reviewer Bundle Verify API",
+    href: "/api/reports/reviewer-bundle/verify",
+    kind: "route",
+    note: "recomputes the bundle digest before handoff approval",
+  },
+  {
     label: "README",
     href: "README.md",
     kind: "doc",
@@ -270,6 +284,8 @@ const CONTROL_TOWER_ARTIFACT_HREFS = [
   "/api/reports/dispatch-board",
   "/api/reports/handoff",
   "/api/reports/export",
+  "/api/reports/reviewer-bundle",
+  "/api/reports/reviewer-bundle/verify",
   "README.md",
   "docs/PORTFOLIO_REVIEW_GUIDE.md",
   "docs/LIVE_INTEGRATION.md",
@@ -287,6 +303,7 @@ const CONTROL_TOWER_PROOF_ASSET_HREFS = [
   "/api/reports/dispatch-board",
   "/api/reports/handoff",
   "/api/reports/export",
+  "/api/reports/reviewer-bundle",
   "docs/PORTFOLIO_REVIEW_GUIDE.md",
   "tests/runtimeRoutes.test.ts",
   "public/screenshots/ops_console.png",
@@ -341,7 +358,7 @@ export function buildControlTowerReportSchema(): ReportSchema {
       "open_incidents",
       "operator_notes",
     ],
-    export_formats: ["csv", "clipboard-summary"],
+    export_formats: ["json", "csv", "reviewer-bundle", "clipboard-summary"],
     operator_rules: [
       "Always separate ACK SLA from resolve SLA.",
       "Every summary must trace back to normalized EventItem data and timeline events.",
@@ -377,6 +394,7 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
       `ingest: ${ingestModeLabel}`,
       "normalize: provider payloads converge into EventItem",
       "state: browser-local replay and timeline persistence",
+      "handoff: reviewer bundles carry a deterministic digest before export approval",
       "map: floorplan + zone polygons + optional homography",
       "validation: 3D probe routes stay optional and review-only",
     ],
@@ -402,6 +420,7 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
       "Use /api/reports/dispatch-board to isolate attention and dispatch lanes before opening exports.",
       "Use /api/reports/handoff to verify the next-shift digest before copying or exporting reviewer artifacts.",
       "Use /api/reports/export to validate server-generated JSON or CSV handoff payloads.",
+      "Use /api/reports/reviewer-bundle when a reviewer needs a digest-backed export bundle.",
       "Use /events or / to exercise triage and timeline handling.",
       "Open /reports for SLA proof and exported summary paths.",
     ],
@@ -412,6 +431,7 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
       "Use /api/reports/dispatch-board to confirm unresolved queue posture and latest action lanes.",
       "Use /api/reports/handoff to confirm the top next-shift priorities and overdue queue risk.",
       "Use /api/reports/export to validate server-side handoff payloads before sharing a report.",
+      "Use /api/reports/reviewer-bundle/verify to confirm bundle integrity before external handoff.",
       "Open /reports to validate SLA proof and export posture.",
       "Use /events to inspect one alert through triage, dispatch, and timeline state.",
     ],
@@ -427,6 +447,8 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
       "/api/reports/dispatch-board",
       "/api/reports/handoff",
       "/api/reports/export",
+      "/api/reports/reviewer-bundle",
+      "/api/reports/reviewer-bundle/verify",
       "/reports",
     ],
     features: runtimeMeta.features,
@@ -463,6 +485,8 @@ export function buildControlTowerRuntimeBrief(now = new Date()): ControlTowerRun
       dispatch_board: "/api/reports/dispatch-board",
       report_handoff: "/api/reports/handoff",
       report_export: "/api/reports/export",
+      reviewer_bundle: "/api/reports/reviewer-bundle",
+      reviewer_bundle_verify: "/api/reports/reviewer-bundle/verify",
       reports: "/reports",
     },
   };

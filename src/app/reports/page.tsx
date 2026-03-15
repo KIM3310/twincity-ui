@@ -21,9 +21,10 @@ import {
   type TwincityRangeKey,
   type TwincitySeverityFilter,
 } from "@/lib/urlState";
+import { CONTROL_TOWER_STORAGE_KEY } from "@/lib/runtimeSnapshot";
 import type { EventItem, IncidentTimelineEntry } from "@/lib/types";
 
-const STORAGE_KEY = "twincity-ops-experience-v2";
+const STORAGE_KEY = CONTROL_TOWER_STORAGE_KEY;
 const ACK_SLA_MS = 2 * 60 * 1000;
 const RESOLVE_SLA_MS = 10 * 60 * 1000;
 
@@ -88,12 +89,6 @@ function parseTimeline(raw: unknown): IncidentTimelineEntry[] {
   }
 
   return rows.sort((a, b) => b.at - a.at);
-}
-
-function toCsvValue(value: unknown) {
-  const text = value === null || value === undefined ? "" : String(value);
-  if (/[",\n]/.test(text)) return `"${text.replace(/"/g, '""')}"`;
-  return text;
 }
 
 async function copyTextValue(text: string) {
@@ -404,56 +399,33 @@ export default function ReportsPage() {
     [events, timeline, now, range, severityFilter, zoneFilter]
   );
 
-  const downloadCsv = () => {
-    const header = [
-      "id",
-      "detected_at",
-      "zone_id",
-      "type",
-      "severity",
-      "incident_status",
-      "camera_id",
-      "source",
-      "latency_ms",
-      "ack_at",
-      "resolved_at",
-      "note",
-    ];
-
-    const rows = focusedEvents.map((event) => {
-      const ackAt = ackAtByEvent.get(event.id);
-      const resolvedAt = resolvedAtByEvent.get(event.id);
-      return [
-        event.id,
-        new Date(event.detected_at).toISOString(),
-        event.zone_id,
-        event.type,
-        event.severity,
-        event.incident_status,
-        event.camera_id ?? "",
-        event.source,
-        event.latency_ms,
-        ackAt ? new Date(ackAt).toISOString() : "",
-        resolvedAt ? new Date(resolvedAt).toISOString() : "",
-        event.note ?? "",
-      ];
-    });
-
-    const csv = [header, ...rows]
-      .map((row) => row.map(toCsvValue).join(","))
-      .join("\n");
-
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `twincity-report-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
-    setNotice("CSV를 다운로드했습니다.");
-  };
+  const downloadCsv = useCallback(async () => {
+    try {
+      const params = new URLSearchParams({
+        format: "csv",
+        range,
+        severity: severityFilter,
+        incident_status: "all",
+        zone: zoneFilter,
+      });
+      const response = await fetch(`/api/reports/export?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error(`report export failed (${response.status})`);
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `twincity-report-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      setNotice("서버에서 생성한 CSV를 다운로드했습니다.");
+    } catch {
+      setNotice("서버 CSV 내보내기에 실패했습니다.");
+    }
+  }, [range, severityFilter, zoneFilter]);
 
   const copySummary = useCallback(async () => {
     const text = [
@@ -633,6 +605,7 @@ export default function ReportsPage() {
       "- /api/reports/dispatch-board",
       "- /api/reports/summary",
       "- /api/reports/export",
+      "- /api/reports/reviewer-bundle",
     ].join("\n");
 
     try {

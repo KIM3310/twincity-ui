@@ -5,6 +5,8 @@ import { GET as getMetaRoute } from "@/app/api/meta/route";
 import { GET as getDispatchBoardRoute } from "@/app/api/reports/dispatch-board/route";
 import { GET as getReportExportRoute } from "@/app/api/reports/export/route";
 import { GET as getReportHandoffRoute } from "@/app/api/reports/handoff/route";
+import { GET as getReviewerBundleRoute } from "@/app/api/reports/reviewer-bundle/route";
+import { GET as getReviewerBundleVerifyRoute } from "@/app/api/reports/reviewer-bundle/verify/route";
 import { GET as getReportSummaryRoute } from "@/app/api/reports/summary/route";
 import { GET as getRuntimeBriefRoute } from "@/app/api/runtime-brief/route";
 import { GET as getRuntimeScorecardRoute } from "@/app/api/runtime-scorecard/route";
@@ -84,6 +86,7 @@ describe("runtime routes", () => {
             "report-summary-surface",
             "dispatch-board-surface",
             "handoff-brief-surface",
+            "reviewer-bundle-surface",
           ],
           service_grade: {
             readiness: "control-tower-readiness-v1",
@@ -94,6 +97,8 @@ describe("runtime routes", () => {
             dispatch_board: "/api/reports/dispatch-board",
             report_handoff: "/api/reports/handoff",
             report_export: "/api/reports/export",
+            reviewer_bundle: "/api/reports/reviewer-bundle",
+            reviewer_bundle_verify: "/api/reports/reviewer-bundle/verify",
           },
           links: {
             meta: "/api/meta",
@@ -104,6 +109,8 @@ describe("runtime routes", () => {
             dispatch_board: "/api/reports/dispatch-board",
             report_handoff: "/api/reports/handoff",
             report_export: "/api/reports/export",
+            reviewer_bundle: "/api/reports/reviewer-bundle",
+            reviewer_bundle_verify: "/api/reports/reviewer-bundle/verify",
             reports: "/reports",
           },
         });
@@ -148,11 +155,13 @@ describe("runtime routes", () => {
         expect(body.routes).toContain("/api/reports/dispatch-board");
         expect(body.routes).toContain("/api/reports/handoff");
         expect(body.routes).toContain("/api/reports/export");
+        expect(body.routes).toContain("/api/reports/reviewer-bundle");
+        expect(body.routes).toContain("/api/reports/reviewer-bundle/verify");
         expect(body.ops_contract.schema).toBe("ops-envelope-v1");
         expect(body.diagnostics.next_action).toContain("/api/3d-test/status");
         expect(body.report_contract.schema).toBe("twincity-report-v1");
         expect(Array.isArray(body.trust_boundary)).toBe(true);
-        expect(body.two_minute_review).toHaveLength(8);
+        expect(body.two_minute_review).toHaveLength(9);
         expect(body.proof_assets[0].href).toBe("/api/health");
         expect(body.links.runtime_brief).toBe("/api/runtime-brief");
         expect(body.links.runtime_scorecard).toBe("/api/runtime-scorecard");
@@ -160,6 +169,8 @@ describe("runtime routes", () => {
         expect(body.links.dispatch_board).toBe("/api/reports/dispatch-board");
         expect(body.links.report_handoff).toBe("/api/reports/handoff");
         expect(body.links.report_export).toBe("/api/reports/export");
+        expect(body.links.reviewer_bundle).toBe("/api/reports/reviewer-bundle");
+        expect(body.links.reviewer_bundle_verify).toBe("/api/reports/reviewer-bundle/verify");
         expect(response.headers.get("x-request-id")).toBe(body.request_id);
       }
     );
@@ -186,12 +197,14 @@ describe("runtime routes", () => {
         dispatch_board: "/api/reports/dispatch-board",
         report_handoff: "/api/reports/handoff",
         report_export: "/api/reports/export",
+        reviewer_bundle: "/api/reports/reviewer-bundle",
+        reviewer_bundle_verify: "/api/reports/reviewer-bundle/verify",
         reports: "/reports",
       },
     });
-    expect(body.route_count).toBeGreaterThanOrEqual(7);
+    expect(body.route_count).toBeGreaterThanOrEqual(9);
     expect(body.review_flow[0]).toContain("/api/health");
-    expect(body.two_minute_review).toHaveLength(8);
+    expect(body.two_minute_review).toHaveLength(9);
     expect(body.proof_assets[0].href).toBe("/api/health");
     expect(response.headers.get("x-request-id")).toBe(body.request_id);
   });
@@ -209,6 +222,7 @@ describe("runtime routes", () => {
     expect(body.runtime.operator_auth.enabled).toBe(false);
     expect(body.links.runtime_scorecard).toBe("/api/runtime-scorecard");
     expect(body.links.dispatch_board).toBe("/api/reports/dispatch-board");
+    expect(body.links.reviewer_bundle).toBe("/api/reports/reviewer-bundle");
     expect(response.headers.get("x-request-id")).toBe(body.request_id);
   });
 
@@ -321,7 +335,9 @@ describe("runtime routes", () => {
       version: 1,
     });
     expect(body.required_sections).toContain("summary");
+    expect(body.export_formats).toContain("json");
     expect(body.export_formats).toContain("csv");
+    expect(body.export_formats).toContain("reviewer-bundle");
     expect(body.operator_rules).toContain(
       "Always separate ACK SLA from resolve SLA."
     );
@@ -356,6 +372,42 @@ describe("runtime routes", () => {
     expect(csvResponse.status).toBe(200);
     expect(csvResponse.headers.get("content-type")).toContain("text/csv");
     expect(csvBody.split("\n")[0]).toContain("id,detected_at,zone_id,type,severity");
+  });
+
+  test("reviewer bundle route exposes digest-backed handoff contract", async () => {
+    const bundleResponse = await getReviewerBundleRoute(
+      new Request("https://example.com/api/reports/reviewer-bundle?range=60m&severity=3")
+    );
+    const bundleBody = await bundleResponse.json();
+
+    expect(bundleResponse.status).toBe(200);
+    expect(bundleBody).toMatchObject({
+      ok: true,
+      service: "twincity-ui",
+      schema: "twincity-reviewer-bundle-v1",
+      filters: {
+        range: "60m",
+        severity: "3",
+      },
+      integrity: {
+        algorithm: "SHA-256",
+        verification_route: "/api/reports/reviewer-bundle/verify",
+      },
+    });
+    expect(bundleBody.integrity.digest).toHaveLength(64);
+    expect(bundleBody.bundle.review_routes).toContain("/api/reports/reviewer-bundle");
+
+    const verifyResponse = await getReviewerBundleVerifyRoute(
+      new Request(
+        `https://example.com/api/reports/reviewer-bundle/verify?range=60m&severity=3&digest=${bundleBody.integrity.digest}`
+      )
+    );
+    const verifyBody = await verifyResponse.json();
+
+    expect(verifyResponse.status).toBe(200);
+    expect(verifyBody.schema).toBe("twincity-reviewer-bundle-verify-v1");
+    expect(verifyBody.match).toBe(true);
+    expect(verifyBody.computed_digest).toBe(bundleBody.integrity.digest);
   });
 
   test("report export route requires operator token when enabled", async () => {

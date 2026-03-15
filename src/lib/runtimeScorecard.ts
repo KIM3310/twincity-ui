@@ -50,6 +50,8 @@ export function buildControlTowerRuntimeScorecard(now = new Date()) {
         "/api/reports/dispatch-board",
         "/api/reports/handoff",
         "/api/reports/export",
+        "/api/reports/reviewer-bundle",
+        "/api/reports/reviewer-bundle/verify",
       ],
     },
     summary: {
@@ -69,6 +71,7 @@ export function buildControlTowerRuntimeScorecard(now = new Date()) {
         : "Exports are open in demo mode; keep them tied to deterministic report summary output.",
       "Use the dispatch board to confirm unresolved queue posture before sharing a report snapshot.",
       "Use the shift handoff brief to highlight overdue queue risk before reviewer handoff.",
+      "Generate and verify the reviewer bundle digest when export integrity matters.",
       "Verify report summary before sharing export artifacts with reviewers.",
       "Keep ingest-mode posture and SLA snapshot paired during walkthroughs.",
     ],
@@ -81,6 +84,8 @@ export function buildControlTowerRuntimeScorecard(now = new Date()) {
       dispatch_board: "/api/reports/dispatch-board",
       report_handoff: "/api/reports/handoff",
       report_export: "/api/reports/export",
+      reviewer_bundle: "/api/reports/reviewer-bundle",
+      reviewer_bundle_verify: "/api/reports/reviewer-bundle/verify",
       reports: "/reports",
     },
   };

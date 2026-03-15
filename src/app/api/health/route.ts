@@ -28,6 +28,7 @@ export function GET(request: Request) {
         "report-summary-surface",
         "dispatch-board-surface",
         "handoff-brief-surface",
+        "reviewer-bundle-surface",
       ],
       service_grade: {
         readiness: serviceMeta.readiness_contract,
@@ -38,6 +39,8 @@ export function GET(request: Request) {
         dispatch_board: "/api/reports/dispatch-board",
         report_handoff: "/api/reports/handoff",
         report_export: "/api/reports/export",
+        reviewer_bundle: "/api/reports/reviewer-bundle",
+        reviewer_bundle_verify: "/api/reports/reviewer-bundle/verify",
       },
       links: {
         meta: "/api/meta",
@@ -48,6 +51,8 @@ export function GET(request: Request) {
         dispatch_board: "/api/reports/dispatch-board",
         report_handoff: "/api/reports/handoff",
         report_export: "/api/reports/export",
+        reviewer_bundle: "/api/reports/reviewer-bundle",
+        reviewer_bundle_verify: "/api/reports/reviewer-bundle/verify",
         reports: "/reports",
       },
     },

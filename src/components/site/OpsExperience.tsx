@@ -34,6 +34,7 @@ import {
   parseOpsUrlState,
   replaceUrlSearch,
 } from "@/lib/urlState";
+import { CONTROL_TOWER_STORAGE_KEY } from "@/lib/runtimeSnapshot";
 import type {
   EventItem,
   EventTypeFilter,
@@ -43,7 +44,7 @@ import type {
   ZoneMap,
 } from "@/lib/types";
 
-const STORAGE_KEY = "twincity-ops-experience-v3";
+const STORAGE_KEY = CONTROL_TOWER_STORAGE_KEY;
 const TIMELINE_MAX = 240;
 const MAX_VISIBLE = 140;
 const OPERATOR_ID = "ops-01";
