@@ -1,67 +1,111 @@
-# TwinCity UI — Digital Twin Ops Console
+# TwinCity UI — Proof-First Digital Twin Ops Console
 
-TwinCity UI is a Next.js (React/TypeScript) operations console that overlays **Zones (polygons)** and **Events (points)** on a floorplan, so an operator can triage alerts faster by combining:
+TwinCity UI is a Next.js (React/TypeScript) control-tower style operations console. It overlays **zones + events** on a floorplan, then connects that spatial view to the full operator loop:
 
-- Spatial context (where it happened)
-- Event context (what happened, severity, status)
-- Workflow context (acknowledge, dispatch, resolve + timeline)
-- Dispatch board context (attention / dispatch / resolved queue posture)
-- Shift handoff context (next-shift digest, overdue ACK/resolve risk, copy-ready handoff brief)
+- ingest posture
+- event normalization
+- queue triage
+- dispatch / resolve timeline
+- SLA reporting
+- shift handoff / export proof
 
-The repo is already **reviewable end-to-end without external infrastructure**, and the feature surface keeps expanding through the same operator workflow:
-- Demo mode includes local mock feeds + replay tools.
-- Live sources can be wired via WebSocket / SSE / HTTP polling (with graceful fallback).
+The important part is not the map by itself. The repo is strongest when read as a **reviewable operator system** that makes `payload -> operator decision -> report/handoff artifact` inspectable without external infrastructure.
 
 ![Ops console screenshot](public/screenshots/ops_console.png)
 
-## Portfolio posture
-- Read this repo like a physical-ops control tower with a demo-first feed, not like a map-only digital-twin showcase.
-- The strongest proof is the full operator loop: health/meta -> event triage -> dispatch board -> handoff/export.
+## Start here
+- **Fastest reviewer guide:** `docs/PORTFOLIO_REVIEW_GUIDE.md`
+- **Strongest runtime proof path:** `/api/health -> /api/meta -> /api/runtime-scorecard -> /api/reports/handoff -> /reports -> /events`
+- **One-command verification:** `npm run verify`
 
-## Role signals
-- **AI / systems engineer:** real-time normalization, spatial mapping, and bulk operator actions all matter here.
-- **Solution / cloud architect:** live/demo feed modes, dispatch board, and reporting surfaces make the ops boundary easy to explain.
-- **Field / solutions engineer:** map -> queue -> report 흐름이 자연스러워서 digital-twin 데모를 빠르게 보여줄 수 있습니다.
+## Why this repo matters in a portfolio
+- **AI / frontier systems signal:** messy provider payloads are normalized into a single operator contract instead of being hand-waved away.
+- **Product / systems signal:** runtime posture is inspectable before the reviewer ever touches the UI.
+- **Solution architect signal:** dispatch, handoff, export, and ops docs line up into one explainable operating model.
+- **Credibility signal:** demo mode is explicit. The repo does not pretend a blank environment is “live production”.
 
+## 2-minute review path
 
-## Portfolio context
-- **Portfolio family:** governed ops and control towers
-- **This repo's role:** flagship physical-ops / dispatch / handoff control tower in the portfolio.
-- **Related repos:** `regulated-case-workbench`, `fab-ops-yield-control-tower`, `smallbiz-ops-copilot`
+| Step | Open | Why |
+| --- | --- | --- |
+| 1 | `/api/health` | Confirm whether the repo is demo-first or live-wired and see the review-safe route bundle |
+| 2 | `/api/meta` | Read the trust boundary, stage ownership, evidence counts, and proof assets |
+| 3 | `/api/runtime-scorecard` | Check ingest posture, export auth posture, and deterministic SLA snapshot |
+| 4 | `/api/reports/handoff` | Validate next-shift priorities and overdue queue risk |
+| 5 | `/reports` | See the human-readable review pack that matches the route contracts |
+| 6 | `/events` | Drop into the actual operator console and timeline flow |
 
-## Runtime vs review/site surfaces
-- Primary runtime: the Next.js app in `src/` powers `/events`, `/reports`, and the `src/app/api/*` routes.
-- Review/site surfaces: `/about` plus the policy/compliance pages are public-facing review surfaces; `docs/` is supporting integration guidance.
-- Repo map: `public/` stores static assets, `tests/` covers verification, and `tools/` contains mock/replay helpers.
+## Role-fit evidence map
 
-## What I Owned (Team Project)
-- End-to-end operator UX: Live/History views, filters, detail panel, action timeline, settings, and list ↔ map ↔ detail sync
+### AI / LLM / systems engineer
+Look at:
+- `src/lib/eventAdapter.ts`
+- `tests/eventAdapter.test.ts`
+- `/api/reports/summary`
+- `/api/schema/report`
+
+This shows the strongest engineering signal in the repo: provider payload variability is normalized into a deterministic, reviewer-safe operator/report contract.
+
+### Product / systems engineer
+Look at:
+- `/api/health`
+- `/api/meta`
+- `/api/runtime-brief`
+- `/api/runtime-scorecard`
+- `tests/runtimeRoutes.test.ts`
+
+This shows that runtime posture, trust boundary, and review flow are explicit instead of buried in the UI.
+
+### Solution architect / field architect
+Look at:
+- `/api/reports/dispatch-board`
+- `/api/reports/handoff`
+- `/api/reports/export`
+- `/reports`
+- `docs/LIVE_INTEGRATION.md`
+- `docs/ops/RUNBOOK.md`
+
+This shows the repo as an explainable operating model, not just a UI demo.
+
+## What I owned (team project)
+- End-to-end operator UX: live/history views, filters, detail panel, action timeline, settings, and list ↔ map ↔ detail sync
 - Reliability work: WS → SSE → HTTP polling fallback, connection state + auto-retry, demo-first mock feeds + replay
-- Normalization layer (“ontology adapter”): unify inconsistent provider payload shapes into a single `EventItem` schema
-- Spatial mapping: percent/world/bbox → normalized 0..1, optional camera homography, and snap-to-walkable zones (holes supported)
+- Normalization layer: inconsistent provider payloads -> one `EventItem` schema
+- Spatial mapping: percent/world/bbox -> normalized `0..1`, optional camera homography, and snap-to-walkable zones
+- Reporting surfaces: SLA summary, dispatch board, shift handoff, export-friendly review routes
+
+## Runtime vs review surfaces
+- **Primary runtime:** `/events`, `/reports`, and `src/app/api/*`
+- **Primary review contracts:** `/api/health`, `/api/meta`, `/api/runtime-brief`, `/api/runtime-scorecard`, `/api/reports/*`
+- **Repo-side proof:** `docs/PORTFOLIO_REVIEW_GUIDE.md`, `docs/LIVE_INTEGRATION.md`, `docs/ops/RUNBOOK.md`, tests, screenshot assets
 
 ## Quickstart
 ```bash
 npm ci
 npm run dev
 ```
+
 Open `http://127.0.0.1:3000/events`.
 
-## Current Demo Scope (Works Today)
-- Demo-first: runs locally with mock feeds (no backend required)
-- Operator workflow: list/map selection sync, timeline actions (ACK/dispatch/resolve), local state restore, keyboard navigation
-- Shift handoff workflow: deterministic next-shift digest, overdue queue posture, and copy-ready handoff brief
-- Payload normalization: multiple provider shapes → one `EventItem` schema (adapter)
-- Coordinate mapping + snapping: percent/world/bbox → normalized (0..1) and snapped to valid walkable areas
-- Engineering rigor: CI (lint/test/build), runbook, postmortem template
+## Verification
+```bash
+npm run test:proof
+npm run verify
+```
 
-## Next (In Progress)
-- Expand “Reports” view beyond handoff + replay into deeper aggregation
-- More adapters for edge-device/VLM payload variants
-- Additional calibration tooling for camera homography
+`npm run verify` runs lint, typecheck, tests, and build.
 
-## Live Sources (Optional)
+## Current demo scope
+- Demo-first reviewability with no backend required
+- Operator workflow: list/map selection sync, timeline actions, local state restore, keyboard navigation
+- Shift handoff workflow: deterministic next-shift digest, overdue queue posture, copy-ready handoff brief
+- Payload normalization: multiple provider shapes -> one `EventItem` schema
+- Coordinate mapping + snapping: percent/world/bbox -> normalized points on valid floor space
+- CI/review hygiene: lint, typecheck, test, build, review gate scripts, runbook, postmortem template
+
+## Live sources (optional)
 Create `.env.local` from `.env.local.example` and set one or more:
+
 ```bash
 # Priority: WS -> SSE -> HTTP polling
 NEXT_PUBLIC_EVENT_WS_URL=wss://example.com/events
@@ -83,75 +127,47 @@ NEXT_PUBLIC_ADSENSE_CLIENT=ca-pub-xxxxxxxxxxxxxxxx
 NEXT_PUBLIC_ADSENSE_SLOT=1234567890
 ```
 
-## Local Mock Endpoint (Demo)
+If nothing is configured, the app stays honest and reviewable in demo mode.
+
+## Local mock endpoints
 - `GET /api/mock/events?shape=a&count=4`
 - `GET /api/mock/events?shape=b&count=4`
 - `GET /api/mock/events?shape=single`
 - `GET /api/mock/events?shape=edge&count=4`
 
-## Key Routes
-- `/events`: main operator console
-- `/reports`: replay + aggregation view
-- `/api/health`: ingest mode + readiness links
-- `/api/runtime-brief`: review-first contract for exports, live source posture, and route count
-- `/api/meta`: control tower trust boundary + evidence surface
-- `/api/schema/report`: report contract for CSV/summary exports
-- `/api/reports/dispatch-board`: compact triage queue board for attention / dispatch / resolved lanes
-- `/about`: product intro + community + sponsored slot
-- `/about`, `/privacy`, `/terms`, `/contact`, `/compliance`: policy/compliance pages for review
+## Key routes
+- `/events` — main operator console
+- `/reports` — SLA, dispatch, handoff, export-oriented review pack
+- `/api/health` — ingest mode + readiness links
+- `/api/meta` — trust boundary + evidence bundle
+- `/api/runtime-brief` — review-first control tower contract
+- `/api/runtime-scorecard` — ingest posture + export governance + SLA snapshot
+- `/api/schema/report` — report/export schema
+- `/api/reports/summary` — deterministic SLA + spotlight summary
+- `/api/reports/dispatch-board` — attention / dispatch / resolved queue snapshot
+- `/api/reports/handoff` — next-shift digest + overdue queue risk
+- `/api/reports/export` — server-generated JSON / CSV report snapshots
 
-AdSense crawl helpers are provided in `public/ads.txt`, `public/robots.txt`, `public/sitemap.xml`, and `public/_headers`.
+## Docs and supporting artifacts
+- `docs/PORTFOLIO_REVIEW_GUIDE.md` — fastest reviewer entry point
+- `docs/LIVE_INTEGRATION.md` — payload examples + transport fallbacks
+- `docs/ops/RUNBOOK.md` — operator/release guidance
+- `docs/ops/POSTMORTEM_TEMPLATE.md` — incident follow-up template
+- `tests/runtimeRoutes.test.ts` — route contract verification
+- `tests/landingPage.test.ts` — front-door proof-copy regression coverage
+- `public/screenshots/ops_console.png` — operator UI proof asset
 
-## Docs
-- English: `README.en.md`
-- Korean: `README.ko.md`
-- Live integration (API contract + payload examples + fallbacks): `docs/LIVE_INTEGRATION.md`
+## Honest limits
+- Demo mode does **not** prove auth, backpressure handling, or central persistence.
+- Reports summarize browser-local state, not a central incident store.
+- 3D probe routes are review/probe surfaces, not a production rendering claim.
 
-## Key Endpoints
-- `docs/ops/RUNBOOK.md`
-- `docs/ops/POSTMORTEM_TEMPLATE.md`
-- `src/app/api/meta/route.ts`
-- `src/app/api/schema/report/route.ts`
-- `.github/workflows/ci.yml` (CI: lint + test + build)
+## Next
+- Expand reports beyond handoff + replay into deeper aggregation
+- Add more adapters for edge-device / VLM payload variants
+- Improve calibration tooling for camera homography
 
-## Service-Grade Surfaces
-- `Control Tower Readiness` board on `/`, `/brand`, `/reports`
-- `GET /api/runtime-brief` for ingest/export posture
-- `GET /api/reports/dispatch-board` for compact unresolved queue posture before export
-- `ops-envelope-v1` ingest contract surfaced through `/api/health` and `/api/meta`
-- `twincity-report-v1` report schema surfaced through `/api/schema/report`
-- reviewer flow: `health -> runtime brief -> meta -> dispatch board -> events -> reports`
-
-## Review Flow
-
-1. Open `/api/health` to confirm whether the control tower is demo-first or live-wired.
-2. Read `/api/meta` for trust boundary, stage ownership, and review artifacts.
-3. Use `/api/reports/dispatch-board` to confirm unresolved queue posture.
-4. Open `/reports` to validate SLA proof and export posture.
-5. Use `/events` to inspect one alert through triage, dispatch, and timeline state.
-
-## Supporting Files
-
-- `/api/health`
-- `/api/meta`
-- `/api/reports/dispatch-board`
-- `/reports`
-- `public/screenshots/ops_console.png`
-
-## Glossary (first-time readers)
-- WS: WebSocket
-- SSE: Server-Sent Events
-- SLA: Service Level Agreement (time-to-ack / time-to-resolve targets)
-
-## Local Verification
-```bash
-npm install
-npm run lint
-npm run typecheck
-npm run test
-npm run build
-```
-
-## Repository Hygiene
-- Keep runtime artifacts out of commits (`.codex_runs/`, cache folders, temporary venvs).
-- Prefer running verification commands above before opening a PR.
+## Repository hygiene
+- Keep runtime artifacts out of commits (`.codex_runs/`, cache folders, temporary venvs)
+- Prefer `npm run verify` before opening a PR
+- Keep claims route-backed and evidence-backed
