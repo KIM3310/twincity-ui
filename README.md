@@ -33,6 +33,11 @@ The important part is not the map by itself. The repo is strongest when read as 
 - **This repo's role:** strongest public proof that spatial UX, fallback transport, and handoff/reporting can live in one coherent operator surface
 - **Related repos:** `stage-pilot`, `fab-ops-yield-control-tower`, `regulated-case-workbench`
 
+## Big-Tech Elevation Track
+
+- Canonical execution plan: [`docs/BIGTECH_ELEVATION_PLAN.md`](docs/BIGTECH_ELEVATION_PLAN.md)
+- Goal: turn this repo into a spatial operations console proof instead of a digital twin UI demo.
+
 ## Start here
 - **Fastest reviewer guide:** `docs/PORTFOLIO_REVIEW_GUIDE.md`
 - **Strongest runtime proof path:** `/api/health -> /api/meta -> /api/runtime-scorecard -> /api/reports/handoff -> /reports -> /events`
