@@ -92,6 +92,8 @@ const REVIEW_KIT_HREFS = [
   "/api/reports/export",
 ] as const;
 
+const isApiHref = (href: string) => href.startsWith("/api/");
+
 export default function DashboardPage() {
   const serviceMeta = buildControlTowerServiceMeta();
   const reviewKit = REVIEW_KIT_HREFS.flatMap((href) => {
@@ -145,9 +147,9 @@ export default function DashboardPage() {
           </div>
 
           <div className="ctaRow">
-            <Link className="button" href="/api/health">
+            <a className="button" href="/api/health">
               상태 먼저 확인
-            </Link>
+            </a>
             <Link className="button buttonGhost" href="/reports">
               리포트 proof 보기
             </Link>
@@ -167,11 +169,19 @@ export default function DashboardPage() {
 
           <div className="landingProofGrid">
             {PROOF_PATHS.map((item) => (
-              <Link key={item.href} className="landingProofCard" href={item.href}>
-                <strong>{item.title}</strong>
-                <p>{item.body}</p>
-                <span className="mono">{item.meta}</span>
-              </Link>
+              isApiHref(item.href) ? (
+                <a key={item.href} className="landingProofCard" href={item.href}>
+                  <strong>{item.title}</strong>
+                  <p>{item.body}</p>
+                  <span className="mono">{item.meta}</span>
+                </a>
+              ) : (
+                <Link key={item.href} className="landingProofCard" href={item.href}>
+                  <strong>{item.title}</strong>
+                  <p>{item.body}</p>
+                  <span className="mono">{item.meta}</span>
+                </Link>
+              )
             ))}
           </div>
 
@@ -268,11 +278,19 @@ export default function DashboardPage() {
         </div>
         <div className="landingSupportGrid">
           {reviewKit.map((item) => (
-            <Link key={item.href} className="landingProofCard" href={item.href}>
-              <strong>{item.label}</strong>
-              <p>{item.note}</p>
-              <span className="mono">{item.href}</span>
-            </Link>
+            isApiHref(item.href) ? (
+              <a key={item.href} className="landingProofCard" href={item.href}>
+                <strong>{item.label}</strong>
+                <p>{item.note}</p>
+                <span className="mono">{item.href}</span>
+              </a>
+            ) : (
+              <Link key={item.href} className="landingProofCard" href={item.href}>
+                <strong>{item.label}</strong>
+                <p>{item.note}</p>
+                <span className="mono">{item.href}</span>
+              </Link>
+            )
           ))}
         </div>
       </section>
