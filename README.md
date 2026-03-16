@@ -13,6 +13,26 @@ The important part is not the map by itself. The repo is strongest when read as 
 
 ![Ops console screenshot](public/screenshots/ops_console.png)
 
+## Portfolio posture
+
+- Read this repo like an operator-facing systems repo, not like a graphics or dashboard demo.
+- The main proof is deterministic event normalization plus handoff/reporting surfaces that stay reviewable in demo mode.
+- In the broader portfolio, this is the clearest bridge from `stage-pilot` reliability work into action-heavy operational software.
+
+## Best target-team fit
+
+| Team lens | What should stand out fast | Start here |
+|---|---|---|
+| Big tech product / SRE | transport fallback, deterministic contracts, runtime posture before UI polish | `/api/health`, `/api/meta`, `/api/runtime-scorecard`, `tests/runtimeRoutes.test.ts` |
+| Palantir / operational software | queue triage, shift handoff, evidence-backed operator decisions, explainable workflow state | `/api/reports/handoff`, `/api/reports/dispatch-board`, `/reports` |
+| Solution / field architect | review-safe live/demo posture and operating-model clarity | `docs/PORTFOLIO_REVIEW_GUIDE.md`, `docs/LIVE_INTEGRATION.md`, `docs/ops/RUNBOOK.md` |
+
+## Portfolio context
+
+- **Portfolio family:** operator systems, digital twin surfaces, high-trust workflow software
+- **This repo's role:** strongest public proof that spatial UX, fallback transport, and handoff/reporting can live in one coherent operator surface
+- **Related repos:** `stage-pilot`, `fab-ops-yield-control-tower`, `regulated-case-workbench`
+
 ## Start here
 - **Fastest reviewer guide:** `docs/PORTFOLIO_REVIEW_GUIDE.md`
 - **Strongest runtime proof path:** `/api/health -> /api/meta -> /api/runtime-scorecard -> /api/reports/handoff -> /reports -> /events`
