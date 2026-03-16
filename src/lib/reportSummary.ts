@@ -202,6 +202,43 @@ export type ControlTowerAssignmentHistory = {
   };
 };
 
+export type ControlTowerResponsePlaybook = {
+  service: string;
+  status: "ok";
+  generated_at: string;
+  schema: "twincity-response-playbook-v1";
+  filters: ReportFilters;
+  summary: {
+    visible_incidents: number;
+    drills_required: number;
+    attention_drills: number;
+    dispatch_drills: number;
+    escalation_candidates: number;
+  };
+  focus_lane: ControlTowerHandoffBrief["handoff"]["focus_lane"];
+  items: Array<{
+    id: string;
+    lane: DispatchBoardLane;
+    severity: number;
+    zone_id: string;
+    incident_status: string;
+    current_owner: string;
+    response_drill: "ack-and-escalate" | "blocker-sync-and-reroute" | "closure-export-check";
+    escalation_gate: "dispatch-lead" | "floor-ops" | "review-only";
+    next_checkpoint_minutes: number;
+    reviewer_safe_when: string;
+  }>;
+  operator_steps: string[];
+  route_bundle: {
+    response_playbook: string;
+    dispatch_board: string;
+    assignment_history: string;
+    report_handoff: string;
+    reviewer_bundle: string;
+    reports: string;
+  };
+};
+
 type TimelineIndexes = {
   ackAtByEvent: Map<string, number>;
   resolvedAtByEvent: Map<string, number>;
@@ -817,8 +854,10 @@ function buildDispatchBoardRows(input: {
 }
 
 export function buildControlTowerDispatchBoard(input?: {
+  events?: EventItem[];
   filters?: Partial<ReportFilters> & { lane?: DispatchBoardLane };
   now?: number;
+  timeline?: IncidentTimelineEntry[];
 }): ControlTowerDispatchBoard {
   const filters: ReportFilters = {
     range: input?.filters?.range ?? "120m",
@@ -829,12 +868,14 @@ export function buildControlTowerDispatchBoard(input?: {
   const lane = input?.filters?.lane ?? "all";
   const demo = buildDemoReportState();
   const now = input?.now ?? demo.now;
+  const events = input?.events ?? demo.events;
+  const timeline = input?.timeline ?? demo.timeline;
   const rows = buildDispatchBoardRows({
     filters,
     lane,
     now,
-    events: demo.events,
-    timeline: demo.timeline,
+    events,
+    timeline,
   });
 
   const items = rows.map(({ detected_at: _detectedAt, ...row }) => row);
@@ -1103,6 +1144,113 @@ export function buildControlTowerHandoffBrief(input?: {
       dispatch_board: "/api/reports/dispatch-board",
       report_handoff: "/api/reports/handoff",
       report_export: "/api/reports/export",
+      reports: "/reports",
+    },
+  };
+}
+
+export function buildControlTowerResponsePlaybook(input?: {
+  events?: EventItem[];
+  filters?: Partial<ReportFilters>;
+  now?: number;
+  timeline?: IncidentTimelineEntry[];
+}): ControlTowerResponsePlaybook {
+  const demo = buildDemoReportState();
+  const now = input?.now ?? demo.now;
+  const filters: ReportFilters = {
+    range: input?.filters?.range ?? "120m",
+    severity: input?.filters?.severity ?? "all",
+    incident_status: input?.filters?.incident_status ?? "all",
+    zone: input?.filters?.zone ?? "all",
+  };
+  const events = input?.events ?? demo.events;
+  const timeline = input?.timeline ?? demo.timeline;
+  const dispatchBoard = buildControlTowerDispatchBoard({
+    now,
+    filters: {
+      ...filters,
+      lane: "all",
+    },
+    events,
+    timeline,
+  });
+  const assignmentHistory = buildControlTowerAssignmentHistory({
+    now,
+    filters,
+    events,
+    timeline,
+  });
+  const handoff = buildControlTowerHandoffBrief({
+    now,
+    filters,
+    events,
+    timeline,
+  });
+  const ownerById = new Map(
+    assignmentHistory.items.map((item) => [item.id, item.current_owner] as const)
+  );
+  const items = dispatchBoard.items.slice(0, 5).map((item) => {
+    const responseDrill: ControlTowerResponsePlaybook["items"][number]["response_drill"] =
+      item.lane === "attention"
+        ? "ack-and-escalate"
+        : item.lane === "dispatch"
+          ? "blocker-sync-and-reroute"
+          : "closure-export-check";
+    const escalationGate: ControlTowerResponsePlaybook["items"][number]["escalation_gate"] =
+      item.lane === "attention" || item.severity === 3
+        ? "dispatch-lead"
+        : item.lane === "dispatch"
+          ? "floor-ops"
+          : "review-only";
+
+    return {
+      id: item.id,
+      lane: item.lane,
+      severity: item.severity,
+      zone_id: item.zone_id,
+      incident_status: item.incident_status,
+      current_owner: ownerById.get(item.id) ?? "dispatch-router",
+      response_drill: responseDrill,
+      escalation_gate: escalationGate,
+      next_checkpoint_minutes:
+        item.lane === "attention" ? 2 : item.lane === "dispatch" ? 5 : 10,
+      reviewer_safe_when:
+        item.incident_status === "resolved"
+          ? "digest and export bundle match the closed timeline"
+          : item.lane === "attention"
+            ? "ACK note, owner, and ETA are recorded"
+            : "handoff brief and blocker note stay aligned",
+    };
+  });
+
+  return {
+    service: "twincity-ui",
+    status: "ok",
+    generated_at: new Date(now).toISOString(),
+    schema: "twincity-response-playbook-v1",
+    filters,
+    summary: {
+      visible_incidents: dispatchBoard.summary.visible_incidents,
+      drills_required: items.length,
+      attention_drills: items.filter((item) => item.lane === "attention").length,
+      dispatch_drills: items.filter((item) => item.lane === "dispatch").length,
+      escalation_candidates: items.filter(
+        (item) => item.escalation_gate === "dispatch-lead"
+      ).length,
+    },
+    focus_lane: handoff.handoff.focus_lane,
+    items,
+    operator_steps: [
+      "Start from the dispatch board, then confirm current owner in assignment history before escalating anything.",
+      "Use the handoff brief to keep next-shift focus lane and blocker notes aligned with the active drill.",
+      "Only export or share reviewer artifacts after the response drill and bundle integrity story match.",
+    ],
+    route_bundle: {
+      response_playbook: "/api/reports/response-playbook",
+      dispatch_board: "/api/reports/dispatch-board",
+      assignment_history: "/api/reports/assignment-history",
+      report_handoff: "/api/reports/handoff",
+      reviewer_bundle: "/api/reports/reviewer-bundle",
       reports: "/reports",
     },
   };

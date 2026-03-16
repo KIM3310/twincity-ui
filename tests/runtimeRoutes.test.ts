@@ -6,6 +6,7 @@ import { GET as getAssignmentHistoryRoute } from "@/app/api/reports/assignment-h
 import { GET as getDispatchBoardRoute } from "@/app/api/reports/dispatch-board/route";
 import { GET as getReportExportRoute } from "@/app/api/reports/export/route";
 import { GET as getReportHandoffRoute } from "@/app/api/reports/handoff/route";
+import { GET as getResponsePlaybookRoute } from "@/app/api/reports/response-playbook/route";
 import { GET as getReviewerBundleRoute } from "@/app/api/reports/reviewer-bundle/route";
 import { GET as getReviewerBundleVerifyRoute } from "@/app/api/reports/reviewer-bundle/verify/route";
 import { GET as getReportSummaryRoute } from "@/app/api/reports/summary/route";
@@ -88,6 +89,7 @@ describe("runtime routes", () => {
             "dispatch-board-surface",
             "assignment-history-surface",
             "handoff-brief-surface",
+            "response-playbook-surface",
             "reviewer-bundle-surface",
           ],
           service_grade: {
@@ -99,6 +101,7 @@ describe("runtime routes", () => {
             dispatch_board: "/api/reports/dispatch-board",
             assignment_history: "/api/reports/assignment-history",
             report_handoff: "/api/reports/handoff",
+            response_playbook: "/api/reports/response-playbook",
             report_export: "/api/reports/export",
             reviewer_bundle: "/api/reports/reviewer-bundle",
             reviewer_bundle_verify: "/api/reports/reviewer-bundle/verify",
@@ -112,6 +115,7 @@ describe("runtime routes", () => {
             dispatch_board: "/api/reports/dispatch-board",
             assignment_history: "/api/reports/assignment-history",
             report_handoff: "/api/reports/handoff",
+            response_playbook: "/api/reports/response-playbook",
             report_export: "/api/reports/export",
             reviewer_bundle: "/api/reports/reviewer-bundle",
             reviewer_bundle_verify: "/api/reports/reviewer-bundle/verify",
@@ -159,6 +163,7 @@ describe("runtime routes", () => {
         expect(body.routes).toContain("/api/reports/dispatch-board");
         expect(body.routes).toContain("/api/reports/assignment-history");
         expect(body.routes).toContain("/api/reports/handoff");
+        expect(body.routes).toContain("/api/reports/response-playbook");
         expect(body.routes).toContain("/api/reports/export");
         expect(body.routes).toContain("/api/reports/reviewer-bundle");
         expect(body.routes).toContain("/api/reports/reviewer-bundle/verify");
@@ -166,7 +171,7 @@ describe("runtime routes", () => {
         expect(body.diagnostics.next_action).toContain("/api/3d-test/status");
         expect(body.report_contract.schema).toBe("twincity-report-v1");
         expect(Array.isArray(body.trust_boundary)).toBe(true);
-        expect(body.two_minute_review).toHaveLength(10);
+        expect(body.two_minute_review).toHaveLength(11);
         expect(body.proof_assets[0].href).toBe("/api/health");
         expect(body.links.runtime_brief).toBe("/api/runtime-brief");
         expect(body.links.runtime_scorecard).toBe("/api/runtime-scorecard");
@@ -174,6 +179,7 @@ describe("runtime routes", () => {
         expect(body.links.dispatch_board).toBe("/api/reports/dispatch-board");
         expect(body.links.assignment_history).toBe("/api/reports/assignment-history");
         expect(body.links.report_handoff).toBe("/api/reports/handoff");
+        expect(body.links.response_playbook).toBe("/api/reports/response-playbook");
         expect(body.links.report_export).toBe("/api/reports/export");
         expect(body.links.reviewer_bundle).toBe("/api/reports/reviewer-bundle");
         expect(body.links.reviewer_bundle_verify).toBe("/api/reports/reviewer-bundle/verify");
@@ -203,6 +209,7 @@ describe("runtime routes", () => {
         dispatch_board: "/api/reports/dispatch-board",
         assignment_history: "/api/reports/assignment-history",
         report_handoff: "/api/reports/handoff",
+        response_playbook: "/api/reports/response-playbook",
         report_export: "/api/reports/export",
         reviewer_bundle: "/api/reports/reviewer-bundle",
         reviewer_bundle_verify: "/api/reports/reviewer-bundle/verify",
@@ -211,7 +218,7 @@ describe("runtime routes", () => {
     });
     expect(body.route_count).toBeGreaterThanOrEqual(10);
     expect(body.review_flow[0]).toContain("/api/health");
-    expect(body.two_minute_review).toHaveLength(10);
+    expect(body.two_minute_review).toHaveLength(11);
     expect(body.proof_assets[0].href).toBe("/api/health");
     expect(response.headers.get("x-request-id")).toBe(body.request_id);
   });
@@ -230,6 +237,7 @@ describe("runtime routes", () => {
     expect(body.links.runtime_scorecard).toBe("/api/runtime-scorecard");
     expect(body.links.dispatch_board).toBe("/api/reports/dispatch-board");
     expect(body.links.assignment_history).toBe("/api/reports/assignment-history");
+    expect(body.links.response_playbook).toBe("/api/reports/response-playbook");
     expect(body.links.reviewer_bundle).toBe("/api/reports/reviewer-bundle");
     expect(response.headers.get("x-request-id")).toBe(body.request_id);
   });
@@ -358,6 +366,39 @@ describe("runtime routes", () => {
     expect(body.priorities[0].next_action).toContain("Acknowledge immediately");
     expect(body.route_bundle.report_handoff).toBe("/api/reports/handoff");
     expect(Array.isArray(body.operator_notes)).toBe(true);
+    expect(response.headers.get("x-request-id")).toBe(body.request_id);
+  });
+
+  test("response playbook route exposes escalation drills and next checkpoints", async () => {
+    const response = await getResponsePlaybookRoute(
+      new Request("https://example.com/api/reports/response-playbook?range=120m&severity=all")
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      ok: true,
+      service: "twincity-ui",
+      schema: "twincity-response-playbook-v1",
+      filters: {
+        range: "120m",
+        severity: "all",
+        incident_status: "all",
+        zone: "all",
+      },
+      route_bundle: {
+        response_playbook: "/api/reports/response-playbook",
+        dispatch_board: "/api/reports/dispatch-board",
+        assignment_history: "/api/reports/assignment-history",
+        report_handoff: "/api/reports/handoff",
+        reviewer_bundle: "/api/reports/reviewer-bundle",
+        reports: "/reports",
+      },
+    });
+    expect(body.summary.drills_required).toBeGreaterThanOrEqual(1);
+    expect(body.items[0].response_drill).toMatch(
+      /ack-and-escalate|blocker-sync-and-reroute|closure-export-check/
+    );
     expect(response.headers.get("x-request-id")).toBe(body.request_id);
   });
 

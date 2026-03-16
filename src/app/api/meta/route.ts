@@ -22,6 +22,7 @@ export function GET(request: Request) {
         dispatch_board: "/api/reports/dispatch-board",
         assignment_history: "/api/reports/assignment-history",
         report_handoff: "/api/reports/handoff",
+        response_playbook: "/api/reports/response-playbook",
         report_export: "/api/reports/export",
         reviewer_bundle: "/api/reports/reviewer-bundle",
         reviewer_bundle_verify: "/api/reports/reviewer-bundle/verify",

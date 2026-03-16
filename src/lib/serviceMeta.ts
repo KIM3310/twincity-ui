@@ -82,6 +82,7 @@ export type ControlTowerRuntimeBrief = {
     dispatch_board: string;
     assignment_history: string;
     report_handoff: string;
+    response_playbook: string;
     report_export: string;
     reviewer_bundle: string;
     reviewer_bundle_verify: string;
@@ -189,6 +190,12 @@ const CONTROL_TOWER_EVIDENCE: ServiceArtifact[] = [
     note: "deterministic shift handoff digest with overdue queue risk",
   },
   {
+    label: "Response Playbook API",
+    href: "/api/reports/response-playbook",
+    kind: "route",
+    note: "response drills, escalation gates, and next checkpoints for active incidents",
+  },
+  {
     label: "Report Export API",
     href: "/api/reports/export",
     kind: "route",
@@ -291,6 +298,7 @@ const CONTROL_TOWER_ARTIFACT_HREFS = [
   "/api/reports/dispatch-board",
   "/api/reports/assignment-history",
   "/api/reports/handoff",
+  "/api/reports/response-playbook",
   "/api/reports/export",
   "/api/reports/reviewer-bundle",
   "/api/reports/reviewer-bundle/verify",
@@ -311,6 +319,7 @@ const CONTROL_TOWER_PROOF_ASSET_HREFS = [
   "/api/reports/dispatch-board",
   "/api/reports/assignment-history",
   "/api/reports/handoff",
+  "/api/reports/response-playbook",
   "/api/reports/export",
   "/api/reports/reviewer-bundle",
   "docs/PORTFOLIO_REVIEW_GUIDE.md",
@@ -429,6 +438,7 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
       "Use /api/reports/dispatch-board to isolate attention and dispatch lanes before opening exports.",
       "Use /api/reports/assignment-history to verify current owner and handoff chain before shift changes.",
       "Use /api/reports/handoff to verify the next-shift digest before copying or exporting reviewer artifacts.",
+      "Use /api/reports/response-playbook to review escalation drills, checkpoint timing, and reviewer-safe action gates.",
       "Use /api/reports/export to validate server-generated JSON or CSV handoff payloads.",
       "Use /api/reports/reviewer-bundle when a reviewer needs a digest-backed export bundle.",
       "Use /events or / to exercise triage and timeline handling.",
@@ -441,6 +451,7 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
       "Use /api/reports/dispatch-board to confirm unresolved queue posture and latest action lanes.",
       "Use /api/reports/assignment-history to confirm queue owner and operator handoff lineage.",
       "Use /api/reports/handoff to confirm the top next-shift priorities and overdue queue risk.",
+      "Use /api/reports/response-playbook to confirm who escalates next and when the next checkpoint should happen.",
       "Use /api/reports/export to validate server-side handoff payloads before sharing a report.",
       "Use /api/reports/reviewer-bundle/verify to confirm bundle integrity before external handoff.",
       "Open /reports to validate SLA proof and export posture.",
@@ -458,6 +469,7 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
       "/api/reports/dispatch-board",
       "/api/reports/assignment-history",
       "/api/reports/handoff",
+      "/api/reports/response-playbook",
       "/api/reports/export",
       "/api/reports/reviewer-bundle",
       "/api/reports/reviewer-bundle/verify",
@@ -497,6 +509,7 @@ export function buildControlTowerRuntimeBrief(now = new Date()): ControlTowerRun
       dispatch_board: "/api/reports/dispatch-board",
       assignment_history: "/api/reports/assignment-history",
       report_handoff: "/api/reports/handoff",
+      response_playbook: "/api/reports/response-playbook",
       report_export: "/api/reports/export",
       reviewer_bundle: "/api/reports/reviewer-bundle",
       reviewer_bundle_verify: "/api/reports/reviewer-bundle/verify",
