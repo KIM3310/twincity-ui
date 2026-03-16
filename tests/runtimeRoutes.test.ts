@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from "vitest";
 
 import { GET as getHealthRoute } from "@/app/api/health/route";
 import { GET as getMetaRoute } from "@/app/api/meta/route";
+import { GET as getAssignmentHistoryRoute } from "@/app/api/reports/assignment-history/route";
 import { GET as getDispatchBoardRoute } from "@/app/api/reports/dispatch-board/route";
 import { GET as getReportExportRoute } from "@/app/api/reports/export/route";
 import { GET as getReportHandoffRoute } from "@/app/api/reports/handoff/route";
@@ -85,6 +86,7 @@ describe("runtime routes", () => {
             "report-schema-surface",
             "report-summary-surface",
             "dispatch-board-surface",
+            "assignment-history-surface",
             "handoff-brief-surface",
             "reviewer-bundle-surface",
           ],
@@ -95,6 +97,7 @@ describe("runtime routes", () => {
             report_schema: "/api/schema/report",
             report_summary: "/api/reports/summary",
             dispatch_board: "/api/reports/dispatch-board",
+            assignment_history: "/api/reports/assignment-history",
             report_handoff: "/api/reports/handoff",
             report_export: "/api/reports/export",
             reviewer_bundle: "/api/reports/reviewer-bundle",
@@ -107,6 +110,7 @@ describe("runtime routes", () => {
             report_schema: "/api/schema/report",
             report_summary: "/api/reports/summary",
             dispatch_board: "/api/reports/dispatch-board",
+            assignment_history: "/api/reports/assignment-history",
             report_handoff: "/api/reports/handoff",
             report_export: "/api/reports/export",
             reviewer_bundle: "/api/reports/reviewer-bundle",
@@ -153,6 +157,7 @@ describe("runtime routes", () => {
         expect(body.routes).toContain("/api/schema/report");
         expect(body.routes).toContain("/api/reports/summary");
         expect(body.routes).toContain("/api/reports/dispatch-board");
+        expect(body.routes).toContain("/api/reports/assignment-history");
         expect(body.routes).toContain("/api/reports/handoff");
         expect(body.routes).toContain("/api/reports/export");
         expect(body.routes).toContain("/api/reports/reviewer-bundle");
@@ -161,12 +166,13 @@ describe("runtime routes", () => {
         expect(body.diagnostics.next_action).toContain("/api/3d-test/status");
         expect(body.report_contract.schema).toBe("twincity-report-v1");
         expect(Array.isArray(body.trust_boundary)).toBe(true);
-        expect(body.two_minute_review).toHaveLength(9);
+        expect(body.two_minute_review).toHaveLength(10);
         expect(body.proof_assets[0].href).toBe("/api/health");
         expect(body.links.runtime_brief).toBe("/api/runtime-brief");
         expect(body.links.runtime_scorecard).toBe("/api/runtime-scorecard");
         expect(body.links.report_summary).toBe("/api/reports/summary");
         expect(body.links.dispatch_board).toBe("/api/reports/dispatch-board");
+        expect(body.links.assignment_history).toBe("/api/reports/assignment-history");
         expect(body.links.report_handoff).toBe("/api/reports/handoff");
         expect(body.links.report_export).toBe("/api/reports/export");
         expect(body.links.reviewer_bundle).toBe("/api/reports/reviewer-bundle");
@@ -195,6 +201,7 @@ describe("runtime routes", () => {
         runtime_scorecard: "/api/runtime-scorecard",
         report_summary: "/api/reports/summary",
         dispatch_board: "/api/reports/dispatch-board",
+        assignment_history: "/api/reports/assignment-history",
         report_handoff: "/api/reports/handoff",
         report_export: "/api/reports/export",
         reviewer_bundle: "/api/reports/reviewer-bundle",
@@ -202,9 +209,9 @@ describe("runtime routes", () => {
         reports: "/reports",
       },
     });
-    expect(body.route_count).toBeGreaterThanOrEqual(9);
+    expect(body.route_count).toBeGreaterThanOrEqual(10);
     expect(body.review_flow[0]).toContain("/api/health");
-    expect(body.two_minute_review).toHaveLength(9);
+    expect(body.two_minute_review).toHaveLength(10);
     expect(body.proof_assets[0].href).toBe("/api/health");
     expect(response.headers.get("x-request-id")).toBe(body.request_id);
   });
@@ -222,6 +229,7 @@ describe("runtime routes", () => {
     expect(body.runtime.operator_auth.enabled).toBe(false);
     expect(body.links.runtime_scorecard).toBe("/api/runtime-scorecard");
     expect(body.links.dispatch_board).toBe("/api/reports/dispatch-board");
+    expect(body.links.assignment_history).toBe("/api/reports/assignment-history");
     expect(body.links.reviewer_bundle).toBe("/api/reports/reviewer-bundle");
     expect(response.headers.get("x-request-id")).toBe(body.request_id);
   });
@@ -285,6 +293,36 @@ describe("runtime routes", () => {
     expect(body.items[0].lane).toBe("attention");
     expect(body.items[0].next_action).toContain("Acknowledge");
     expect(body.route_bundle.dispatch_board).toBe("/api/reports/dispatch-board");
+    expect(response.headers.get("x-request-id")).toBe(body.request_id);
+  });
+
+  test("assignment history route exposes operator ownership and handoff chain", async () => {
+    const response = await getAssignmentHistoryRoute(
+      new Request("https://example.com/api/reports/assignment-history?range=120m&severity=all")
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      ok: true,
+      service: "twincity-ui",
+      schema: "twincity-assignment-history-v1",
+      filters: {
+        range: "120m",
+        severity: "all",
+        incident_status: "all",
+        zone: "all",
+      },
+      summary: {
+        visible_incidents: 4,
+        assigned_count: 3,
+        unassigned_count: 1,
+      },
+    });
+    expect(body.items[0].id).toBe("evt-seoul-03");
+    expect(body.items[0].current_owner).toBe("dispatch-lead");
+    expect(body.items[0].history[0].actor).toBe("dispatch-router");
+    expect(body.route_bundle.assignment_history).toBe("/api/reports/assignment-history");
     expect(response.headers.get("x-request-id")).toBe(body.request_id);
   });
 

@@ -162,6 +162,46 @@ export type ControlTowerHandoffBrief = {
   };
 };
 
+export type ControlTowerAssignmentHistory = {
+  service: string;
+  status: "ok";
+  generated_at: string;
+  schema: "twincity-assignment-history-v1";
+  filters: ReportFilters;
+  summary: {
+    visible_incidents: number;
+    assigned_count: number;
+    unassigned_count: number;
+    resolved_assignments: number;
+    total_handoffs: number;
+  };
+  items: Array<{
+    id: string;
+    severity: number;
+    type: string;
+    zone_id: string;
+    incident_status: string;
+    current_owner: string;
+    handoff_count: number;
+    latest_action: string;
+    next_action: string;
+    history: Array<{
+      at: string;
+      actor: string;
+      action: string;
+      to_owner: string;
+      note: string | null;
+    }>;
+  }>;
+  review_actions: string[];
+  route_bundle: {
+    assignment_history: string;
+    dispatch_board: string;
+    report_handoff: string;
+    reports: string;
+  };
+};
+
 type TimelineIndexes = {
   ackAtByEvent: Map<string, number>;
   resolvedAtByEvent: Map<string, number>;
@@ -835,6 +875,131 @@ export function buildControlTowerDispatchBoard(input?: {
       dispatch_board: "/api/reports/dispatch-board",
       report_summary: "/api/reports/summary",
       report_export: "/api/reports/export",
+      reports: "/reports",
+    },
+  };
+}
+
+export function buildControlTowerAssignmentHistory(input?: {
+  events?: EventItem[];
+  filters?: Partial<ReportFilters>;
+  now?: number;
+  timeline?: IncidentTimelineEntry[];
+}): ControlTowerAssignmentHistory {
+  const demo = buildDemoReportState();
+  const now = input?.now ?? demo.now;
+  const filters: ReportFilters = {
+    range: input?.filters?.range ?? "120m",
+    severity: input?.filters?.severity ?? "all",
+    incident_status: input?.filters?.incident_status ?? "all",
+    zone: input?.filters?.zone ?? "all",
+  };
+  const events = input?.events ?? demo.events;
+  const timeline = input?.timeline ?? demo.timeline;
+  const { filteredEvents, ackAtByEvent, resolvedAtByEvent, latestTimelineByEvent } =
+    buildFilteredReportRowsFromState({
+      filters,
+      now,
+      events,
+      timeline,
+    });
+
+  const items = filteredEvents
+    .map((event) => {
+      const seedOwner = event.severity >= 3 ? "dispatch-lead" : "floor-ops";
+      const eventTimeline = timeline
+        .filter((entry) => entry.event_id === event.id)
+        .sort((left, right) => left.at - right.at);
+      const history = [
+        {
+          at: new Date(event.detected_at).toISOString(),
+          actor: "dispatch-router",
+          action: "queued",
+          to_owner: seedOwner,
+          note: `${event.zone_id} incident entered the ${seedOwner} queue.`,
+        },
+        ...eventTimeline.map((entry) => ({
+          at: new Date(entry.at).toISOString(),
+          actor: entry.actor,
+          action: entry.action === "ack" ? "assigned" : entry.action,
+          to_owner: entry.actor,
+          note: entry.note ?? null,
+        })),
+      ];
+      const latestTimeline = latestTimelineByEvent.get(event.id);
+      const acked = ackAtByEvent.has(event.id);
+      const resolved = resolvedAtByEvent.has(event.id);
+      const handoffCount = Math.max(0, history.length - 1);
+      const currentOwner =
+        event.incident_status === "resolved"
+          ? history[history.length - 1]?.to_owner ?? seedOwner
+          : acked
+            ? history[history.length - 1]?.to_owner ?? seedOwner
+            : seedOwner;
+
+      return {
+        id: event.id,
+        severity: event.severity,
+        type: event.type,
+        zone_id: event.zone_id,
+        incident_status: event.incident_status,
+        current_owner: currentOwner,
+        handoff_count: handoffCount,
+        latest_action: latestTimeline?.action ?? "queued",
+        next_action:
+          event.incident_status === "resolved"
+            ? "Capture the final handoff note and keep the reviewer export aligned with the closed timeline."
+            : acked
+              ? "Keep the blocker and ETA updated so the next shift inherits a clean operator handoff."
+              : "Assign the incident to an operator before the queue drifts beyond the ACK SLA.",
+        history,
+        sort_detected_at: event.detected_at,
+        sort_ack_priority: acked ? 1 : 0,
+        sort_resolved_priority: resolved ? 1 : 0,
+      };
+    })
+    .sort((left, right) => {
+      if (left.sort_ack_priority !== right.sort_ack_priority) {
+        return left.sort_ack_priority - right.sort_ack_priority;
+      }
+      if (right.severity !== left.severity) return right.severity - left.severity;
+      if (left.sort_resolved_priority !== right.sort_resolved_priority) {
+        return left.sort_resolved_priority - right.sort_resolved_priority;
+      }
+      return right.sort_detected_at - left.sort_detected_at;
+    })
+    .map(
+      ({
+        sort_detected_at: _sortDetectedAt,
+        sort_ack_priority: _sortAckPriority,
+        sort_resolved_priority: _sortResolvedPriority,
+        ...item
+      }) => item
+    );
+
+  return {
+    service: "twincity-ui",
+    status: "ok",
+    generated_at: new Date(now).toISOString(),
+    schema: "twincity-assignment-history-v1",
+    filters,
+    summary: {
+      visible_incidents: items.length,
+      assigned_count: items.filter((item) => item.history.length > 1).length,
+      unassigned_count: items.filter((item) => item.history.length === 1).length,
+      resolved_assignments: items.filter((item) => item.incident_status === "resolved").length,
+      total_handoffs: items.reduce((sum, item) => sum + item.handoff_count, 0),
+    },
+    items,
+    review_actions: [
+      "Start with incidents that still have only the queue owner before walking the active handoff chain.",
+      "Keep assignment history aligned with dispatch board filters during operator walkthroughs.",
+      "Review the handoff brief before exporting anything to the next shift.",
+    ],
+    route_bundle: {
+      assignment_history: "/api/reports/assignment-history",
+      dispatch_board: "/api/reports/dispatch-board",
+      report_handoff: "/api/reports/handoff",
       reports: "/reports",
     },
   };
