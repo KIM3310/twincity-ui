@@ -24,7 +24,7 @@ The important part is not the map by itself. The repo is strongest when read as 
 | Team lens | What should stand out fast | Start here |
 |---|---|---|
 | Big tech product / SRE | transport fallback, deterministic contracts, runtime posture before UI polish | `/api/health`, `/api/meta`, `/api/runtime-scorecard`, `tests/runtimeRoutes.test.ts` |
-| Palantir / operational software | queue triage, shift handoff, evidence-backed operator decisions, explainable workflow state | `/api/reports/handoff`, `/api/reports/dispatch-board`, `/reports` |
+| High-trust operational software | queue triage, shift handoff, evidence-backed operator decisions, explainable workflow state | `/api/reports/handoff`, `/api/reports/dispatch-board`, `/reports` |
 | Solution / field architect | review-safe live/demo posture and operating-model clarity | `docs/PORTFOLIO_REVIEW_GUIDE.md`, `docs/LIVE_INTEGRATION.md`, `docs/ops/RUNBOOK.md` |
 
 ## Portfolio context
