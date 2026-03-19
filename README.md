@@ -1,5 +1,11 @@
 # TwinCity UI — Digital Twin Ops Console
 
+[![CI](https://github.com/KIM3310/twincity-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/KIM3310/twincity-ui/actions/workflows/ci.yml)
+![Node >=20](https://img.shields.io/badge/node-%3E%3D20-brightgreen)
+![Next.js](https://img.shields.io/badge/Next.js-15-black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow)
+
 Next.js (React/TypeScript) operations console for spatial event management. Overlays zones and events on a floorplan, connecting the spatial view to the full operator workflow: ingest, normalization, triage, dispatch, SLA reporting, and shift handoff.
 
 ![Ops console screenshot](public/screenshots/ops_console.png)
