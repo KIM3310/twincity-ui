@@ -1,0 +1,19 @@
+twincity-ui test run — 2026-03-19
+Runner: vitest v3.2.4
+Platform: darwin (macOS), Node.js >=20
+
+ Test Files  9 passed (9)
+      Tests  46 passed (46)
+   Start at  10:31:54
+   Duration  440ms (transform 323ms, setup 0ms, collect 710ms, tests 91ms, environment 1ms, prepare 435ms)
+
+Suite breakdown:
+  landingPage.test.ts: 2 tests (1ms)
+  assetProbe.test.ts: 4 tests (3ms)
+  serviceMeta.test.ts: 2 tests (3ms)
+  urlState.test.ts: 5 tests (4ms)
+  signalChecks.test.ts: 4 tests (4ms)
+  assetRoutes.test.ts: 3 tests (9ms)
+  eventAdapter.test.ts: 10 tests (20ms)
+  eventDetail.test.ts: 2 tests (18ms)
+  runtimeRoutes.test.ts: 14 tests (27ms)
