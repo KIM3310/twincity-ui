@@ -10,6 +10,21 @@ export default function NotFound() {
           주소가 바뀌었거나 삭제되었을 수 있어요. 상황판으로 돌아가서 다시 선택해 주세요.
         </p>
 
+        <div style={{ display: "grid", gap: "0.6rem", marginTop: "1rem" }}>
+          <div className="landingProofGrid" style={{ maxWidth: "560px" }}>
+            <Link className="landingProofCard" href="/">
+              <strong>상황판으로</strong>
+              <p>운영 화면에서 다시 시작합니다.</p>
+              <span className="mono">/</span>
+            </Link>
+            <Link className="landingProofCard" href="/reports">
+              <strong>리포트 proof 보기</strong>
+              <p>dispatch, handoff, export를 한 화면에서 확인합니다.</p>
+              <span className="mono">/reports</span>
+            </Link>
+          </div>
+        </div>
+
         <div className="ctaRow" style={{ marginTop: "1.1rem" }}>
           <Link className="button" href="/">
             상황판으로

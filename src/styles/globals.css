@@ -117,6 +117,34 @@
   box-sizing: border-box;
 }
 
+/* ── Focus-visible accessibility ring ── */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ── Selection style ── */
+::selection {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+/* ── Smooth transitions for interactive elements ── */
+a, button {
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease,
+    transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
 html,
 body {
   min-height: 100%;
