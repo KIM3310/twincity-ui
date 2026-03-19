@@ -48,7 +48,7 @@ NEXT_PUBLIC_EVENT_API_URL=https://example.com/events
 NEXT_PUBLIC_EVENT_POLL_MS=5000
 ```
 
-아무 설정이 없으면 앱은 demo-first 상태로 동작하며, 그 상태에서도 리뷰 가능한 surface를 유지합니다.
+아무 설정이 없으면 앱은 demo 상태로 동작하며, 그 상태에서도 리뷰 가능한 surface를 유지합니다.
 
 ## 미리 말해둘 한계
 - demo 모드는 auth, noisy traffic, 중앙 저장소까지 증명하지는 않습니다.

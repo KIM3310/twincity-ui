@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     template: "%s | TwinCity UI",
   },
   description:
-    "Demo-first digital twin ops console with reviewer-safe runtime, dispatch, handoff, and export status pages.",
+    "Digital twin ops console with reviewable runtime, dispatch, handoff, and export status pages.",
   keywords: [
     "digital twin",
     "operations console",
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "TwinCity UI — Proof-first Ops Control Tower",
     description:
-      "Demo-first digital twin ops console with reviewable runtime, dispatch, handoff, and export surfaces.",
+      "Digital twin ops console with reviewable runtime, dispatch, handoff, and export surfaces.",
     images: ["/screenshots/ops_console.png"],
   },
   robots: {
