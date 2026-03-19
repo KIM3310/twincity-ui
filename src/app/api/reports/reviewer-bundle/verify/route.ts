@@ -14,8 +14,8 @@ export async function GET(request: Request) {
     if (!authResult.ok) {
       return apiError(
         authResult.reason === "missing-role"
-          ? "required operator role missing for reviewer bundle verification"
-          : "operator token required for reviewer bundle verification",
+          ? "required operator role missing for status bundle verification"
+          : "operator token required for status bundle verification",
         {
           status: authResult.reason === "missing-role" ? 403 : 401,
           requestId,

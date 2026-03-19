@@ -39,7 +39,7 @@ export default function Loading() {
             {LOADING_PATHS.map(([label, href]) => (
               <Link key={href} className="landingProofCard" href={href}>
                 <strong>{label}</strong>
-                <p>첫 화면이 길게 비어 보이지 않도록 proof-first 경로를 유지합니다.</p>
+                <p>첫 화면이 길게 비어 보이지 않도록 product-focused 경로를 유지합니다.</p>
                 <span className="mono">{href}</span>
               </Link>
             ))}

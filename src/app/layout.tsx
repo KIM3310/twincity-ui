@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     template: "%s | TwinCity UI",
   },
   description:
-    "Demo-first digital twin ops console with reviewer-safe runtime, dispatch, handoff, and export proof surfaces.",
+    "Demo-first digital twin ops console with reviewer-safe runtime, dispatch, handoff, and export status pages.",
   keywords: [
     "digital twin",
     "operations console",

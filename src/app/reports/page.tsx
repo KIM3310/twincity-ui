@@ -829,7 +829,7 @@ export default function ReportsPage() {
 
       <section className="splitBlock reveal delay-2">
         <article className="panel reportCard">
-          <p className="kicker">Review Pack</p>
+          <p className="kicker">Status Summary</p>
           <h2 className="panelTitle">리포트 계약과 운영 증거</h2>
           <p className="pageLead" style={{ maxWidth: "unset" }}>
             {runtimeBrief.headline}

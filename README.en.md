@@ -4,7 +4,7 @@ If you only read one repo-side document, start with:
 - `README.md`
 - `docs/PORTFOLIO_REVIEW_GUIDE.md`
 
-TwinCity UI is a **proof-first digital twin / operations control tower** built with Next.js, React, and TypeScript. The repo is strongest when reviewed as an operator system that makes the full loop inspectable:
+TwinCity UI is a **product-focused digital twin / operations control tower** built with Next.js, React, and TypeScript. The repo is strongest when reviewed as an operator system that makes the full loop inspectable:
 
 `ingest posture -> payload normalization -> triage -> dispatch -> SLA/report -> shift handoff`
 

@@ -191,9 +191,9 @@ export async function buildControlTowerReviewerBundle(input?: {
     handoff: {
       headline: "Deterministic reviewer handoff bundle for queue posture, SLA state, and export governance.",
       review_sequence: [
-        "Confirm /api/runtime-scorecard before sharing a reviewer bundle.",
+        "Confirm /api/runtime-scorecard before sharing a status bundle.",
         "Use the bundle digest to verify queue posture and SLA summary were not altered after export.",
-        "Pair the reviewer bundle with /reports when a human needs the richer visual surface.",
+        "Pair the status bundle with /reports when a human needs the richer visual surface.",
       ],
       export_routes: [
         "/api/reports/export?format=json",

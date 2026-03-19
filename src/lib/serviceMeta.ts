@@ -412,7 +412,7 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
       `ingest: ${ingestModeLabel}`,
       "normalize: provider payloads converge into EventItem",
       "state: browser-local replay and timeline persistence",
-      "handoff: reviewer bundles carry a deterministic digest before export approval",
+      "handoff: status bundles carry a deterministic digest before export approval",
       "map: floorplan + zone polygons + optional homography",
       "validation: 3D probe routes stay optional and review-only",
     ],
@@ -488,7 +488,7 @@ export function buildControlTowerRuntimeBrief(now = new Date()): ControlTowerRun
     generated_at: serviceMeta.generated_at,
     mode: serviceMeta.mode,
     headline:
-      "Control tower review pack that keeps ingest mode, export contract, and operator proof visible before deep-dive debugging.",
+      "Control tower status summary that keeps ingest mode, export contract, and operator proof visible before deep-dive debugging.",
     readiness_contract: "control-tower-runtime-brief-v1",
     live_sources: serviceMeta.live_sources,
     diagnostics: serviceMeta.diagnostics,

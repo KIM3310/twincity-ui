@@ -86,7 +86,7 @@ export function buildControlTowerRuntimeScorecard(now = new Date()) {
       "Use the dispatch board to confirm unresolved queue posture before sharing a report snapshot.",
       "Use the shift handoff brief to highlight overdue queue risk before reviewer handoff.",
       "Use the response playbook to confirm escalation owner and next checkpoint timing before actioning incidents.",
-      "Generate and verify the reviewer bundle digest when export integrity matters.",
+      "Generate and verify the status bundle digest when export integrity matters.",
       "Verify report summary before sharing export artifacts with reviewers.",
       "Keep ingest-mode posture and SLA snapshot paired during walkthroughs.",
     ],

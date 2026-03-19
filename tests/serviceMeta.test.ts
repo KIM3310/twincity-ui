@@ -15,7 +15,7 @@ describe("service meta evidence surface", () => {
     );
   });
 
-  test("includes the portfolio review guide in reviewer-facing artifacts", () => {
+  test("includes the portfolio review guide in public artifacts", () => {
     const meta = buildControlTowerServiceMeta();
 
     expect(meta.artifacts.map((item) => item.href)).toContain("docs/PORTFOLIO_REVIEW_GUIDE.md");

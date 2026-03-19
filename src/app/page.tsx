@@ -40,7 +40,7 @@ const LANDING_SIGNALS = [
   {
     label: "첫 클릭",
     value: "Proof before polish",
-    note: "health → reports → events 순서로 recruiter와 reviewer가 바로 읽을 수 있게 정리했습니다.",
+    note: "health → reports → events 순서로 user와 reviewer가 바로 읽을 수 있게 정리했습니다.",
   },
   {
     label: "handoff 톤",
@@ -121,7 +121,7 @@ export default function DashboardPage() {
           <h1 className="heroTitle">첫 화면에서 바로 운영 맥락과 검증 경로가 보이는 홈</h1>
           <p className="heroLead">
             실시간 연결이 비어 있어도 첫 화면을 빈 상태로 두지 않고, 지금 바로 확인할 수 있는 운영 맥락과
-            proof path를 먼저 보여줍니다. 과장된 control room 연출보다 reviewer가 바로 따라갈 수 있는
+            walkthrough를 먼저 보여줍니다. 과장된 control room 연출보다 reviewer가 바로 따라갈 수 있는
             health → reports → events 순서를 앞세웠습니다.
           </p>
 
@@ -160,7 +160,7 @@ export default function DashboardPage() {
         </div>
 
         <aside className="heroCopy landingProofRail">
-          <p className="kicker">First-click proof path</p>
+          <p className="kicker">First-click walkthrough</p>
           <h2 className="panelTitle">1분 안에 제품의 진짜 이야기를 확인하는 순서</h2>
           <p className="landingProofLead">
             채용 담당자나 reviewer가 처음 열었을 때도, 무엇이 live이고 무엇이 staged인지 바로 읽을 수
@@ -254,7 +254,7 @@ export default function DashboardPage() {
             <h2 className="panelTitle">채용 렌즈별로 무엇을 읽어야 하는지 바로 보이게 정리했습니다</h2>
           </div>
           <span className="chip" data-tone="calm">
-            recruiter scanable
+            user scanable
           </span>
         </div>
         <div className="landingSupportGrid">
@@ -273,7 +273,7 @@ export default function DashboardPage() {
             <h2 className="panelTitle">route contract만 열어도 control tower story를 따라갈 수 있습니다</h2>
           </div>
           <span className="chip" data-tone="critical">
-            review pack
+            status summary
           </span>
         </div>
         <div className="landingSupportGrid">

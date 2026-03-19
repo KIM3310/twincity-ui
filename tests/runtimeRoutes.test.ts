@@ -453,7 +453,7 @@ describe("runtime routes", () => {
     expect(csvBody.split("\n")[0]).toContain("id,detected_at,zone_id,type,severity");
   });
 
-  test("reviewer bundle route exposes digest-backed handoff contract", async () => {
+  test("status bundle route exposes digest-backed handoff contract", async () => {
     const bundleResponse = await getReviewerBundleRoute(
       new Request("https://example.com/api/reports/reviewer-bundle?range=60m&severity=3")
     );
