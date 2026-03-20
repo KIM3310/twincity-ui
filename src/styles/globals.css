@@ -1708,28 +1708,32 @@ body.is-gated {
 }
 
 .readinessHead {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(320px, 0.82fr);
+  align-items: start;
   gap: 1rem;
-  flex-wrap: wrap;
 }
 
 .readinessLead {
   display: grid;
   gap: 0.4rem;
-  max-width: 70ch;
+  max-width: 66ch;
 }
 
 .readinessLead p:last-child {
   color: var(--ink-muted);
 }
 
+.readinessHeadAside {
+  display: grid;
+  gap: 0.72rem;
+}
+
 .readinessMetricStrip {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.72rem;
-  width: min(100%, 520px);
+  width: 100%;
 }
 
 .readinessMetricCard {
@@ -1767,8 +1771,30 @@ body.is-gated {
 
 .readinessQuickActions {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.7rem;
+}
+
+.readinessHeadNote {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 0.86rem 0.92rem;
+  background: rgba(255, 255, 255, 0.6);
+  display: grid;
+  gap: 0.65rem;
+}
+
+.readinessMiniList {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.readinessMiniItem {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.52rem 0.62rem;
+  background: rgba(255, 255, 255, 0.52);
+  color: var(--ink);
 }
 
 .readinessLensPanel {
@@ -1936,6 +1962,26 @@ body.is-gated {
   border-radius: 999px;
   padding: 0.18rem 0.5rem;
   background: rgba(255, 255, 255, 0.7);
+}
+
+@media (max-width: 1080px) {
+  .readinessHead {
+    grid-template-columns: 1fr;
+  }
+
+  .readinessQuickActions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .readinessMetricStrip,
+  .readinessQuickActions,
+  .readinessLensGrid,
+  .readinessStageGrid,
+  .zoneGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .textList {

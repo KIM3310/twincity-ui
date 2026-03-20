@@ -68,38 +68,54 @@ export default function ControlTowerReadiness({
           </p>
         </div>
 
-        <div className="readinessMetricStrip" aria-label="service readiness metrics">
-          <article className="readinessMetricCard">
-            <span>운영 모드</span>
-            <strong>{meta.mode === "demo-first" ? "Demo-first" : "Live-wired"}</strong>
-            <small>{meta.diagnostics.ingest_mode}</small>
-          </article>
-          <article className="readinessMetricCard">
-            <span>검증 근거</span>
-            <strong>{meta.evidence_counts.tests + meta.evidence_counts.docs}</strong>
-            <small>{meta.evidence_counts.tests} tests + {meta.evidence_counts.docs} docs</small>
-          </article>
-          <article className="readinessMetricCard">
-            <span>리포트 구성</span>
-            <strong>{schema.required_sections.length}</strong>
-            <small>{schema.schema}</small>
+        <div className="readinessHeadAside">
+          <div className="readinessMetricStrip" aria-label="service readiness metrics">
+            <article className="readinessMetricCard">
+              <span>운영 모드</span>
+              <strong>{meta.mode === "demo-first" ? "Demo-first" : "Live-wired"}</strong>
+              <small>{meta.diagnostics.ingest_mode}</small>
+            </article>
+            <article className="readinessMetricCard">
+              <span>검증 근거</span>
+              <strong>{meta.evidence_counts.tests + meta.evidence_counts.docs}</strong>
+              <small>{meta.evidence_counts.tests} tests + {meta.evidence_counts.docs} docs</small>
+            </article>
+            <article className="readinessMetricCard">
+              <span>리포트 구성</span>
+              <strong>{schema.required_sections.length}</strong>
+              <small>{schema.schema}</small>
+            </article>
+          </div>
+
+          <div className="readinessQuickActions" aria-label="빠른 이동">
+            <Link className="readinessQuickLink" href="/events">
+              <strong>실시간 알림 보기</strong>
+              <span className="readinessQuickMeta">지금 들어온 이벤트와 처리 기록을 바로 확인</span>
+            </Link>
+            <Link className="readinessQuickLink" href="/reports">
+              <strong>리포트 열기</strong>
+              <span className="readinessQuickMeta">handoff, dispatch, export 흐름을 빠르게 검토</span>
+            </Link>
+            <Link className="readinessQuickLink" href="/api/runtime-brief">
+              <strong>운영 계약 확인</strong>
+              <span className="readinessQuickMeta">reviewer가 바로 읽을 수 있는 JSON 근거 surface</span>
+            </Link>
+          </div>
+
+          <article className="readinessHeadNote">
+            <div className="readinessSectionHead">
+              <h3>검토 시작 경로</h3>
+              <small>처음 30초에 확인할 항목</small>
+            </div>
+            <div className="readinessMiniList">
+              {twoMinuteReview.slice(0, 3).map((item) => (
+                <div key={item} className="readinessMiniItem">
+                  {item}
+                </div>
+              ))}
+            </div>
           </article>
         </div>
-      </div>
-
-      <div className="readinessQuickActions" aria-label="빠른 이동">
-        <Link className="readinessQuickLink" href="/events">
-          <strong>실시간 알림 보기</strong>
-          <span className="readinessQuickMeta">지금 들어온 이벤트와 처리 기록을 바로 확인</span>
-        </Link>
-        <Link className="readinessQuickLink" href="/reports">
-          <strong>리포트 열기</strong>
-          <span className="readinessQuickMeta">handoff, dispatch, export 흐름을 빠르게 검토</span>
-        </Link>
-        <Link className="readinessQuickLink" href="/api/runtime-brief">
-          <strong>운영 계약 확인</strong>
-          <span className="readinessQuickMeta">reviewer가 바로 읽을 수 있는 JSON 근거 surface</span>
-        </Link>
       </div>
 
       <div className="readinessLensPanel">
