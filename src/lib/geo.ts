@@ -110,7 +110,8 @@ export function clamp01(v: number) {
 }
 
 export function isLive(ts: number, windowMs: number) {
-  return Date.now() - ts <= windowMs;
+  const effectiveWindowMs = windowMs <= 0 ? 1000 : windowMs;
+  return Date.now() - ts <= effectiveWindowMs;
 }
 
 export function pointInPolygon(x: number, y: number, polygon: readonly Point[]) {
