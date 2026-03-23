@@ -1,5 +1,9 @@
 # TwinCity UI — Digital Twin Ops Console
 
+> **Archived / Supporting repo**  
+> The active operator-surface story now lives primarily in **AegisOps**, **ops-reliability-workbench**, and the manufacturing-facing control surfaces.  
+> Keep this repo as historical proof for the spatial / digital-twin operations console lane.
+
 [![CI](https://github.com/KIM3310/twincity-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/KIM3310/twincity-ui/actions/workflows/ci.yml)
 ![Node >=20](https://img.shields.io/badge/node-%3E%3D20-brightgreen)
 ![Next.js](https://img.shields.io/badge/Next.js-15-black)
