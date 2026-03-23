@@ -1,7 +1,7 @@
 import zoneMap from "@/data/zone_map_s001.json";
 import { apiJson, resolveRequestId } from "@/lib/apiResponse";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {

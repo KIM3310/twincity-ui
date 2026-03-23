@@ -1,7 +1,7 @@
 import { apiJson, resolveRequestId } from "@/lib/apiResponse";
 import { buildControlTowerRuntimeScorecard } from "@/lib/runtimeScorecard";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export function GET(request: Request) {

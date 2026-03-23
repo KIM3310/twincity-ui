@@ -3,7 +3,7 @@ import { readOperatorAuthStatus, validateOperatorRequest } from "@/lib/operatorA
 import { buildControlTowerReviewerBundle } from "@/lib/reviewerBundle";
 import { parseReportSummaryFilters } from "@/lib/reportSummary";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {

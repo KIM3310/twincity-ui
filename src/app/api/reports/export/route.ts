@@ -9,7 +9,7 @@ import {
   parseReportSummaryFilters,
 } from "@/lib/reportSummary";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export function GET(request: Request) {

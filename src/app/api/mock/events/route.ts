@@ -2,7 +2,7 @@ import { apiError, apiJson, readBoundedIntParam, resolveRequestId } from "@/lib/
 import { generateDummyEvents } from "@/lib/dummy";
 import type { EventItem } from "@/lib/types";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function toSchemaA(event: EventItem) {

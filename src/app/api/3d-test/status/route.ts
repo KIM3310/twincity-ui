@@ -2,7 +2,7 @@ import zoneMap from "@/data/zone_map_s001.json";
 import { resolveFirstAvailableAsset } from "@/lib/assetProbe";
 import { apiJson, resolveRequestId } from "@/lib/apiResponse";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const FLOORPLAN_CANDIDATES = [

@@ -1,7 +1,7 @@
 import { apiError, noStoreHeaders, resolveRequestId } from "@/lib/apiResponse";
 import { resolveFirstAvailableAsset } from "@/lib/assetProbe";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const CANDIDATE_FLOORPLAN_PATHS = [
