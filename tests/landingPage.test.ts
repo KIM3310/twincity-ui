@@ -7,6 +7,7 @@ describe("landing page front door", () => {
 
   test("adds decision support for the first proof route", () => {
     expect(source).toContain("Decision support");
+    expect(source).toContain("/api/proof-route-map");
     expect(source).toContain("무엇을 확인해야 하는지에 따라 첫 route를 바로 고를 수 있게 했습니다");
     expect(source).toContain("연결 신호를 먼저 확인해야 할 때");
     expect(source).toContain("handoff proof가 먼저 필요할 때");

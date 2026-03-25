@@ -130,6 +130,12 @@ const CONTROL_TOWER_STAGES: ServiceStage[] = [
 
 const CONTROL_TOWER_EVIDENCE: ServiceArtifact[] = [
   {
+    label: "Proof Route Map",
+    href: "/api/proof-route-map",
+    kind: "route",
+    note: "front-door route chooser for reviewer proof order",
+  },
+  {
     label: "Health API",
     href: "/api/health",
     kind: "route",
@@ -288,6 +294,7 @@ const CONTROL_TOWER_EVIDENCE: ServiceArtifact[] = [
 ];
 
 const CONTROL_TOWER_ARTIFACT_HREFS = [
+  "/api/proof-route-map",
   "/api/health",
   "/api/meta",
   "/api/runtime-brief",
@@ -312,6 +319,7 @@ const CONTROL_TOWER_ARTIFACT_HREFS = [
 ] as const;
 
 const CONTROL_TOWER_PROOF_ASSET_HREFS = [
+  "/api/proof-route-map",
   "/api/health",
   "/api/meta",
   "/api/runtime-scorecard",

@@ -10,20 +10,26 @@ export const metadata: Metadata = {
 
 const PROOF_PATHS = [
   {
+    href: "/api/proof-route-map",
+    title: "01 · proof map",
+    body: "health · reports · events 중 어떤 surface를 먼저 열어야 하는지 reviewer 기준으로 바로 고릅니다.",
+    meta: "/api/proof-route-map",
+  },
+  {
     href: "/api/health",
-    title: "01 · 상태 확인",
+    title: "02 · 상태 확인",
     body: "실시간 소스 연결 상태와 reviewer-safe 링크를 먼저 확인합니다.",
     meta: "/api/health",
   },
   {
     href: "/reports",
-    title: "02 · 리포트 proof",
+    title: "03 · 리포트 proof",
     body: "dispatch · handoff · export가 같은 이야기인지 한 화면에서 검토합니다.",
     meta: "/reports",
   },
   {
     href: "/events",
-    title: "03 · 운영 콘솔",
+    title: "04 · 운영 콘솔",
     body: "그 다음에 실제 이벤트 큐와 timeline으로 내려가 operator 흐름을 확인합니다.",
     meta: "/events",
   },
@@ -140,22 +146,19 @@ export default function DashboardPage() {
             <strong>{DEFAULT_PROOF_PATH.title}</strong>
             <p>{DEFAULT_PROOF_PATH.body}</p>
             <p className="landingFirstClickNote">
-              health가 정상이면 reports로, 연결 신호가 비어 있으면 events로 바로 내려가 다음 확인 경로를
-              이어갑니다.
+              proof map을 먼저 읽고, health가 정상이면 reports로, 연결 신호가 비어 있으면 events로 바로 내려가
+              다음 확인 경로를 이어갑니다.
             </p>
             <span className="mono">{DEFAULT_PROOF_PATH.meta}</span>
           </div>
 
           <div className="ctaRow">
-            <a className="button" href="/api/health">
-              상태 먼저 확인
+            <a className="button" href="/api/proof-route-map">
+              proof map 열기
             </a>
-            <Link className="button buttonGhost" href="/reports">
-              리포트 proof 보기
-            </Link>
-            <Link className="button buttonGhost" href="/events">
-              운영 콘솔 보기
-            </Link>
+            <a className="button buttonGhost" href="/api/health">상태 확인</a>
+            <Link className="button buttonGhost" href="/reports">리포트 proof 보기</Link>
+            <Link className="button buttonGhost" href="/events">운영 콘솔 보기</Link>
           </div>
         </div>
 

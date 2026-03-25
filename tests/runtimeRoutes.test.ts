@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from "vitest";
 
 import { GET as getHealthRoute } from "@/app/api/health/route";
 import { GET as getMetaRoute } from "@/app/api/meta/route";
+import { GET as getProofRouteMapRoute } from "@/app/api/proof-route-map/route";
 import { GET as getAssignmentHistoryRoute } from "@/app/api/reports/assignment-history/route";
 import { GET as getDispatchBoardRoute } from "@/app/api/reports/dispatch-board/route";
 import { GET as getReportExportRoute } from "@/app/api/reports/export/route";
@@ -91,6 +92,7 @@ describe("runtime routes", () => {
             "handoff-brief-surface",
             "response-playbook-surface",
             "reviewer-bundle-surface",
+            "proof-route-map-surface",
           ],
           service_grade: {
             readiness: "control-tower-readiness-v1",
@@ -107,6 +109,7 @@ describe("runtime routes", () => {
             reviewer_bundle_verify: "/api/reports/reviewer-bundle/verify",
           },
           links: {
+            proof_route_map: "/api/proof-route-map",
             meta: "/api/meta",
             runtime_brief: "/api/runtime-brief",
             runtime_scorecard: "/api/runtime-scorecard",
@@ -156,6 +159,7 @@ describe("runtime routes", () => {
           },
         });
         expect(body.features).toContain("digital-twin-floor-map");
+        expect(body.routes).toContain("/api/proof-route-map");
         expect(body.routes).toContain("/api/meta");
         expect(body.routes).toContain("/api/runtime-brief");
         expect(body.routes).toContain("/api/schema/report");
@@ -172,7 +176,8 @@ describe("runtime routes", () => {
         expect(body.report_contract.schema).toBe("twincity-report-v1");
         expect(Array.isArray(body.trust_boundary)).toBe(true);
         expect(body.two_minute_review).toHaveLength(11);
-        expect(body.proof_assets[0].href).toBe("/api/health");
+        expect(body.proof_assets[0].href).toBe("/api/proof-route-map");
+        expect(body.links.proof_route_map).toBe("/api/proof-route-map");
         expect(body.links.runtime_brief).toBe("/api/runtime-brief");
         expect(body.links.runtime_scorecard).toBe("/api/runtime-scorecard");
         expect(body.links.report_summary).toBe("/api/reports/summary");
@@ -219,8 +224,21 @@ describe("runtime routes", () => {
     expect(body.route_count).toBeGreaterThanOrEqual(10);
     expect(body.review_flow[0]).toContain("/api/health");
     expect(body.two_minute_review).toHaveLength(11);
-    expect(body.proof_assets[0].href).toBe("/api/health");
+    expect(body.proof_assets[0].href).toBe("/api/proof-route-map");
     expect(response.headers.get("x-request-id")).toBe(body.request_id);
+  });
+
+  test("proof route map exposes the first-click reviewer sequence", async () => {
+    const response = await getProofRouteMapRoute(
+      new Request("https://example.com/api/proof-route-map")
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.contract_version).toBe("twincity-proof-route-map-v1");
+    expect(body.reviewer_fast_path[0]).toBe("/api/proof-route-map");
+    expect(body.route_groups.posture[0]).toBe("/api/health");
+    expect(body.route_groups.operator[0]).toBe("/events");
   });
 
   test("runtime scorecard exposes export auth and deterministic SLA snapshot", async () => {

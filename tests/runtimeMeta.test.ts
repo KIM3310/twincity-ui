@@ -82,6 +82,7 @@ describe("runtimeMeta", () => {
     const meta = buildRuntimeMeta();
     expect(meta.features).toContain("digital-twin-floor-map");
     expect(meta.features).toContain("normalized-event-feed");
+    expect(meta.routes).toContain("/api/proof-route-map");
     expect(meta.routes).toContain("/api/health");
     expect(meta.routes).toContain("/api/meta");
   });

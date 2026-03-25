@@ -31,6 +31,7 @@ export function GET(request: Request) {
         "handoff-brief-surface",
         "response-playbook-surface",
         "reviewer-bundle-surface",
+        "proof-route-map-surface",
       ],
       service_grade: {
         readiness: serviceMeta.readiness_contract,
@@ -47,6 +48,7 @@ export function GET(request: Request) {
         reviewer_bundle_verify: "/api/reports/reviewer-bundle/verify",
       },
       links: {
+        proof_route_map: "/api/proof-route-map",
         meta: "/api/meta",
         runtime_brief: "/api/runtime-brief",
         runtime_scorecard: "/api/runtime-scorecard",

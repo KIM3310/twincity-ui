@@ -14,6 +14,7 @@ export function GET(request: Request) {
       request_id: requestId,
       ...runtimeMeta,
       links: {
+        proof_route_map: "/api/proof-route-map",
         health: "/api/health",
         runtime_brief: "/api/runtime-brief",
         runtime_scorecard: "/api/runtime-scorecard",

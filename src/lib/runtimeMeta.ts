@@ -58,6 +58,6 @@ export function buildRuntimeMeta(now = new Date()): RuntimeMeta {
       "3d-asset-probe",
       "ops-engagement-hub",
     ],
-    routes: ["/api/health", "/api/meta", "/api/3d-test/status", "/api/3d-test/model"],
+    routes: ["/api/proof-route-map", "/api/health", "/api/meta", "/api/3d-test/status", "/api/3d-test/model"],
   };
 }

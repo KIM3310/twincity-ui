@@ -34,10 +34,11 @@ Open `http://127.0.0.1:3000/events`.
 
 If you only have a minute, use this order:
 
-1. `/api/health` — confirm whether the console is in demo mode or attached to live ingest
-2. `/api/meta` — read the trust boundary and evidence bundle
-3. `/api/runtime-scorecard` — inspect ingest posture and SLA summary together
-4. `/reports` — see the dispatch, handoff, and export surfaces that make the operator story concrete
+1. `/api/proof-route-map` — pick the right first proof lane before opening the full console
+2. `/api/health` — confirm whether the console is in demo mode or attached to live ingest
+3. `/api/meta` — read the trust boundary and evidence bundle
+4. `/api/runtime-scorecard` — inspect ingest posture and SLA summary together
+5. `/reports` — see the dispatch, handoff, and export surfaces that make the operator story concrete
 
 ## Verify
 ```bash
@@ -50,6 +51,7 @@ npm run verify
 - `/events` - Main operator console
 - `/reports` - SLA, dispatch, handoff, export
 - `/api/health` - Ingest mode + readiness
+- `/api/proof-route-map` - Front-door reviewer route chooser
 - `/api/meta` - Trust boundary + evidence bundle
 - `/api/runtime-scorecard` - Ingest posture + SLA snapshot
 - `/api/reports/summary` - Deterministic SLA summary
