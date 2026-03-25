@@ -30,6 +30,15 @@ npm run dev
 
 Open `http://127.0.0.1:3000/events`.
 
+## Review this first
+
+If you only have a minute, use this order:
+
+1. `/api/health` — confirm whether the console is in demo mode or attached to live ingest
+2. `/api/meta` — read the trust boundary and evidence bundle
+3. `/api/runtime-scorecard` — inspect ingest posture and SLA summary together
+4. `/reports` — see the dispatch, handoff, and export surfaces that make the operator story concrete
+
 ## Verify
 ```bash
 npm run test:proof
