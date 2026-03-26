@@ -40,6 +40,11 @@ If you only have a minute, use this order:
 4. `/api/runtime-scorecard` — inspect ingest posture and SLA summary together
 5. `/reports` — see the dispatch, handoff, and export surfaces that make the operator story concrete
 
+## Hosted runtime
+
+- Live runtime: `https://twincity-ui-app-811356341663.asia-northeast3.run.app`
+- Public Pages front door: `https://twincity-ui.pages.dev` → redirects to the live runtime
+
 ## Verify
 ```bash
 npm run test:proof

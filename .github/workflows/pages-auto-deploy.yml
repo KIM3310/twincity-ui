@@ -28,27 +28,13 @@ jobs:
         if: ${{ env.HAS_CLOUDFLARE_SECRETS != 'true' }}
         run: echo "Cloudflare secrets are not configured; skipping Pages deploy."
 
-      - name: Setup Node
-        if: ${{ env.HAS_CLOUDFLARE_SECRETS == 'true' }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: package-lock.json
-
-      - name: Build
-        if: ${{ env.HAS_CLOUDFLARE_SECRETS == 'true' }}
-        run: |
-          npm ci
-          npx @cloudflare/next-on-pages
-
       - name: Deploy to Cloudflare Pages (retry)
         if: ${{ env.HAS_CLOUDFLARE_SECRETS == 'true' }}
         run: |
           set -euo pipefail
           for attempt in 1 2 3; do
             echo "Deploy attempt $attempt/3"
-            if npx wrangler@4.66.0 pages deploy .vercel/output/static --project-name=twincity-ui --branch=main --commit-dirty=true; then
+            if npx wrangler@4.66.0 pages deploy pages-redirect --project-name=twincity-ui --branch=main --commit-dirty=true; then
               exit 0
             fi
             if [ "$attempt" -lt 3 ]; then

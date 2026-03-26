@@ -1,8 +1,8 @@
 # Cloudflare Pages Deploy
 
-- Root directory: `.`
-- Build command: `npm ci && npx @cloudflare/next-on-pages`
-- Output directory: `.vercel/output/static`
+- Deploy directory: `pages-redirect/`
+- Purpose: redirect reviewer traffic to the live Cloud Run runtime
+- Redirect target: `https://twincity-ui-app-811356341663.asia-northeast3.run.app`
 
 AdSense/Review automation:
 - `tools/release_ops.sh cloudflare`
