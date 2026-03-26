@@ -1,0 +1,45 @@
+name: pages-auto-deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: pages-auto-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      HAS_CLOUDFLARE_SECRETS: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Skip deploy when Cloudflare secrets are missing
+        if: ${{ env.HAS_CLOUDFLARE_SECRETS != 'true' }}
+        run: echo "Cloudflare secrets are not configured; skipping Pages deploy."
+
+      - name: Deploy to Cloudflare Pages (retry)
+        if: ${{ env.HAS_CLOUDFLARE_SECRETS == 'true' }}
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            echo "Deploy attempt $attempt/3"
+            if npx wrangler@4.66.0 pages deploy pages-redirect --project-name=twincity-ui --branch=main --commit-dirty=true; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              sleep 15
+            fi
+          done
+          echo "Cloudflare deploy failed after retries"
+          exit 1
