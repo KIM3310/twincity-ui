@@ -3,6 +3,21 @@
   "version": "0.1.0",
   "private": true,
   "description": "Digital twin operations console with reviewable replay, dispatch, and live-ingest surfaces.",
+  "homepage": "https://twincity-ui.pages.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KIM3310/twincity-ui.git"
+  },
+  "keywords": [
+    "digital-twin",
+    "operations-console",
+    "next-js",
+    "react",
+    "typescript",
+    "spatial-mapping"
+  ],
+  "license": "MIT",
+  "author": "Doeon Kim",
   "type": "module",
   "scripts": {
     "dev": "next dev --webpack --hostname 127.0.0.1",
