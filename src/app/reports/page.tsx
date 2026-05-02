@@ -21,10 +21,10 @@ import {
   type TwincityRangeKey,
   type TwincitySeverityFilter,
 } from "@/lib/urlState";
-import { CONTROL_TOWER_STORAGE_KEY } from "@/lib/runtimeSnapshot";
+import { CONTROL_TOWER_STORAGE_NAME } from "@/lib/runtimeSnapshot";
 import type { EventItem, IncidentTimelineEntry } from "@/lib/types";
 
-const STORAGE_KEY = CONTROL_TOWER_STORAGE_KEY;
+const STORAGE_KEY = CONTROL_TOWER_STORAGE_NAME;
 const ACK_SLA_MS = 2 * 60 * 1000;
 const RESOLVE_SLA_MS = 10 * 60 * 1000;
 

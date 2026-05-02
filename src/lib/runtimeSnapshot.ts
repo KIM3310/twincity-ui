@@ -1,1 +1,1 @@
-export const CONTROL_TOWER_STORAGE_KEY = "twincity-ops-experience-v3";
+export const CONTROL_TOWER_STORAGE_NAME = "twincity-ops-experience-v3";
