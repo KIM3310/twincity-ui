@@ -12,6 +12,8 @@
 
 Next.js (React/TypeScript) operations console for spatial event management. Overlays zones and events on a floorplan, connecting the spatial view to the full operator workflow: ingest, normalization, triage, dispatch, SLA reporting, and shift handoff.
 
+Technical review pack: [`docs/technical-review-pack.md`](docs/technical-review-pack.md)
+
 ![Ops console screenshot](public/screenshots/ops_console.png)
 
 ## What I built
