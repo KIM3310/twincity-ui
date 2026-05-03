@@ -30,7 +30,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:proof": "vitest run tests/runtimeRoutes.test.ts tests/landingPage.test.ts tests/serviceMeta.test.ts",
-    "build": "next build",
+    "build": "node tools/build_for_target.mjs",
+    "build:next": "next build",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "verify": "npm run lint && npm run typecheck && npm run test && npm run build"
