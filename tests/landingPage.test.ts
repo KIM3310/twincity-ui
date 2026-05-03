@@ -14,11 +14,12 @@ describe("landing page front door", () => {
     expect(source).toContain("실제 운영 큐를 바로 보여줘야 할 때");
   });
 
-  test("surfaces role-fit signals and operator-ready kit copy", () => {
-    expect(source).toContain("Role-fit signals");
-    expect(source).toContain("AI engineer signal");
-    expect(source).toContain("Systems engineer signal");
-    expect(source).toContain("Solution architect signal");
+  test("surfaces surface-fit signals and operator-ready kit copy", () => {
+    expect(source).toContain("Surface-fit signals");
+    expect(source).toContain("운영 관점별로 어떤 근거를 먼저 읽어야 하는지 바로 보이게 정리했습니다");
+    expect(source).toContain("AI pipeline signal");
+    expect(source).toContain("Systems reliability signal");
+    expect(source).toContain("Architecture rollout signal");
     expect(source).toContain("Operator-ready kit");
   });
 });

@@ -73,19 +73,19 @@ const DECISION_SUPPORT = [
   },
 ] as const;
 
-const ROLE_SIGNAL_CARDS = [
+const SURFACE_SIGNAL_CARDS = [
   {
-    title: "AI engineer signal",
+    title: "AI pipeline signal",
     body: "이기종 provider payload를 EventItem 계약으로 정규화하고, summary/export contract까지 operator-safe surface로 연결합니다.",
     proof: "eventAdapter.ts → /api/reports/summary → /api/schema/report",
   },
   {
-    title: "Systems engineer signal",
+    title: "Systems reliability signal",
     body: "UI를 보기 전에 ingest posture, trust boundary, export auth posture를 먼저 검토할 수 있게 runtime surface를 분리했습니다.",
     proof: "/api/health → /api/meta → /api/runtime-scorecard",
   },
   {
-    title: "Solution architect signal",
+    title: "Architecture rollout signal",
     body: "dispatch lane, shift handoff, export payload를 같은 이야기로 읽게 해서 운영 continuity와 rollout 대화를 쉽게 만듭니다.",
     proof: "/api/runtime-brief → /api/reports/handoff → /api/reports/export",
   },
@@ -253,15 +253,15 @@ export default function DashboardPage() {
 
         <div className="landingSupportHead">
           <div>
-            <p className="kicker">Role-fit signals</p>
-            <h2 className="panelTitle">채용 렌즈별로 무엇을 읽어야 하는지 바로 보이게 정리했습니다</h2>
+            <p className="kicker">Surface-fit signals</p>
+            <h2 className="panelTitle">운영 관점별로 어떤 근거를 먼저 읽어야 하는지 바로 보이게 정리했습니다</h2>
           </div>
           <span className="chip" data-tone="calm">
-            user scanable
+            user scannable
           </span>
         </div>
         <div className="landingSupportGrid">
-          {ROLE_SIGNAL_CARDS.map((item) => (
+          {SURFACE_SIGNAL_CARDS.map((item) => (
             <article key={item.title} className="landingSupportCard">
               <strong>{item.title}</strong>
               <p>{item.body}</p>
