@@ -22,7 +22,7 @@ export default function Loading() {
           <p className="kicker">Loading</p>
           <h1 className="heroTitle">운영 화면을 준비하는 동안에도 front door는 비워두지 않습니다</h1>
           <p className="heroLead">
-            지도와 최근 알림을 정리하는 중입니다. 그동안 reviewer가 먼저 볼 수 있는 경로와 현재 제품
+            지도와 최근 알림을 정리하는 중입니다. 그동안 operator가 먼저 볼 수 있는 경로와 현재 제품
             톤을 위에 고정해 두었습니다.
           </p>
           <div className="landingPulseRow" aria-hidden="true">

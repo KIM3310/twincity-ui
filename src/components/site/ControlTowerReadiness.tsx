@@ -37,7 +37,7 @@ export default function ControlTowerReadiness({
       ],
     },
     reviewer: {
-      title: "리뷰어 관점",
+      title: "검토 관점",
       summary: "health / meta / summary를 먼저 열고, 화면은 그 다음에 보는 편이 가장 설득력이 큽니다.",
       cards: [
         ["01 · health", "ingest mode와 review 링크를 가장 먼저 확인합니다."],
@@ -98,7 +98,7 @@ export default function ControlTowerReadiness({
             </Link>
             <Link className="readinessQuickLink" href="/api/runtime-brief">
               <strong>운영 계약 확인</strong>
-              <span className="readinessQuickMeta">reviewer가 바로 읽을 수 있는 JSON 근거 surface</span>
+              <span className="readinessQuickMeta">operator가 바로 읽을 수 있는 JSON 근거 surface</span>
             </Link>
           </div>
 
@@ -132,7 +132,7 @@ export default function ControlTowerReadiness({
             className={"readinessLensBtn" + (lens === "reviewer" ? " active" : "")}
             onClick={() => setLens("reviewer")}
           >
-            리뷰어
+            검토
           </button>
           <button
             type="button"

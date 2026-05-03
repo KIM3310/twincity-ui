@@ -81,13 +81,13 @@ export function buildControlTowerRuntimeScorecard(now = new Date()) {
     spotlight: reportSummary.spotlight_incidents[0] ?? null,
     recommendations: [
       operatorAuth.enabled
-        ? "Use the operator token before exporting JSON or CSV snapshots for reviewer handoff."
+        ? "Use the operator token before exporting JSON or CSV snapshots for operator handoff."
         : "Exports are open in demo mode; keep them tied to deterministic report summary output.",
       "Use the dispatch board to confirm unresolved queue posture before sharing a report snapshot.",
-      "Use the shift handoff brief to highlight overdue queue risk before reviewer handoff.",
+      "Use the shift handoff brief to highlight overdue queue risk before operator handoff.",
       "Use the response playbook to confirm escalation owner and next checkpoint timing before actioning incidents.",
       "Generate and verify the status bundle digest when export integrity matters.",
-      "Verify report summary before sharing export artifacts with reviewers.",
+      "Verify report summary before sharing export artifacts with operators.",
       "Keep ingest-mode posture and SLA snapshot paired during walkthroughs.",
     ],
     links: {

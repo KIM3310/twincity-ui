@@ -52,6 +52,6 @@ describe("event detail next step guidance", () => {
     );
 
     expect(html).toContain("신뢰도가 낮아서");
-    expect(html).toContain("reviewer handoff는 현장 확인 뒤에");
+    expect(html).toContain("operator handoff는 현장 확인 뒤에");
   });
 });

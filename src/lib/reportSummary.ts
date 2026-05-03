@@ -722,7 +722,7 @@ export function buildControlTowerReportExport(input?: {
     top_types: summary.top_types,
     top_zones: summary.top_zones,
     operator_snapshot: {
-      headline: "Deterministic control tower snapshot for reviewer export and downstream handoff.",
+      headline: "Deterministic control tower snapshot for operator export and downstream handoff.",
       top_zone: summary.top_zones[0]?.zone_id ?? null,
       top_type: summary.top_types[0]?.type ?? null,
       spotlight_id: summary.spotlight_incidents[0]?.id ?? null,
@@ -909,7 +909,7 @@ export function buildControlTowerDispatchBoard(input?: {
     items,
     review_actions: [
       "Start with attention incidents before reviewing dispatched or resolved rows.",
-      "Keep report summary and dispatch board filters aligned during reviewer walkthroughs.",
+      "Keep report summary and dispatch board filters aligned during operator walkthroughs.",
       "Validate export payloads only after the dispatch board matches the expected operator queue.",
     ],
     route_bundle: {
@@ -989,7 +989,7 @@ export function buildControlTowerAssignmentHistory(input?: {
         latest_action: latestTimeline?.action ?? "queued",
         next_action:
           event.incident_status === "resolved"
-            ? "Capture the final handoff note and keep the reviewer export aligned with the closed timeline."
+            ? "Capture the final handoff note and keep the operator export aligned with the closed timeline."
             : acked
               ? "Keep the blocker and ETA updated so the next shift inherits a clean operator handoff."
               : "Assign the incident to an operator before the queue drifts beyond the ACK SLA.",
@@ -1121,7 +1121,7 @@ export function buildControlTowerHandoffBrief(input?: {
           : dispatchCount > 0
             ? `${dispatchCount} active dispatch incident needs a clean blocker/ETA handoff.`
             : rows.length > 0
-              ? "Queue is stable enough for a reviewer-safe handoff summary."
+              ? "Queue is stable enough for a operator-safe handoff summary."
               : "No visible incidents match the current handoff filter.",
       focus_lane: focusLane,
       suggested_owner:
@@ -1243,7 +1243,7 @@ export function buildControlTowerResponsePlaybook(input?: {
     operator_steps: [
       "Start from the dispatch board, then confirm current owner in assignment history before escalating anything.",
       "Use the handoff brief to keep next-shift focus lane and blocker notes aligned with the active drill.",
-      "Only export or share reviewer artifacts after the response drill and bundle integrity story match.",
+      "Only export or share operator artifacts after the response drill and bundle integrity story match.",
     ],
     route_bundle: {
       response_playbook: "/api/reports/response-playbook",

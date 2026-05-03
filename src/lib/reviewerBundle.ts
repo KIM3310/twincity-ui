@@ -189,7 +189,7 @@ export async function buildControlTowerReviewerBundle(input?: {
       ],
     },
     handoff: {
-      headline: "Deterministic reviewer handoff bundle for queue posture, SLA state, and export governance.",
+      headline: "Deterministic operator handoff bundle for queue posture, SLA state, and export governance.",
       review_sequence: [
         "Confirm /api/runtime-scorecard before sharing a status bundle.",
         "Use the bundle digest to verify queue posture and SLA summary were not altered after export.",

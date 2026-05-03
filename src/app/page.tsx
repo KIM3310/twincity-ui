@@ -12,13 +12,13 @@ const PROOF_PATHS = [
   {
     href: "/api/proof-route-map",
     title: "01 · proof map",
-    body: "health · reports · events 중 어떤 surface를 먼저 열어야 하는지 reviewer 기준으로 바로 고릅니다.",
+    body: "health · reports · events 중 어떤 surface를 먼저 열어야 하는지 operator 기준으로 바로 고릅니다.",
     meta: "/api/proof-route-map",
   },
   {
     href: "/api/health",
     title: "02 · 상태 확인",
-    body: "실시간 소스 연결 상태와 reviewer-safe 링크를 먼저 확인합니다.",
+    body: "실시간 소스 연결 상태와 operator-safe 링크를 먼저 확인합니다.",
     meta: "/api/health",
   },
   {
@@ -46,7 +46,7 @@ const LANDING_SIGNALS = [
   {
     label: "첫 클릭",
     value: "Proof before polish",
-    note: "health → reports → events 순서로 user와 reviewer가 바로 읽을 수 있게 정리했습니다.",
+    note: "health → reports → events 순서로 user와 operator가 바로 읽을 수 있게 정리했습니다.",
   },
   {
     label: "handoff 톤",
@@ -59,7 +59,7 @@ const DECISION_SUPPORT = [
   {
     label: "연결 신호를 먼저 확인해야 할 때",
     route: "/api/health",
-    note: "demo인지 live인지, reviewer-safe 링크가 무엇인지 먼저 확인한 뒤 다음 surface를 고릅니다.",
+    note: "demo인지 live인지, operator-safe 링크가 무엇인지 먼저 확인한 뒤 다음 surface를 고릅니다.",
   },
   {
     label: "handoff proof가 먼저 필요할 때",
@@ -76,7 +76,7 @@ const DECISION_SUPPORT = [
 const ROLE_SIGNAL_CARDS = [
   {
     title: "AI engineer signal",
-    body: "이기종 provider payload를 EventItem 계약으로 정규화하고, summary/export contract까지 reviewer-safe surface로 연결합니다.",
+    body: "이기종 provider payload를 EventItem 계약으로 정규화하고, summary/export contract까지 operator-safe surface로 연결합니다.",
     proof: "eventAdapter.ts → /api/reports/summary → /api/schema/report",
   },
   {
@@ -116,7 +116,7 @@ export default function DashboardPage() {
               Demo-first
             </span>
             <span className="chip" data-tone="calm">
-              Reviewer-safe routes
+              Operator-safe routes
             </span>
             <span className="chip" data-tone="critical">
               Handoff-aware
@@ -127,7 +127,7 @@ export default function DashboardPage() {
           <h1 className="heroTitle">첫 화면에서 바로 운영 맥락과 검증 경로가 보이는 홈</h1>
           <p className="heroLead">
             실시간 연결이 비어 있어도 첫 화면을 빈 상태로 두지 않고, 지금 바로 확인할 수 있는 운영 맥락과
-            walkthrough를 먼저 보여줍니다. 과장된 control room 연출보다 reviewer가 바로 따라갈 수 있는
+            walkthrough를 먼저 보여줍니다. 과장된 control room 연출보다 operator가 바로 따라갈 수 있는
             health → reports → events 순서를 앞세웠습니다.
           </p>
 
@@ -166,7 +166,7 @@ export default function DashboardPage() {
           <p className="kicker">First-click walkthrough</p>
           <h2 className="panelTitle">1분 안에 제품의 진짜 이야기를 확인하는 순서</h2>
           <p className="landingProofLead">
-            채용 담당자나 reviewer가 처음 열었을 때도, 무엇이 live이고 무엇이 staged인지 바로 읽을 수
+            운영 담당자나 operator가 처음 열었을 때도, 무엇이 live이고 무엇이 staged인지 바로 읽을 수
             있는 순서만 남겼습니다.
           </p>
 
@@ -223,7 +223,7 @@ export default function DashboardPage() {
             <p>SSR 단계에서 바로 읽히는 홈 카피와 proof 링크를 먼저 렌더링합니다.</p>
           </article>
           <article className="landingSupportCard">
-            <strong>채용 / 리뷰어 가시성</strong>
+            <strong>운영 / 검토 가시성</strong>
             <p>health, reports, events로 이어지는 첫 클릭 경로를 한 섹션에 묶었습니다.</p>
           </article>
           <article className="landingSupportCard">
@@ -272,7 +272,7 @@ export default function DashboardPage() {
 
         <div className="landingSupportHead">
           <div>
-            <p className="kicker">Reviewer-ready kit</p>
+            <p className="kicker">Operator-ready kit</p>
             <h2 className="panelTitle">route contract만 열어도 control tower story를 따라갈 수 있습니다</h2>
           </div>
           <span className="chip" data-tone="critical">

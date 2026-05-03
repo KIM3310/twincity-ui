@@ -12,7 +12,7 @@
 
 Next.js (React/TypeScript) operations console for spatial event management. Overlays zones and events on a floorplan, connecting the spatial view to the full operator workflow: ingest, normalization, triage, dispatch, SLA reporting, and shift handoff.
 
-Technical review pack: [`docs/technical-review-pack.md`](docs/technical-review-pack.md)
+Technical walkthrough pack: [`docs/technical-review-pack.md`](docs/technical-review-pack.md)
 
 ![Ops console screenshot](public/screenshots/ops_console.png)
 
@@ -32,7 +32,7 @@ npm run dev
 
 Open `http://127.0.0.1:3000/events`.
 
-## Review this first
+## Walk Through This First
 
 If you only have a minute, use this order:
 
@@ -58,7 +58,7 @@ npm run verify
 - `/events` - Main operator console
 - `/reports` - SLA, dispatch, handoff, export
 - `/api/health` - Ingest mode + readiness
-- `/api/proof-route-map` - Front-door reviewer route chooser
+- `/api/proof-route-map` - Front-door operator route chooser
 - `/api/meta` - Trust boundary + evidence bundle
 - `/api/runtime-scorecard` - Ingest posture + SLA snapshot
 - `/api/reports/summary` - Deterministic SLA summary

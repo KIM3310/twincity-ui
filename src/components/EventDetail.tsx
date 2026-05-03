@@ -24,7 +24,7 @@ function getNextStepSummary(event: EventItem, readOnly: boolean) {
   if (readOnly) {
     return {
       title: "다음 권장 단계",
-      body: "이 화면은 reviewer 보기 모드라서 상태 변경 대신 현재 판단 근거와 다음 담당자만 확인할 수 있어요.",
+      body: "이 화면은 operator 보기 모드라서 상태 변경 대신 현재 판단 근거와 다음 담당자만 확인할 수 있어요.",
       guard: "보기 권한에서는 상태 변경 버튼이 비활성화됩니다.",
     };
   }
@@ -40,7 +40,7 @@ function getNextStepSummary(event: EventItem, readOnly: boolean) {
   if (event.incident_status === "ack") {
     return {
       title: "다음 권장 단계",
-      body: "이미 담당자가 잡은 건이니 직원 호출과 현장 메모를 이어서 reviewer에게 handoff할 준비를 해 주세요.",
+      body: "이미 담당자가 잡은 건이니 직원 호출과 현장 메모를 이어서 operator에게 handoff할 준비를 해 주세요.",
       guard: "상태 변경은 확인 → 직원 호출 → 처리 종료 순서로 맞추면 운영 설명이 깔끔해집니다.",
     };
   }
@@ -50,7 +50,7 @@ function getNextStepSummary(event: EventItem, readOnly: boolean) {
       title: "다음 권장 단계",
       body: "신뢰도가 낮아서 먼저 현장 확인이나 추가 화면 근거를 붙인 뒤에 확인 처리로 넘기는 편이 안전해요.",
       guard:
-        "reviewer handoff는 현장 확인 뒤에 하고, 상태 변경은 확인 → 직원 호출 → 처리 종료 순서로 맞추면 설명이 깔끔해집니다.",
+        "operator handoff는 현장 확인 뒤에 하고, 상태 변경은 확인 → 직원 호출 → 처리 종료 순서로 맞추면 설명이 깔끔해집니다.",
     };
   }
 
