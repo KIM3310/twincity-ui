@@ -160,7 +160,7 @@ body {
   color: var(--ink);
   font-size: var(--type-md);
   line-height: var(--lh-body);
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -464,7 +464,7 @@ body.is-gated {
   font-family: var(--font-display-stack);
   font-size: clamp(1.7rem, 1.1rem + 2.2vw, 3.1rem);
   line-height: 1.07;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   text-wrap: balance;
 }
 
@@ -827,7 +827,7 @@ body.is-gated {
   font-family: var(--font-display-stack);
   font-weight: 600;
   line-height: 1.05;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .heroTitle {
@@ -2479,7 +2479,7 @@ body.is-gated {
   padding: 0.32rem 2.1rem 0.32rem 0.62rem;
   cursor: pointer;
   text-transform: none;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   line-height: 1.1;
   background-image:
     linear-gradient(45deg, transparent 50%, rgba(24, 24, 21, 0.56) 50%),
