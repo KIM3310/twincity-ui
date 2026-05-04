@@ -229,7 +229,7 @@ const CONTROL_TOWER_EVIDENCE: ServiceArtifact[] = [
     label: "Portfolio Review Guide",
     href: "docs/PORTFOLIO_REVIEW_GUIDE.md",
     kind: "doc",
-    note: "2-minute operator path and role-fit evidence map",
+    note: "2-minute operator path and capability evidence map",
   },
   {
     label: "Live Integration Guide",
