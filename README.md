@@ -32,6 +32,10 @@ Technical walkthrough pack: [`docs/technical-review-pack.md`](docs/technical-rev
 - **Verification:** Run `npm run test:proof` for proof routes or `npm run verify` for the full gate.
 - **Commercial read:** Keep it as supporting evidence for spatial operations UX while AegisOps and reliability workbenches carry the active story.
 
+## Commercialization Playbook
+
+- [Monetization and GTM playbook](docs/monetization-playbook.md) maps the repository to buyer segments, offer ladder, pricing hypotheses, proof gates, and risk boundaries.
+
 ## What I built
 
 - End-to-end operator UX: live/history views, filters, detail panel, action timeline, list/map/detail sync
