@@ -8,6 +8,18 @@ TwinCity UI is a **product-focused digital twin / operations control tower** bui
 
 `ingest posture -> payload normalization -> triage -> dispatch -> SLA/report -> shift handoff`
 
+## Product and Review Surface
+
+A digital-twin operations surface that preserves spatial, real-time, and control-room UI craft as a focused interface study.
+
+| Lens | Definition |
+|---|---|
+| Buyer or user | Operations teams, smart-building teams, city/industrial control groups, and product reviewers looking for realtime UX evidence. |
+| Commercial route | Use as a design-led prototype for realtime monitoring pilots, operator map views, or executive demo workshops. |
+| Review signal | Next.js/React surface, digital-twin framing, realtime posture, and spatial-computing interaction notes. |
+| Safety boundary | Treat as a UI concept unless connected to approved telemetry, authentication, and incident workflows. |
+| Fast proof | Run the local app/build and inspect the first screen for operator clarity and responsive behavior. |
+
 ## Fast review path
 1. `/api/health`
 2. `/api/meta`
