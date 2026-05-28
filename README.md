@@ -25,6 +25,13 @@ Technical walkthrough pack: [`docs/technical-review-pack.md`](docs/technical-rev
 | Reviewer proof | `/api/proof-route-map`, `/api/health`, `/api/meta`, runtime scorecard, reports, and screenshot evidence create a fast evaluation path. |
 | Safety posture | Demo-mode defaults, trust-boundary metadata, normalized ingest, and explicit fallback behavior keep the archived surface understandable and low-risk. |
 
+## Reviewer Fast Path
+
+- **First minute:** Use `/api/proof-route-map`, then open `/events` and `/reports`.
+- **Local demo:** Run `npm ci && npm run dev`, then open `http://127.0.0.1:3000/events`.
+- **Verification:** Run `npm run test:proof` for proof routes or `npm run verify` for the full gate.
+- **Commercial read:** Keep it as supporting evidence for spatial operations UX while AegisOps and reliability workbenches carry the active story.
+
 ## What I built
 
 - End-to-end operator UX: live/history views, filters, detail panel, action timeline, list/map/detail sync
