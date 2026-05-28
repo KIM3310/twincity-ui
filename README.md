@@ -16,6 +16,15 @@ Technical walkthrough pack: [`docs/technical-review-pack.md`](docs/technical-rev
 
 ![Ops console screenshot](public/screenshots/ops_console.png)
 
+## Product and Review Surface
+
+| Lens | Decision signal |
+|---|---|
+| Buyer | Facilities, city operations, and industrial command centers that need spatial incidents, dispatch, and SLA evidence in one console. |
+| Commercial proof | Live/history event views, zone overlays, transport fallback, reports, and exports form a sellable operations cockpit rather than a static demo. |
+| Reviewer proof | `/api/proof-route-map`, `/api/health`, `/api/meta`, runtime scorecard, reports, and screenshot evidence create a fast evaluation path. |
+| Safety posture | Demo-mode defaults, trust-boundary metadata, normalized ingest, and explicit fallback behavior keep the archived surface understandable and low-risk. |
+
 ## What I built
 
 - End-to-end operator UX: live/history views, filters, detail panel, action timeline, list/map/detail sync
