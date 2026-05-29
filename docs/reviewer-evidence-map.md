@@ -1,31 +1,27 @@
-# Reviewer Evidence Map - TwinCity UI — Digital Twin Ops Console
+# Review Guide - TwinCity UI — Digital Twin Ops Console
 
-Updated: 2026-05-29
+Updated: 2026-05-30
 
-This document is the short path for a technical reviewer, engineering leader, product evaluator, or buyer who wants to understand what this repository proves without wandering through every file.
+Use this page as the short path through the repository. It keeps the review grounded in the code, docs, commands, and boundaries that are already present.
 
-## One-Line Proof
+## Summary
 
-**B2B spatial operations UX.** Supporting spatial console proof for incident zones, dispatch, SLA reporting, and shift handoff.
-
-## Audience and Commercial Angle
-
-| Lens | Answer |
+| Field | Notes |
 |---|---|
-| Primary reviewer | Facilities, city operations, industrial command centers, and spatial event teams. |
-| Technical signal | Can the project be explained, verified, bounded, and extended like a real product surface? |
-| Buyer signal | Is there a narrow operational pain, a runnable proof path, and a risk-aware pilot shape? |
-| Stack signal | TypeScript/JavaScript, Terraform, Cloudflare, Docker |
+| Lane | B2B spatial operations UX |
+| Core idea | Supporting spatial console proof for incident zones, dispatch, SLA reporting, and shift handoff. |
+| Primary reader | Facilities, city operations, industrial command centers, and spatial event teams. |
+| Stack | TypeScript/JavaScript, Terraform, Cloudflare, Docker |
 
-## Seven-Minute Review Route
+## Open First
 
-1. Read the README `Product and Review Surface` and `Reviewer Fast Path` sections.
-2. Open `docs/monetization-playbook.md` to understand the buyer, offer ladder, and GTM hypothesis.
-3. Run or inspect the strongest local quality gate below.
-4. Inspect CI workflow definitions and test fixtures before deeper implementation review.
-5. Check the risk boundaries so claims stay credible and not overextended.
+1. Start with the README fast path and architecture section.
+2. Open `docs/monetization-playbook.md` only when reviewing the product or service angle.
+3. Check the commands below before making claims about quality.
+4. Skim the CI workflows and fixture data before deeper implementation review.
+5. Read the boundaries section before presenting the project externally.
 
-## Verification Commands
+## Checks
 
 | Purpose | Command |
 |---|---|
@@ -35,7 +31,7 @@ This document is the short path for a technical reviewer, engineering leader, pr
 | Typecheck | `npm run typecheck` |
 | Production build | `npm run build` |
 
-## CI and Automation Surface
+## CI
 
 - .github/workflows/architecture-blueprint.yml
 - .github/workflows/ci.yml
@@ -46,7 +42,7 @@ This document is the short path for a technical reviewer, engineering leader, pr
 - .github/workflows/repository-surface.yml
 - .github/workflows/secret-scan.yml
 
-## Evidence Inventory
+## Evidence
 
 - package scripts and web/runtime checks
 - infrastructure-as-code review surface
@@ -56,26 +52,22 @@ This document is the short path for a technical reviewer, engineering leader, pr
 - Hosted runtime is documented
 - Proof route map works
 
-## Commercialization Snapshot
+## Commercial Notes
 
-| Offer | Pricing hypothesis |
+| Possible offer | Working price assumption |
 |---|---|
 | Spatial ops cockpit prototype | $3k-$10k UX review |
 | Digital twin UX review | $10k-$40k prototype |
 | Dispatch/reporting starter | $2k-$8k/month reporting support |
 
-## Risk Boundaries
+## Boundaries
 
 - Archived/supporting status clear
 - Live ingest requires tenant controls
 - Demo mode boundaries explicit
 
-## Metrics That Matter
+## Useful Metrics
 
 - Dispatch clarity
 - SLA report usefulness
 - Event normalization coverage
-
-## Review Verdict
-
-This repository should be evaluated as part of the broader KIM3310 portfolio: it is strongest when the reviewer sees the link between a concrete implementation, a documented verification path, and an externally credible operating story.
