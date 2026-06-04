@@ -26,4 +26,4 @@ build:
 verify:
 	npm run verify
 
-ci: install lint typecheck test build
+ci: install verify
