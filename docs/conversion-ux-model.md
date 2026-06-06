@@ -49,9 +49,9 @@ This note specializes the repository for service launch. It combines product str
 
 ## Conversion Path
 
-- Risk-reversing entry: Spatial ops cockpit prototype ($3k-$10k UX review) with one acceptance metric.
-- Pilot: Digital twin UX review ($10k-$40k prototype) using buyer-approved data and named operators.
-- Recurring layer: Dispatch/reporting starter ($2k-$8k/month reporting support) for monitoring, governance, support, or managed review.
+- Risk-reversing entry: Spatial ops cockpit prototype (scope after buyer intake) with one acceptance metric.
+- Pilot: Digital twin UX review (scope after buyer intake) using buyer-approved data and named operators.
+- Recurring layer: Dispatch/reporting starter (scope after buyer intake) for monitoring, governance, support, or managed review.
 
 ## Scope Frame
 

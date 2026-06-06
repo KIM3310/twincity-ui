@@ -12,7 +12,7 @@ This is the buyer-ready version of the repository. It turns the technical proof 
 | Buyer | Facilities, city operations, industrial command centers, and spatial event teams. |
 | Pain wedge | Supporting spatial console proof for incident zones, dispatch, SLA reporting, and shift handoff. |
 | Front-door offer | Spatial ops cockpit prototype |
-| Entry scope | $3k-$10k UX review |
+| Entry scope | Scope after buyer intake |
 | Proof before pitch | npm run verify passes |
 | Next buyer action | Review one proof artifact, then choose diagnostic, workshop, pilot, support, or revival path. |
 
@@ -20,9 +20,9 @@ This is the buyer-ready version of the repository. It turns the technical proof 
 
 | Offer | Scope assumption | Buyer-facing scope |
 |---|---|---|
-| Spatial ops cockpit prototype | $3k-$10k UX review | Keep as supporting proof |
-| Digital twin UX review | $10k-$40k prototype | Route buyers to AegisOps/reliability |
-| Dispatch/reporting starter | $2k-$8k/month reporting support | Offer spatial UX sprint |
+| Spatial ops cockpit prototype | Scope after buyer intake | Keep as supporting proof |
+| Digital twin UX review | Scope after buyer intake | Route buyers to AegisOps/reliability |
+| Dispatch/reporting starter | Scope after buyer intake | Offer spatial UX sprint |
 
 ## Close Path
 

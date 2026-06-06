@@ -56,9 +56,9 @@ Use this page as the short path through the repository. It keeps the review grou
 
 | Possible offer | Working scope assumption |
 |---|---|
-| Spatial ops cockpit prototype | $3k-$10k UX review |
-| Digital twin UX review | $10k-$40k prototype |
-| Dispatch/reporting starter | $2k-$8k/month reporting support |
+| Spatial ops cockpit prototype | Scope after buyer intake |
+| Digital twin UX review | Scope after buyer intake |
+| Dispatch/reporting starter | Scope after buyer intake |
 
 ## Boundaries
 
