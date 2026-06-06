@@ -5,10 +5,9 @@ import { fileURLToPath } from "node:url";
 
 const root = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 
-async function ensurePagesRedirect() {
-  await access(join(root, "pages-redirect", "index.html"));
-  await access(join(root, "pages-redirect", "_redirects"));
-  process.stdout.write("Cloudflare Pages build target: pages-redirect\n");
+async function ensurePagesProxy() {
+  await access(join(root, "pages-proxy", "_worker.js"));
+  process.stdout.write("Cloudflare Pages build target: pages-proxy\n");
 }
 
 function runNextBuild() {
@@ -28,7 +27,7 @@ function runNextBuild() {
 }
 
 if (process.env.CF_PAGES === "1") {
-  await ensurePagesRedirect();
+  await ensurePagesProxy();
 } else {
   runNextBuild();
 }

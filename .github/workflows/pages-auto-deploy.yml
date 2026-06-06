@@ -37,7 +37,7 @@ jobs:
           set -euo pipefail
           for attempt in 1 2 3; do
             echo "Deploy attempt $attempt/3"
-            if npx wrangler@4.66.0 pages deploy pages-redirect --project-name=twincity-ui --branch=main --commit-dirty=true; then
+            if npx wrangler@4.66.0 pages deploy pages-proxy --project-name=twincity-ui --branch=main --commit-dirty=true; then
               exit 0
             fi
             if [ "$attempt" -lt 3 ]; then
