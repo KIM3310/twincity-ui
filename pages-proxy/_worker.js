@@ -27,9 +27,8 @@ async function injectMainLandmark(response) {
     });
   }
 
-  const withMain = html
-    .replace(/<body([^>]*)>/i, '<body$1><main id="main-content" role="main">')
-    .replace(/<\/body>/i, "</main></body>");
+  const landmarkBootstrap = `<script data-pages-landmark-bootstrap>(function(){var install=function(){if(document.querySelector('main,[role="main"]'))return;var anchor=document.querySelector('.siteRoot')||document.querySelector('#__next')||document.body.firstElementChild;if(!anchor||!anchor.parentNode||anchor===document.body)return;var main=document.createElement('main');main.id='main-content';main.setAttribute('role','main');main.setAttribute('data-pages-landmark','true');anchor.parentNode.insertBefore(main,anchor);main.appendChild(anchor);};var defer=function(){requestAnimationFrame(function(){setTimeout(install,0);});};if(document.readyState==='complete')defer();else window.addEventListener('load',defer,{once:true});})();</script>`;
+  const withMain = html.replace(/<\/body>/i, `${landmarkBootstrap}</body>`);
 
   return new Response(withMain, {
     status: response.status,
