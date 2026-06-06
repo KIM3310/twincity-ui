@@ -129,7 +129,7 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="siteMain">
+      <main id="main-content" className="siteMain" role="main">
         <div className="shell">{children}</div>
       </main>
 
