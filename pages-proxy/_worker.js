@@ -37,7 +37,7 @@ async function injectMainLandmark(response) {
   });
 }
 
-export default {
+const worker = {
   async fetch(request) {
     const targetUrl = proxiedUrl(request.url);
     const headers = new Headers(request.headers);
@@ -78,3 +78,5 @@ export default {
     });
   },
 };
+
+export default worker;
