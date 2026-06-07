@@ -50,12 +50,14 @@ export function buildControlTowerRuntimeScorecard(now = new Date()) {
       execution_model: "edge",
       live_sources: runtimeMeta.live_sources,
       diagnostics: runtimeMeta.diagnostics,
+      public_api_readiness: runtimeMeta.public_api_readiness,
       operator_auth: operatorAuth,
       review_routes: [
         "/api/health",
         "/api/meta",
         "/api/runtime-brief",
         "/api/runtime-scorecard",
+        "/api/public-apis",
         "/api/reports/summary",
         "/api/reports/dispatch-board",
         "/api/reports/assignment-history",
@@ -83,6 +85,7 @@ export function buildControlTowerRuntimeScorecard(now = new Date()) {
       operatorAuth.enabled
         ? "Use the operator token before exporting JSON or CSV snapshots for operator handoff."
         : "Exports are open in demo mode; keep them tied to deterministic report summary output.",
+      "Confirm Korean public API readiness before presenting weather, traffic, or safety overlays as live data.",
       "Use the dispatch board to confirm unresolved queue posture before sharing a report snapshot.",
       "Use the shift handoff brief to highlight overdue queue risk before operator handoff.",
       "Use the response playbook to confirm escalation owner and next checkpoint timing before actioning incidents.",
@@ -95,6 +98,7 @@ export function buildControlTowerRuntimeScorecard(now = new Date()) {
       meta: "/api/meta",
       runtime_brief: "/api/runtime-brief",
       runtime_scorecard: "/api/runtime-scorecard",
+      public_apis: "/api/public-apis",
       report_summary: "/api/reports/summary",
       dispatch_board: "/api/reports/dispatch-board",
       assignment_history: "/api/reports/assignment-history",

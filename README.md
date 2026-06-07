@@ -86,6 +86,7 @@ npm run verify
 - `/api/proof-route-map` - Front-door operator route chooser
 - `/api/meta` - Trust boundary + evidence bundle
 - `/api/runtime-scorecard` - Ingest posture + SLA snapshot
+- `/api/public-apis` - Korean public API enrichment readiness
 - `/api/reports/summary` - Deterministic SLA summary
 - `/api/reports/dispatch-board` - Attention / dispatch / resolved queues
 - `/api/reports/handoff` - Next-shift digest + overdue risk
@@ -103,6 +104,9 @@ NEXT_PUBLIC_EVENT_POLL_MS=5000
 ```
 
 Without live sources, the app runs in demo mode with mock data.
+
+Optional Korean public-data enrichment is exposed through `/api/public-apis`.
+The readiness registry is aligned with [public-apis-4Kr](https://github.com/yybmion/public-apis-4Kr) and checks for server-side provider secrets such as `SEOUL_OPEN_DATA_API_KEY`, `KMA_API_KEY`, `AIRKOREA_API_KEY`, and `PUBLIC_SAFETY_API_KEY` without returning secret values.
 
 ## Mock endpoints
 - `GET /api/mock/events?shape=a&count=4`

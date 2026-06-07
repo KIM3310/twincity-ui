@@ -34,6 +34,7 @@ export type ControlTowerServiceMeta = {
   readiness_contract: "control-tower-readiness-v1";
   live_sources: RuntimeMeta["live_sources"];
   diagnostics: RuntimeMeta["diagnostics"];
+  public_api_readiness: RuntimeMeta["public_api_readiness"];
   ops_contract: RuntimeMeta["ops_contract"];
   ingest_contract: RuntimeMeta["ops_contract"];
   report_contract: ReportSchema;
@@ -65,6 +66,14 @@ export type ControlTowerRuntimeBrief = {
   readiness_contract: "control-tower-runtime-brief-v1";
   live_sources: RuntimeMeta["live_sources"];
   diagnostics: RuntimeMeta["diagnostics"];
+  public_api_summary: {
+    schema: RuntimeMeta["public_api_readiness"]["schema"];
+    configured_source_count: number;
+    total_source_count: number;
+    configured_group_count: number;
+    next_action: string;
+    source_catalog: RuntimeMeta["public_api_readiness"]["source_catalog"];
+  };
   report_contract: ReportSchema;
   evidence_counts: ControlTowerServiceMeta["evidence_counts"];
   review_flow: string[];
@@ -77,6 +86,7 @@ export type ControlTowerRuntimeBrief = {
     runtime_brief: string;
     runtime_scorecard?: string;
     meta: string;
+    public_apis: string;
     report_schema: string;
     report_summary: string;
     dispatch_board: string;
@@ -158,6 +168,12 @@ const CONTROL_TOWER_EVIDENCE: ServiceArtifact[] = [
     href: "/api/runtime-scorecard",
     kind: "route",
     note: "ingest posture, export auth, and SLA snapshot in one compact contract",
+  },
+  {
+    label: "Korean Public API Readiness",
+    href: "/api/public-apis",
+    kind: "route",
+    note: "public-apis-4Kr aligned integration readiness without exposing secrets",
   },
   {
     label: "Report Schema",
@@ -299,6 +315,7 @@ const CONTROL_TOWER_ARTIFACT_HREFS = [
   "/api/meta",
   "/api/runtime-brief",
   "/api/runtime-scorecard",
+  "/api/public-apis",
   "/api/schema/report",
   "/reports",
   "/api/reports/summary",
@@ -323,6 +340,7 @@ const CONTROL_TOWER_PROOF_ASSET_HREFS = [
   "/api/health",
   "/api/meta",
   "/api/runtime-scorecard",
+  "/api/public-apis",
   "/api/reports/summary",
   "/api/reports/dispatch-board",
   "/api/reports/assignment-history",
@@ -412,6 +430,7 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
     readiness_contract: "control-tower-readiness-v1",
     live_sources: runtimeMeta.live_sources,
     diagnostics: runtimeMeta.diagnostics,
+    public_api_readiness: runtimeMeta.public_api_readiness,
     ops_contract: runtimeMeta.ops_contract,
     ingest_contract: runtimeMeta.ops_contract,
     report_contract: reportContract,
@@ -421,6 +440,7 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
       "normalize: provider payloads converge into EventItem",
       "state: browser-local replay and timeline persistence",
       "handoff: status bundles carry a deterministic digest before export approval",
+      "public APIs: readiness exposes configured providers only, never secret values",
       "map: floorplan + zone polygons + optional homography",
       "validation: 3D probe routes stay optional and review-only",
     ],
@@ -428,6 +448,7 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
       "Keep the operator loop visible before any deep-dive debugging.",
       "Treat replay and live transport as separate trust domains.",
       "Prefer schema-backed summaries over free-form screenshots.",
+      "Do not mark weather, traffic, or safety overlays as live until provider fixtures pass review.",
     ],
     strengths: [
       "No backend is required to review the end-to-end operator loop.",
@@ -438,6 +459,7 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
       "Demo mode can hide auth, backpressure, and noisy provider payloads.",
       "Reports currently summarize browser-local state, not a central incident store.",
       "3D validation routes are for geometry checks, not production rendering.",
+      "Public API enrichment needs provider keys plus station/zone matching before live use.",
     ],
     review_flow: [
       "Open /api/health to confirm ingest mode and review links.",
@@ -447,6 +469,7 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
       "Use /api/reports/assignment-history to verify current owner and handoff chain before shift changes.",
       "Use /api/reports/handoff to verify the next-shift digest before copying or exporting operator artifacts.",
       "Use /api/reports/response-playbook to review escalation drills, checkpoint timing, and operator-safe action gates.",
+      "Use /api/public-apis to confirm which Korean public-data providers are configured before claiming live enrichment.",
       "Use /api/reports/export to validate server-generated JSON or CSV handoff payloads.",
       "Use /api/reports/reviewer-bundle when an operator needs a digest-backed export bundle.",
       "Use /events or / to exercise triage and timeline handling.",
@@ -472,6 +495,7 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
       ...runtimeMeta.routes,
       "/api/runtime-brief",
       "/api/runtime-scorecard",
+      "/api/public-apis",
       "/api/schema/report",
       "/api/reports/summary",
       "/api/reports/dispatch-board",
@@ -500,6 +524,14 @@ export function buildControlTowerRuntimeBrief(now = new Date()): ControlTowerRun
     readiness_contract: "control-tower-runtime-brief-v1",
     live_sources: serviceMeta.live_sources,
     diagnostics: serviceMeta.diagnostics,
+    public_api_summary: {
+      schema: serviceMeta.public_api_readiness.schema,
+      configured_source_count: serviceMeta.public_api_readiness.configured_source_count,
+      total_source_count: serviceMeta.public_api_readiness.total_source_count,
+      configured_group_count: serviceMeta.public_api_readiness.configured_group_count,
+      next_action: serviceMeta.public_api_readiness.next_action,
+      source_catalog: serviceMeta.public_api_readiness.source_catalog,
+    },
     report_contract: serviceMeta.report_contract,
     evidence_counts: serviceMeta.evidence_counts,
     review_flow: serviceMeta.review_flow,
@@ -512,6 +544,7 @@ export function buildControlTowerRuntimeBrief(now = new Date()): ControlTowerRun
       runtime_brief: "/api/runtime-brief",
       runtime_scorecard: "/api/runtime-scorecard",
       meta: "/api/meta",
+      public_apis: "/api/public-apis",
       report_schema: "/api/schema/report",
       report_summary: "/api/reports/summary",
       dispatch_board: "/api/reports/dispatch-board",

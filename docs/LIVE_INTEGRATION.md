@@ -34,7 +34,29 @@ Operational behavior:
 
 ---
 
-## 2) What The UI Accepts (Payload Shapes)
+## 2) Korean Public API Enrichment (Optional)
+
+`/api/public-apis` reports readiness for selected Korean public-data providers from the [public-apis-4Kr](https://github.com/yybmion/public-apis-4Kr) catalog.
+These providers enrich context around an incident; they do not replace the primary WS/SSE/HTTP event transport.
+
+Server-side keys:
+
+```bash
+SEOUL_OPEN_DATA_API_KEY=
+DATA_GO_KR_SERVICE_KEY=
+TOPIS_API_KEY=
+EXPRESSWAY_API_KEY=
+KMA_API_KEY=
+AIRKOREA_API_KEY=
+PUBLIC_SAFETY_API_KEY=
+NATIONAL_FIRE_API_KEY=
+```
+
+Use this readiness endpoint before presenting weather, traffic, city-context, or public-safety overlays as live data.
+
+---
+
+## 3) What The UI Accepts (Payload Shapes)
 
 TwinCity UI normalizes inconsistent provider payloads into a single internal schema (`EventItem`) using:
 - `src/components/site/OpsExperience.tsx` (wrapper extraction + edge object merging)

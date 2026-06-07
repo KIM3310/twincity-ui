@@ -1,3 +1,8 @@
+import {
+  buildKoreanPublicApiReadiness,
+  type KoreanPublicApiReadiness,
+} from "./koreanPublicApis";
+
 type RuntimeMeta = {
   service: string;
   status: "ok";
@@ -18,6 +23,7 @@ type RuntimeMeta = {
     version: 1;
     required_fields: string[];
   };
+  public_api_readiness: KoreanPublicApiReadiness;
   features: string[];
   routes: string[];
 };
@@ -52,12 +58,21 @@ export function buildRuntimeMeta(now = new Date()): RuntimeMeta {
       version: 1,
       required_fields: ["service", "status", "diagnostics.next_action"],
     },
+    public_api_readiness: buildKoreanPublicApiReadiness(),
     features: [
       "digital-twin-floor-map",
       "normalized-event-feed",
       "3d-asset-probe",
       "ops-engagement-hub",
+      "korean-public-api-readiness",
     ],
-    routes: ["/api/proof-route-map", "/api/health", "/api/meta", "/api/3d-test/status", "/api/3d-test/model"],
+    routes: [
+      "/api/proof-route-map",
+      "/api/health",
+      "/api/meta",
+      "/api/public-apis",
+      "/api/3d-test/status",
+      "/api/3d-test/model",
+    ],
   };
 }

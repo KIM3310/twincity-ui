@@ -3,6 +3,7 @@ import { afterEach, describe, expect, test } from "vitest";
 import { GET as getHealthRoute } from "@/app/api/health/route";
 import { GET as getMetaRoute } from "@/app/api/meta/route";
 import { GET as getProofRouteMapRoute } from "@/app/api/proof-route-map/route";
+import { GET as getPublicApisRoute } from "@/app/api/public-apis/route";
 import { GET as getAssignmentHistoryRoute } from "@/app/api/reports/assignment-history/route";
 import { GET as getDispatchBoardRoute } from "@/app/api/reports/dispatch-board/route";
 import { GET as getReportExportRoute } from "@/app/api/reports/export/route";
@@ -22,6 +23,14 @@ const ENV_KEYS = [
   "NEXT_PUBLIC_EVENT_POLL_MS",
   "TWINCITY_EXPORT_OPERATOR_TOKEN",
   "TWINCITY_EXPORT_OPERATOR_ALLOWED_ROLES",
+  "SEOUL_OPEN_DATA_API_KEY",
+  "DATA_GO_KR_SERVICE_KEY",
+  "TOPIS_API_KEY",
+  "EXPRESSWAY_API_KEY",
+  "KMA_API_KEY",
+  "AIRKOREA_API_KEY",
+  "PUBLIC_SAFETY_API_KEY",
+  "NATIONAL_FIRE_API_KEY",
 ] as const;
 
 function withEnv(values: Partial<Record<(typeof ENV_KEYS)[number], string>>, run: () => Promise<void>) {
@@ -85,6 +94,7 @@ describe("runtime routes", () => {
             "service-metadata-surface",
             "runtime-brief-surface",
             "runtime-scorecard-surface",
+            "korean-public-api-readiness",
             "report-schema-surface",
             "report-summary-surface",
             "dispatch-board-surface",
@@ -98,6 +108,7 @@ describe("runtime routes", () => {
             readiness: "control-tower-readiness-v1",
             runtime_brief: "/api/runtime-brief",
             runtime_scorecard: "/api/runtime-scorecard",
+            public_apis: "/api/public-apis",
             report_schema: "/api/schema/report",
             report_summary: "/api/reports/summary",
             dispatch_board: "/api/reports/dispatch-board",
@@ -113,6 +124,7 @@ describe("runtime routes", () => {
             meta: "/api/meta",
             runtime_brief: "/api/runtime-brief",
             runtime_scorecard: "/api/runtime-scorecard",
+            public_apis: "/api/public-apis",
             report_schema: "/api/schema/report",
             report_summary: "/api/reports/summary",
             dispatch_board: "/api/reports/dispatch-board",
@@ -126,6 +138,7 @@ describe("runtime routes", () => {
           },
         });
         expect(body.ops_contract.schema).toBe("ops-envelope-v1");
+        expect(body.public_api_readiness.schema).toBe("korean-public-api-readiness-v1");
         expect(body.diagnostics.next_action).toContain("/api/3d-test/status");
         expect(response.headers.get("x-request-id")).toBe(body.request_id);
       }
@@ -159,8 +172,10 @@ describe("runtime routes", () => {
           },
         });
         expect(body.features).toContain("digital-twin-floor-map");
+        expect(body.features).toContain("korean-public-api-readiness");
         expect(body.routes).toContain("/api/proof-route-map");
         expect(body.routes).toContain("/api/meta");
+        expect(body.routes).toContain("/api/public-apis");
         expect(body.routes).toContain("/api/runtime-brief");
         expect(body.routes).toContain("/api/schema/report");
         expect(body.routes).toContain("/api/reports/summary");
@@ -174,12 +189,14 @@ describe("runtime routes", () => {
         expect(body.ops_contract.schema).toBe("ops-envelope-v1");
         expect(body.diagnostics.next_action).toContain("/api/3d-test/status");
         expect(body.report_contract.schema).toBe("twincity-report-v1");
+        expect(body.public_api_readiness.schema).toBe("korean-public-api-readiness-v1");
         expect(Array.isArray(body.trust_boundary)).toBe(true);
         expect(body.two_minute_review).toHaveLength(11);
         expect(body.proof_assets[0].href).toBe("/api/proof-route-map");
         expect(body.links.proof_route_map).toBe("/api/proof-route-map");
         expect(body.links.runtime_brief).toBe("/api/runtime-brief");
         expect(body.links.runtime_scorecard).toBe("/api/runtime-scorecard");
+        expect(body.links.public_apis).toBe("/api/public-apis");
         expect(body.links.report_summary).toBe("/api/reports/summary");
         expect(body.links.dispatch_board).toBe("/api/reports/dispatch-board");
         expect(body.links.assignment_history).toBe("/api/reports/assignment-history");
@@ -210,6 +227,7 @@ describe("runtime routes", () => {
       links: {
         runtime_brief: "/api/runtime-brief",
         runtime_scorecard: "/api/runtime-scorecard",
+        public_apis: "/api/public-apis",
         report_summary: "/api/reports/summary",
         dispatch_board: "/api/reports/dispatch-board",
         assignment_history: "/api/reports/assignment-history",
@@ -221,11 +239,57 @@ describe("runtime routes", () => {
         reports: "/reports",
       },
     });
+    expect(body.public_api_summary).toMatchObject({
+      schema: "korean-public-api-readiness-v1",
+      total_source_count: 8,
+      configured_group_count: 0,
+    });
     expect(body.route_count).toBeGreaterThanOrEqual(10);
     expect(body.review_flow[0]).toContain("/api/health");
     expect(body.two_minute_review).toHaveLength(11);
     expect(body.proof_assets[0].href).toBe("/api/proof-route-map");
     expect(response.headers.get("x-request-id")).toBe(body.request_id);
+  });
+
+  test("public API readiness route lists configured sources without secret values", async () => {
+    await withEnv(
+      {
+        SEOUL_OPEN_DATA_API_KEY: "city-secret",
+        AIRKOREA_API_KEY: "air-secret",
+        PUBLIC_SAFETY_API_KEY: "safety-secret",
+      },
+      async () => {
+        const response = await getPublicApisRoute(new Request("https://example.com/api/public-apis"));
+        const body = await response.json();
+
+        expect(response.status).toBe(200);
+        expect(body).toMatchObject({
+          ok: true,
+          schema: "korean-public-api-readiness-v1",
+          configured_source_count: 3,
+          configured_group_count: 3,
+          source_catalog: {
+            url: "https://github.com/yybmion/public-apis-4Kr",
+          },
+          links: {
+            source_catalog: "https://github.com/yybmion/public-apis-4Kr",
+          },
+        });
+        expect(body.groups.map((group: { id: string }) => group.id)).toEqual([
+          "city-context",
+          "mobility",
+          "weather-environment",
+          "public-safety",
+        ]);
+        expect(body.missing_secret_names).not.toContain("SEOUL_OPEN_DATA_API_KEY");
+        expect(body.missing_secret_names).not.toContain("AIRKOREA_API_KEY");
+        expect(body.missing_secret_names).not.toContain("PUBLIC_SAFETY_API_KEY");
+        expect(JSON.stringify(body)).not.toContain("city-secret");
+        expect(JSON.stringify(body)).not.toContain("air-secret");
+        expect(JSON.stringify(body)).not.toContain("safety-secret");
+        expect(response.headers.get("x-request-id")).toBe(body.request_id);
+      }
+    );
   });
 
   test("proof route map exposes the first-click reviewer sequence", async () => {
@@ -252,7 +316,9 @@ describe("runtime routes", () => {
     expect(body.summary.total_incidents).toBeGreaterThanOrEqual(1);
     expect(body.summary.attention_incidents).toBeGreaterThanOrEqual(1);
     expect(body.runtime.operator_auth.enabled).toBe(false);
+    expect(body.runtime.public_api_readiness.schema).toBe("korean-public-api-readiness-v1");
     expect(body.links.runtime_scorecard).toBe("/api/runtime-scorecard");
+    expect(body.links.public_apis).toBe("/api/public-apis");
     expect(body.links.dispatch_board).toBe("/api/reports/dispatch-board");
     expect(body.links.assignment_history).toBe("/api/reports/assignment-history");
     expect(body.links.response_playbook).toBe("/api/reports/response-playbook");
