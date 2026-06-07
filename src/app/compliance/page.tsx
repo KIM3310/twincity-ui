@@ -25,7 +25,7 @@ export default function CompliancePage() {
       </section>
       <section className="panel reveal delay-3">
         <h2 className="panelTitle">외부 영역 정책</h2>
-        <p>선택형 외부 영역은 기능 사용을 막지 않는 위치에서만 제공하며 콘텐츠와 구분 가능한 형태로 표시됩니다.</p>
+        <p>선택형 외부 영역은 기능 사용을 막지 않는 위치에서만 제공하며 콘텐츠와 구분 가능한 형태로 표시됩니다. Optional embed areas remain separated from the primary workflow.</p>
       </section>
     </div>
   );
