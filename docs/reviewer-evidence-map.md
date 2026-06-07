@@ -52,13 +52,13 @@ Use this page as the short path through the repository. It keeps the review grou
 - Hosted runtime is documented
 - Proof route map works
 
-## Commercial Notes
+## Review Notes
 
 | Possible offer | Working scope assumption |
 |---|---|
-| Spatial ops cockpit prototype | Scope after buyer intake |
-| Digital twin UX review | Scope after buyer intake |
-| Dispatch/reporting starter | Scope after buyer intake |
+| Spatial ops cockpit prototype | Scope after reviewer intake |
+| Digital twin UX review | Scope after reviewer intake |
+| Dispatch/reporting starter | Scope after reviewer intake |
 
 ## Boundaries
 

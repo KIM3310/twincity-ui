@@ -21,7 +21,7 @@ Technical walkthrough pack: [`docs/technical-review-pack.md`](docs/technical-rev
 | Lens | Decision signal |
 |---|---|
 | Buyer | Facilities, city operations, and industrial command centers that need spatial incidents, dispatch, and SLA evidence in one console. |
-| Commercial proof | Live/history event views, zone overlays, transport fallback, reports, and exports form a sellable operations cockpit rather than a static demo. |
+| Product proof | The demo, workflow loop, and static proof surface show the current product direction without extra claims. |
 | Reviewer proof | `/api/proof-route-map`, `/api/health`, `/api/meta`, runtime scorecard, reports, and screenshot evidence create a fast evaluation path. |
 | Safety posture | Demo-mode defaults, trust-boundary metadata, normalized ingest, and explicit fallback behavior keep the archived surface understandable and low-risk. |
 
@@ -30,20 +30,16 @@ Technical walkthrough pack: [`docs/technical-review-pack.md`](docs/technical-rev
 - **First minute:** Use `/api/proof-route-map`, then open `/events` and `/reports`.
 - **Local demo:** Run `npm ci && npm run dev`, then open `http://127.0.0.1:3000/events`.
 - **Verification:** Run `npm run test:proof` for proof routes or `npm run verify` for the full gate.
-- **Commercial read:** Keep it as supporting evidence for spatial operations UX while AegisOps and reliability workbenches carry the active story.
 
 ## Service Launch Playbook
 
-- [Service launch playbook](docs/service-launch-playbook.md) maps the repository to buyer segments, offer ladder, proof gates, proof gates, and risk boundaries.
+- [Service launch playbook](docs/service-launch-playbook.md) maps the repository to review audiences, offer ladder, proof gates, proof gates, and risk boundaries.
 
 ## Review Notes
 
 - [Review guide](docs/reviewer-evidence-map.md) summarizes the project angle, first files to inspect, verification commands, and known boundaries.
 - [Quality notes](docs/quality-gate.md) lists the local checks, CI surface, and release expectations for this repository.
-- [Service growth model](docs/service-growth-model.md) maps the project to an ethical service path, activation loop, scope logic, and growth experiments.
 - [Enterprise readiness notes](docs/enterprise-readiness.md) outlines security, data, operations, integration, and handoff expectations.
-- [Conversion UX model](docs/conversion-ux-model.md) maps the buyer path, behavioral design, UI/UX direction, scope frame, and ethical conversion guardrails.
-- [Commercial offer](docs/commercial-offer.md) packages the repository into a buyer-ready offer ladder, proof gate, outreach angle, and close path.
 
 ## What I built
 
@@ -139,7 +135,7 @@ This repository includes a neutral cloud and AI engineering blueprint that maps 
 
 ## Enterprise Productization
 
-- [Product operating model](docs/product-operating-model.md) defines the buyer, paid wedge, trust boundary, operating checks, and service path for this repository.
+- [Product operating model](docs/product-operating-model.md) defines the reviewer, trust boundary, trust boundary, operating checks, and service path for this repository.
 
 ## Service Architecture
 

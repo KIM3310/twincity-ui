@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import LoopVisual from "@/components/site/LoopVisual";
-import AdSenseSlot from "@/components/site/AdSenseSlot";
 import EngagementHub from "@/components/site/EngagementHub";
 import { contactChannels, principles } from "@/lib/studioData";
 
@@ -55,9 +54,8 @@ export default function AboutPage() {
       <EngagementHub />
 
       <section className="panel reveal delay-3">
-        <h2 className="panelTitle">Sponsored</h2>
-        <p className="pageLead">광고는 콘텐츠 흐름을 방해하지 않도록 제한적으로 노출합니다.</p>
-        <AdSenseSlot />
+        <h2 className="panelTitle">Operations Readiness</h2>
+        <p className="pageLead">External embeds stay disabled by default while reviewers inspect the operator workflow, privacy boundary, and runtime posture.</p>
       </section>
     </div>
   );

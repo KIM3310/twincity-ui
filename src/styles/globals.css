@@ -2292,27 +2292,6 @@ body.is-gated {
   color: #306a63;
 }
 
-.adsenseFrame {
-  min-height: 96px;
-  border: 1px dashed var(--line);
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.adsenseFallback {
-  min-height: 96px;
-  border: 1px dashed var(--line);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 0.65rem;
-  color: var(--ink-muted);
-  font-size: 0.82rem;
-  background: rgba(255, 255, 255, 0.8);
-}
-
 .discussionBlock {
   border: 1px solid var(--line);
   border-radius: 10px;

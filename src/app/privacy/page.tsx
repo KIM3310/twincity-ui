@@ -21,7 +21,7 @@ export default function PrivacyPage() {
       </section>
       <section className="panel reveal delay-2">
         <h2 className="panelTitle">제3자 서비스</h2>
-        <p>Formspree/Disqus/Giscus/AdSense는 설정 시에만 활성화되며 각 제공자 정책이 적용됩니다.</p>
+        <p>Formspree/Disqus/Giscus or other external embeds는 설정 시에만 활성화되며 각 제공자 정책이 적용됩니다.</p>
       </section>
     </div>
   );

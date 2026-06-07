@@ -11,7 +11,7 @@ export default function ContactPage() {
         <p className="kicker">Contact</p>
         <h1 className="pageTitle">운영 문의</h1>
         <p className="pageLead">
-          서비스 개선 제안, 장애 제보, 광고/파트너십 문의를 아래 채널로 받아 운영 백로그에 반영합니다.
+          서비스 개선 제안, 장애 제보, 운영/파트너십 문의를 아래 채널로 받아 운영 백로그에 반영합니다.
         </p>
       </header>
       <section className="panel reveal delay-1">
