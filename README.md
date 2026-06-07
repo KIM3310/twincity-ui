@@ -20,7 +20,7 @@ Technical walkthrough pack: [`docs/technical-review-pack.md`](docs/technical-rev
 
 | Lens | Decision signal |
 |---|---|
-| Buyer | Facilities, city operations, and industrial command centers that need spatial incidents, dispatch, and SLA evidence in one console. |
+| Reviewer | Facilities, city operations, and industrial command centers that need spatial incidents, dispatch, and SLA evidence in one console. |
 | Product proof | The demo, workflow loop, and static proof surface show the current product direction without extra claims. |
 | Reviewer proof | `/api/proof-route-map`, `/api/health`, `/api/meta`, runtime scorecard, reports, and screenshot evidence create a fast evaluation path. |
 | Safety posture | Demo-mode defaults, trust-boundary metadata, normalized ingest, and explicit fallback behavior keep the archived surface understandable and low-risk. |
