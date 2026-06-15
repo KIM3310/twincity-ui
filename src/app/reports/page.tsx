@@ -464,7 +464,7 @@ export default function ReportsPage() {
 
   const copyReviewRoutes = useCallback(async () => {
     const text = [
-      `TwinCity review routes (${filterSummary})`,
+      `TwinCity architecture routes (${filterSummary})`,
       ...serviceMeta.review_flow.map((item) => `- ${item}`),
       "",
       "Routes",
@@ -558,7 +558,7 @@ export default function ReportsPage() {
     const text = [
       `TwinCity control tower claim (${filterSummary})`,
       `Headline: ${runtimeBrief.headline}`,
-      `Review routes: ${runtimeBrief.route_count}`,
+      `Architecture routes: ${runtimeBrief.route_count}`,
       `Open incidents: ${openCount}`,
       `Critical incidents: ${criticalCount}`,
       `ACK SLA: ${ackDurations.length > 0 ? `${ackSlaMet}/${ackDurations.length}` : "-"}`,
@@ -605,7 +605,7 @@ export default function ReportsPage() {
       "- /api/reports/dispatch-board",
       "- /api/reports/summary",
       "- /api/reports/export",
-      "- /api/reports/reviewer-bundle",
+      "- /api/reports/architecture-bundle",
     ].join("\n");
 
     try {
@@ -690,7 +690,7 @@ export default function ReportsPage() {
       `Top zone: ${byZone[0] ? `${getZoneLabel(byZone[0][0])} (${byZone[0][1]})` : "-"}`,
       `Spotlight: ${target ? `${target.id} / ${getZoneLabel(target.zone_id)} / S${target.severity}` : "-"}`,
       "",
-      "Review routes",
+      "Architecture routes",
       ...serviceMeta.routes.slice(0, 5).map((route) => `- ${route}`),
       "",
       "Dispatch lanes",
@@ -864,7 +864,7 @@ export default function ReportsPage() {
               <span className="mono">{runtimeBrief.evidence_counts.routes}</span>
             </div>
             <div className="reportRow">
-              <span>Review route count</span>
+              <span>Architecture route count</span>
               <span className="mono">{runtimeBrief.route_count}</span>
             </div>
           </div>

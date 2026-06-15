@@ -64,8 +64,8 @@ export function buildControlTowerRuntimeScorecard(now = new Date()) {
         "/api/reports/handoff",
         "/api/reports/response-playbook",
         "/api/reports/export",
-        "/api/reports/reviewer-bundle",
-        "/api/reports/reviewer-bundle/verify",
+        "/api/reports/architecture-bundle",
+        "/api/reports/architecture-bundle/verify",
       ],
     },
     summary: {
@@ -105,8 +105,8 @@ export function buildControlTowerRuntimeScorecard(now = new Date()) {
       report_handoff: "/api/reports/handoff",
       response_playbook: "/api/reports/response-playbook",
       report_export: "/api/reports/export",
-      reviewer_bundle: "/api/reports/reviewer-bundle",
-      reviewer_bundle_verify: "/api/reports/reviewer-bundle/verify",
+      architecture_bundle: "/api/reports/architecture-bundle",
+      architecture_bundle_verify: "/api/reports/architecture-bundle/verify",
       reports: "/reports",
     },
   };

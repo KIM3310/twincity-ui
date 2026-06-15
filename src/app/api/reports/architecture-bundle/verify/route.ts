@@ -1,6 +1,6 @@
 import { apiError, apiJson, resolveRequestId } from "@/lib/apiResponse";
 import { readOperatorAuthStatus, validateOperatorRequest } from "@/lib/operatorAccess";
-import { verifyControlTowerReviewerBundle } from "@/lib/reviewerBundle";
+import { verifyControlTowerArchitectureBundle } from "@/lib/architectureBundle";
 import { parseReportSummaryFilters } from "@/lib/reportSummary";
 
 export const runtime = "nodejs";
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const filters = parseReportSummaryFilters(url);
-  const verification = await verifyControlTowerReviewerBundle({
+  const verification = await verifyControlTowerArchitectureBundle({
     digest: url.searchParams.get("digest"),
     filters,
   });

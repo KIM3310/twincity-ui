@@ -94,8 +94,8 @@ export type ControlTowerRuntimeBrief = {
     report_handoff: string;
     response_playbook: string;
     report_export: string;
-    reviewer_bundle: string;
-    reviewer_bundle_verify: string;
+    architecture_bundle: string;
+    architecture_bundle_verify: string;
     reports: string;
   };
 };
@@ -225,13 +225,13 @@ const CONTROL_TOWER_EVIDENCE: ServiceArtifact[] = [
   },
   {
     label: "Operator Bundle API",
-    href: "/api/reports/reviewer-bundle",
+    href: "/api/reports/architecture-bundle",
     kind: "route",
     note: "digest-backed operator handoff bundle for export-safe review",
   },
   {
     label: "Operator Bundle Verify API",
-    href: "/api/reports/reviewer-bundle/verify",
+    href: "/api/reports/architecture-bundle/verify",
     kind: "route",
     note: "recomputes the bundle digest before handoff approval",
   },
@@ -239,10 +239,10 @@ const CONTROL_TOWER_EVIDENCE: ServiceArtifact[] = [
     label: "README",
     href: "README.md",
     kind: "doc",
-    note: "repo entry point, review path, and local verification commands",
+    note: "repo entry point, review path, and local runtime commands",
   },
   {
-    label: "Portfolio Review Guide",
+    label: "Portfolio Architecture Guide",
     href: "docs/PORTFOLIO_REVIEW_GUIDE.md",
     kind: "doc",
     note: "2-minute operator path and capability evidence map",
@@ -324,8 +324,8 @@ const CONTROL_TOWER_ARTIFACT_HREFS = [
   "/api/reports/handoff",
   "/api/reports/response-playbook",
   "/api/reports/export",
-  "/api/reports/reviewer-bundle",
-  "/api/reports/reviewer-bundle/verify",
+  "/api/reports/architecture-bundle",
+  "/api/reports/architecture-bundle/verify",
   "README.md",
   "docs/PORTFOLIO_REVIEW_GUIDE.md",
   "docs/LIVE_INTEGRATION.md",
@@ -347,7 +347,7 @@ const CONTROL_TOWER_PROOF_ASSET_HREFS = [
   "/api/reports/handoff",
   "/api/reports/response-playbook",
   "/api/reports/export",
-  "/api/reports/reviewer-bundle",
+  "/api/reports/architecture-bundle",
   "docs/PORTFOLIO_REVIEW_GUIDE.md",
   "tests/runtimeRoutes.test.ts",
   "public/screenshots/ops_console.png",
@@ -402,7 +402,7 @@ export function buildControlTowerReportSchema(): ReportSchema {
       "open_incidents",
       "operator_notes",
     ],
-    export_formats: ["json", "csv", "reviewer-bundle", "clipboard-summary"],
+    export_formats: ["json", "csv", "architecture-bundle", "clipboard-summary"],
     operator_rules: [
       "Always separate ACK SLA from resolve SLA.",
       "Every summary must trace back to normalized EventItem data and timeline events.",
@@ -471,7 +471,7 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
       "Use /api/reports/response-playbook to review escalation drills, checkpoint timing, and operator-safe action gates.",
       "Use /api/public-apis to confirm which Korean public-data providers are configured before claiming live enrichment.",
       "Use /api/reports/export to validate server-generated JSON or CSV handoff payloads.",
-      "Use /api/reports/reviewer-bundle when an operator needs a digest-backed export bundle.",
+      "Use /api/reports/architecture-bundle when an operator needs a digest-backed export bundle.",
       "Use /events or / to exercise triage and timeline handling.",
       "Open /reports for SLA proof and exported summary paths.",
     ],
@@ -484,7 +484,7 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
       "Use /api/reports/handoff to confirm the top next-shift priorities and overdue queue risk.",
       "Use /api/reports/response-playbook to confirm who escalates next and when the next checkpoint should happen.",
       "Use /api/reports/export to validate server-side handoff payloads before sharing a report.",
-      "Use /api/reports/reviewer-bundle/verify to confirm bundle integrity before external handoff.",
+      "Use /api/reports/architecture-bundle/verify to confirm bundle integrity before external handoff.",
       "Open /reports to validate SLA proof and export posture.",
       "Use /events to inspect one alert through triage, dispatch, and timeline state.",
     ],
@@ -503,8 +503,8 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
       "/api/reports/handoff",
       "/api/reports/response-playbook",
       "/api/reports/export",
-      "/api/reports/reviewer-bundle",
-      "/api/reports/reviewer-bundle/verify",
+      "/api/reports/architecture-bundle",
+      "/api/reports/architecture-bundle/verify",
       "/reports",
     ],
     features: runtimeMeta.features,
@@ -552,8 +552,8 @@ export function buildControlTowerRuntimeBrief(now = new Date()): ControlTowerRun
       report_handoff: "/api/reports/handoff",
       response_playbook: "/api/reports/response-playbook",
       report_export: "/api/reports/export",
-      reviewer_bundle: "/api/reports/reviewer-bundle",
-      reviewer_bundle_verify: "/api/reports/reviewer-bundle/verify",
+      architecture_bundle: "/api/reports/architecture-bundle",
+      architecture_bundle_verify: "/api/reports/architecture-bundle/verify",
       reports: "/reports",
     },
   };

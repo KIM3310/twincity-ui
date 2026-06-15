@@ -53,4 +53,4 @@ NEXT_PUBLIC_EVENT_POLL_MS=5000
 ## 미리 말해둘 한계
 - demo 모드는 auth, noisy traffic, 중앙 저장소까지 증명하지는 않습니다.
 - report는 중앙 incident store가 아니라 브라우저 로컬 상태를 요약합니다.
-- 3D route는 production 렌더링 claim이 아니라 probe/review surface입니다.
+- 3D route는 production 렌더링 claim이 아니라 probe/architecture surface입니다.

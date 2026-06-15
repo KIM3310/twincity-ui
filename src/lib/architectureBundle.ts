@@ -9,11 +9,11 @@ import {
 } from "@/lib/reportSummary";
 import { readOperatorAuthStatus, type OperatorAuthStatus } from "@/lib/operatorAccess";
 
-export type ControlTowerReviewerBundle = {
+export type ControlTowerArchitectureBundle = {
   service: "twincity-ui";
   status: "ok";
   generated_at: string;
-  schema: "twincity-reviewer-bundle-v1";
+  schema: "twincity-architecture-bundle-v1";
   filters: ReportFilters;
   operator_auth: OperatorAuthStatus;
   bundle: {
@@ -49,11 +49,11 @@ export type ControlTowerReviewerBundle = {
   };
 };
 
-export type ControlTowerReviewerBundleVerification = {
+export type ControlTowerArchitectureBundleVerification = {
   service: "twincity-ui";
   status: "ok";
   generated_at: string;
-  schema: "twincity-reviewer-bundle-verify-v1";
+  schema: "twincity-architecture-bundle-verify-v1";
   filters: ReportFilters;
   provided_digest: string | null;
   computed_digest: string;
@@ -142,10 +142,10 @@ function buildBundlePayload(filters: ReportFilters, now?: number) {
   };
 }
 
-export async function buildControlTowerReviewerBundle(input?: {
+export async function buildControlTowerArchitectureBundle(input?: {
   filters?: BundleFiltersInput;
   now?: number;
-}): Promise<ControlTowerReviewerBundle> {
+}): Promise<ControlTowerArchitectureBundle> {
   const filters = normalizeFilters(input?.filters);
   const { reportExport, dispatchBoard, operatorAuth, digestPayload } = buildBundlePayload(filters, input?.now);
   const digest = await sha256Hex(digestPayload);
@@ -154,7 +154,7 @@ export async function buildControlTowerReviewerBundle(input?: {
     service: "twincity-ui",
     status: "ok",
     generated_at: reportExport.generated_at,
-    schema: "twincity-reviewer-bundle-v1",
+    schema: "twincity-architecture-bundle-v1",
     filters,
     operator_auth: operatorAuth,
     bundle: {
@@ -183,8 +183,8 @@ export async function buildControlTowerReviewerBundle(input?: {
         "/api/reports/summary",
         "/api/reports/dispatch-board",
         "/api/reports/export",
-        "/api/reports/reviewer-bundle",
-        "/api/reports/reviewer-bundle/verify",
+        "/api/reports/architecture-bundle",
+        "/api/reports/architecture-bundle/verify",
         "/reports",
       ],
     },
@@ -198,7 +198,7 @@ export async function buildControlTowerReviewerBundle(input?: {
       export_routes: [
         "/api/reports/export?format=json",
         "/api/reports/export?format=csv",
-        "/api/reports/reviewer-bundle",
+        "/api/reports/architecture-bundle",
       ],
     },
     integrity: {
@@ -212,16 +212,16 @@ export async function buildControlTowerReviewerBundle(input?: {
         "dispatch_snapshot",
         "operator_auth",
       ],
-      verification_route: "/api/reports/reviewer-bundle/verify",
+      verification_route: "/api/reports/architecture-bundle/verify",
     },
   };
 }
 
-export async function verifyControlTowerReviewerBundle(input: {
+export async function verifyControlTowerArchitectureBundle(input: {
   digest?: string | null;
   filters?: BundleFiltersInput;
   now?: number;
-}): Promise<ControlTowerReviewerBundleVerification> {
+}): Promise<ControlTowerArchitectureBundleVerification> {
   const filters = normalizeFilters(input.filters);
   const { digestPayload } = buildBundlePayload(filters, input.now);
   const computedDigest = await sha256Hex(digestPayload);
@@ -231,12 +231,12 @@ export async function verifyControlTowerReviewerBundle(input: {
     service: "twincity-ui",
     status: "ok",
     generated_at: new Date(input.now ?? Date.now()).toISOString(),
-    schema: "twincity-reviewer-bundle-verify-v1",
+    schema: "twincity-architecture-bundle-verify-v1",
     filters,
     provided_digest: providedDigest,
     computed_digest: computedDigest,
     match: providedDigest === computedDigest,
-    verification_route: "/api/reports/reviewer-bundle/verify",
+    verification_route: "/api/reports/architecture-bundle/verify",
     covered_sections: [
       "filters",
       "summary",

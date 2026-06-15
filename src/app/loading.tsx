@@ -16,7 +16,7 @@ export default function Loading() {
               Preparing live surface
             </span>
             <span className="chip" data-tone="calm">
-              Proof path stays visible
+              Walkthrough path stays visible
             </span>
           </div>
           <p className="kicker">Loading</p>

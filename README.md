@@ -12,20 +12,20 @@
 
 Next.js (React/TypeScript) operations console for spatial event management. Overlays zones and events on a floorplan, connecting the spatial view to the full operator workflow: ingest, normalization, triage, dispatch, SLA reporting, and shift handoff.
 
-Technical walkthrough pack: [`docs/technical-review-pack.md`](docs/technical-review-pack.md)
+Architecture pack: [`docs/architecture-pack.md`](docs/architecture-pack.md)
 
 ![Ops console screenshot](public/screenshots/ops_console.png)
 
-## Product and Review Surface
+## Product and System Surface
 
 | Lens | Decision signal |
 |---|---|
-| Reviewer | Facilities, city operations, and industrial command centers that need spatial incidents, dispatch, and SLA evidence in one console. |
+| Technical reader | Facilities, city operations, and industrial command centers that need spatial incidents, dispatch, and SLA evidence in one console. |
 | Product proof | The demo, workflow loop, and static proof surface show the current product direction without extra claims. |
-| Reviewer proof | `/api/proof-route-map`, `/api/health`, `/api/meta`, runtime scorecard, reports, and screenshot evidence create a fast evaluation path. |
+| Technical reader proof | `/api/proof-route-map`, `/api/health`, `/api/meta`, runtime scorecard, reports, and screenshot evidence create a fast evaluation path. |
 | Safety posture | Demo-mode defaults, trust-boundary metadata, normalized ingest, and explicit fallback behavior keep the archived surface understandable and low-risk. |
 
-## Reviewer Fast Path
+## System Fast Path
 
 - **First minute:** Use `/api/proof-route-map`, then open `/events` and `/reports`.
 - **Local demo:** Run `npm ci && npm run dev`, then open `http://127.0.0.1:3000/events`.
@@ -33,11 +33,11 @@ Technical walkthrough pack: [`docs/technical-review-pack.md`](docs/technical-rev
 
 ## Service Launch Playbook
 
-- [Service launch playbook](docs/service-launch-playbook.md) maps the repository to review audiences, proof gates, operating boundaries, and risk controls.
+- [Service launch playbook](docs/service-launch-playbook.md) maps the repository to architecture audiences, operating gates, operating boundaries, and risk controls.
 
-## Review Notes
+## Architecture Notes
 
-- [Review guide](docs/reviewer-evidence-map.md) summarizes the project angle, first files to inspect, verification commands, and known boundaries.
+- [Architecture guide](docs/architecture-evidence-map.md) summarizes the project angle, first files to inspect, runtime commands, and known boundaries.
 - [Quality notes](docs/quality-gate.md) lists the local checks, CI surface, and release expectations for this repository.
 - [Enterprise readiness notes](docs/enterprise-readiness.md) outlines security, data, operations, integration, and handoff expectations.
 
@@ -139,7 +139,7 @@ This repository includes a neutral cloud and AI engineering blueprint that maps 
 
 ## Enterprise Productization
 
-- [Product operating model](docs/product-operating-model.md) defines the reviewer, trust boundary, trust boundary, operating checks, and service path for this repository.
+- [Product operating model](docs/product-operating-model.md) defines the technical reader, trust boundary, trust boundary, operating checks, and service path for this repository.
 
 ## System Architecture
 

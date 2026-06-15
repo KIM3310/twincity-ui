@@ -20,7 +20,7 @@ export default function ControlTowerReadiness({
 }: ControlTowerReadinessProps) {
   const meta = buildControlTowerServiceMeta();
   const schema = buildControlTowerReportSchema();
-  const [lens, setLens] = useState<"operator" | "reviewer" | "executive">("operator");
+  const [lens, setLens] = useState<"operator" | "architecture" | "executive">("operator");
   const compact = variant === "compact";
   const stages = compact ? meta.stages.slice(0, 3) : meta.stages;
   const artifacts = compact ? meta.artifacts.slice(0, 4) : meta.artifacts;
@@ -36,7 +36,7 @@ export default function ControlTowerReadiness({
         ["03 · 계약 확인", "runtime brief와 schema surface로 근거를 잠급니다."],
       ],
     },
-    reviewer: {
+    architecture: {
       title: "검토 관점",
       summary: "health / meta / summary를 먼저 열고, 화면은 그 다음에 보는 편이 가장 설득력이 큽니다.",
       cards: [
@@ -129,8 +129,8 @@ export default function ControlTowerReadiness({
           </button>
           <button
             type="button"
-            className={"readinessLensBtn" + (lens === "reviewer" ? " active" : "")}
-            onClick={() => setLens("reviewer")}
+            className={"readinessLensBtn" + (lens === "architecture" ? " active" : "")}
+            onClick={() => setLens("architecture")}
           >
             검토
           </button>

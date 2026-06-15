@@ -55,7 +55,7 @@ export default function AboutPage() {
 
       <section className="panel reveal delay-3">
         <h2 className="panelTitle">Operations Readiness</h2>
-        <p className="pageLead">External embeds stay disabled by default while reviewers inspect the operator workflow, privacy boundary, and runtime posture.</p>
+        <p className="pageLead">External embeds stay disabled by default while operators inspect the operator workflow, privacy boundary, and runtime posture.</p>
       </section>
     </div>
   );

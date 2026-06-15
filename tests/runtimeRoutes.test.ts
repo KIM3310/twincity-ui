@@ -9,8 +9,8 @@ import { GET as getDispatchBoardRoute } from "@/app/api/reports/dispatch-board/r
 import { GET as getReportExportRoute } from "@/app/api/reports/export/route";
 import { GET as getReportHandoffRoute } from "@/app/api/reports/handoff/route";
 import { GET as getResponsePlaybookRoute } from "@/app/api/reports/response-playbook/route";
-import { GET as getReviewerBundleRoute } from "@/app/api/reports/reviewer-bundle/route";
-import { GET as getReviewerBundleVerifyRoute } from "@/app/api/reports/reviewer-bundle/verify/route";
+import { GET as getArchitectureBundleRoute } from "@/app/api/reports/architecture-bundle/route";
+import { GET as getArchitectureBundleVerifyRoute } from "@/app/api/reports/architecture-bundle/verify/route";
 import { GET as getReportSummaryRoute } from "@/app/api/reports/summary/route";
 import { GET as getRuntimeBriefRoute } from "@/app/api/runtime-brief/route";
 import { GET as getRuntimeScorecardRoute } from "@/app/api/runtime-scorecard/route";
@@ -101,7 +101,7 @@ describe("runtime routes", () => {
             "assignment-history-surface",
             "handoff-brief-surface",
             "response-playbook-surface",
-            "reviewer-bundle-surface",
+            "architecture-bundle-surface",
             "proof-route-map-surface",
           ],
           service_grade: {
@@ -116,8 +116,8 @@ describe("runtime routes", () => {
             report_handoff: "/api/reports/handoff",
             response_playbook: "/api/reports/response-playbook",
             report_export: "/api/reports/export",
-            reviewer_bundle: "/api/reports/reviewer-bundle",
-            reviewer_bundle_verify: "/api/reports/reviewer-bundle/verify",
+            architecture_bundle: "/api/reports/architecture-bundle",
+            architecture_bundle_verify: "/api/reports/architecture-bundle/verify",
           },
           links: {
             proof_route_map: "/api/proof-route-map",
@@ -132,8 +132,8 @@ describe("runtime routes", () => {
             report_handoff: "/api/reports/handoff",
             response_playbook: "/api/reports/response-playbook",
             report_export: "/api/reports/export",
-            reviewer_bundle: "/api/reports/reviewer-bundle",
-            reviewer_bundle_verify: "/api/reports/reviewer-bundle/verify",
+            architecture_bundle: "/api/reports/architecture-bundle",
+            architecture_bundle_verify: "/api/reports/architecture-bundle/verify",
             reports: "/reports",
           },
         });
@@ -184,8 +184,8 @@ describe("runtime routes", () => {
         expect(body.routes).toContain("/api/reports/handoff");
         expect(body.routes).toContain("/api/reports/response-playbook");
         expect(body.routes).toContain("/api/reports/export");
-        expect(body.routes).toContain("/api/reports/reviewer-bundle");
-        expect(body.routes).toContain("/api/reports/reviewer-bundle/verify");
+        expect(body.routes).toContain("/api/reports/architecture-bundle");
+        expect(body.routes).toContain("/api/reports/architecture-bundle/verify");
         expect(body.ops_contract.schema).toBe("ops-envelope-v1");
         expect(body.diagnostics.next_action).toContain("/api/3d-test/status");
         expect(body.report_contract.schema).toBe("twincity-report-v1");
@@ -203,8 +203,8 @@ describe("runtime routes", () => {
         expect(body.links.report_handoff).toBe("/api/reports/handoff");
         expect(body.links.response_playbook).toBe("/api/reports/response-playbook");
         expect(body.links.report_export).toBe("/api/reports/export");
-        expect(body.links.reviewer_bundle).toBe("/api/reports/reviewer-bundle");
-        expect(body.links.reviewer_bundle_verify).toBe("/api/reports/reviewer-bundle/verify");
+        expect(body.links.architecture_bundle).toBe("/api/reports/architecture-bundle");
+        expect(body.links.architecture_bundle_verify).toBe("/api/reports/architecture-bundle/verify");
         expect(response.headers.get("x-request-id")).toBe(body.request_id);
       }
     );
@@ -234,8 +234,8 @@ describe("runtime routes", () => {
         report_handoff: "/api/reports/handoff",
         response_playbook: "/api/reports/response-playbook",
         report_export: "/api/reports/export",
-        reviewer_bundle: "/api/reports/reviewer-bundle",
-        reviewer_bundle_verify: "/api/reports/reviewer-bundle/verify",
+        architecture_bundle: "/api/reports/architecture-bundle",
+        architecture_bundle_verify: "/api/reports/architecture-bundle/verify",
         reports: "/reports",
       },
     });
@@ -292,7 +292,7 @@ describe("runtime routes", () => {
     );
   });
 
-  test("proof route map exposes the first-click reviewer sequence", async () => {
+  test("proof route map exposes the first-click architecture sequence", async () => {
     const response = await getProofRouteMapRoute(
       new Request("https://example.com/api/proof-route-map")
     );
@@ -300,7 +300,7 @@ describe("runtime routes", () => {
 
     expect(response.status).toBe(200);
     expect(body.contract_version).toBe("twincity-proof-route-map-v1");
-    expect(body.reviewer_fast_path[0]).toBe("/api/proof-route-map");
+    expect(body.architecture_fast_path[0]).toBe("/api/proof-route-map");
     expect(body.route_groups.posture[0]).toBe("/api/health");
     expect(body.route_groups.operator[0]).toBe("/events");
   });
@@ -322,7 +322,7 @@ describe("runtime routes", () => {
     expect(body.links.dispatch_board).toBe("/api/reports/dispatch-board");
     expect(body.links.assignment_history).toBe("/api/reports/assignment-history");
     expect(body.links.response_playbook).toBe("/api/reports/response-playbook");
-    expect(body.links.reviewer_bundle).toBe("/api/reports/reviewer-bundle");
+    expect(body.links.architecture_bundle).toBe("/api/reports/architecture-bundle");
     expect(response.headers.get("x-request-id")).toBe(body.request_id);
   });
 
@@ -475,7 +475,7 @@ describe("runtime routes", () => {
         dispatch_board: "/api/reports/dispatch-board",
         assignment_history: "/api/reports/assignment-history",
         report_handoff: "/api/reports/handoff",
-        reviewer_bundle: "/api/reports/reviewer-bundle",
+        architecture_bundle: "/api/reports/architecture-bundle",
         reports: "/reports",
       },
     });
@@ -500,7 +500,7 @@ describe("runtime routes", () => {
     expect(body.required_sections).toContain("summary");
     expect(body.export_formats).toContain("json");
     expect(body.export_formats).toContain("csv");
-    expect(body.export_formats).toContain("reviewer-bundle");
+    expect(body.export_formats).toContain("architecture-bundle");
     expect(body.operator_rules).toContain(
       "Always separate ACK SLA from resolve SLA."
     );
@@ -538,8 +538,8 @@ describe("runtime routes", () => {
   });
 
   test("status bundle route exposes digest-backed handoff contract", async () => {
-    const bundleResponse = await getReviewerBundleRoute(
-      new Request("https://example.com/api/reports/reviewer-bundle?range=60m&severity=3")
+    const bundleResponse = await getArchitectureBundleRoute(
+      new Request("https://example.com/api/reports/architecture-bundle?range=60m&severity=3")
     );
     const bundleBody = await bundleResponse.json();
 
@@ -547,28 +547,28 @@ describe("runtime routes", () => {
     expect(bundleBody).toMatchObject({
       ok: true,
       service: "twincity-ui",
-      schema: "twincity-reviewer-bundle-v1",
+      schema: "twincity-architecture-bundle-v1",
       filters: {
         range: "60m",
         severity: "3",
       },
       integrity: {
         algorithm: "SHA-256",
-        verification_route: "/api/reports/reviewer-bundle/verify",
+        verification_route: "/api/reports/architecture-bundle/verify",
       },
     });
     expect(bundleBody.integrity.digest).toHaveLength(64);
-    expect(bundleBody.bundle.review_routes).toContain("/api/reports/reviewer-bundle");
+    expect(bundleBody.bundle.review_routes).toContain("/api/reports/architecture-bundle");
 
-    const verifyResponse = await getReviewerBundleVerifyRoute(
+    const verifyResponse = await getArchitectureBundleVerifyRoute(
       new Request(
-        `https://example.com/api/reports/reviewer-bundle/verify?range=60m&severity=3&digest=${bundleBody.integrity.digest}`
+        `https://example.com/api/reports/architecture-bundle/verify?range=60m&severity=3&digest=${bundleBody.integrity.digest}`
       )
     );
     const verifyBody = await verifyResponse.json();
 
     expect(verifyResponse.status).toBe(200);
-    expect(verifyBody.schema).toBe("twincity-reviewer-bundle-verify-v1");
+    expect(verifyBody.schema).toBe("twincity-architecture-bundle-verify-v1");
     expect(verifyBody.match).toBe(true);
     expect(verifyBody.computed_digest).toBe(bundleBody.integrity.digest);
   });

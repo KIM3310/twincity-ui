@@ -3,7 +3,7 @@ export function buildProofRouteMap() {
     contract_version: "twincity-proof-route-map-v1",
     headline:
       "Front-door route map for choosing the right TwinCity proof lane before opening the full operator console.",
-    reviewer_fast_path: [
+    architecture_fast_path: [
       "/api/proof-route-map",
       "/api/health",
       "/api/meta",
@@ -13,7 +13,7 @@ export function buildProofRouteMap() {
     ],
     route_groups: {
       posture: ["/api/health", "/api/meta", "/api/runtime-scorecard"],
-      reviewer: ["/api/reports/summary", "/api/reports/handoff", "/api/reports/export", "/reports"],
+      architecture: ["/api/reports/summary", "/api/reports/handoff", "/api/reports/export", "/reports"],
       operator: ["/events"],
     },
     decision_support: [

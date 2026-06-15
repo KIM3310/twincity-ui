@@ -1,6 +1,6 @@
 import { apiError, apiJson, resolveRequestId } from "@/lib/apiResponse";
 import { readOperatorAuthStatus, validateOperatorRequest } from "@/lib/operatorAccess";
-import { buildControlTowerReviewerBundle } from "@/lib/reviewerBundle";
+import { buildControlTowerArchitectureBundle } from "@/lib/architectureBundle";
 import { parseReportSummaryFilters } from "@/lib/reportSummary";
 
 export const runtime = "nodejs";
@@ -29,6 +29,6 @@ export async function GET(request: Request) {
   }
 
   const filters = parseReportSummaryFilters(new URL(request.url));
-  const bundle = await buildControlTowerReviewerBundle({ filters });
+  const bundle = await buildControlTowerArchitectureBundle({ filters });
   return apiJson({ ok: true, request_id: requestId, ...bundle }, { requestId });
 }

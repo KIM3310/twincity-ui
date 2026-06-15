@@ -226,7 +226,7 @@ export type ControlTowerResponsePlaybook = {
     response_drill: "ack-and-escalate" | "blocker-sync-and-reroute" | "closure-export-check";
     escalation_gate: "dispatch-lead" | "floor-ops" | "review-only";
     next_checkpoint_minutes: number;
-    reviewer_safe_when: string;
+    architecture_safe_when: string;
   }>;
   operator_steps: string[];
   route_bundle: {
@@ -234,7 +234,7 @@ export type ControlTowerResponsePlaybook = {
     dispatch_board: string;
     assignment_history: string;
     report_handoff: string;
-    reviewer_bundle: string;
+    architecture_bundle: string;
     reports: string;
   };
 };
@@ -686,8 +686,8 @@ export function buildControlTowerReportSummary(input?: {
     spotlight_incidents: spotlight,
     operator_notes: [
       "ACK SLA and resolve SLA are calculated separately to keep dispatch latency visible.",
-      "incident_status filtering lets reviewers isolate unresolved queue posture before opening the full reports surface.",
-      "Summary reflects deterministic demo state so reviewers can compare route output without browser storage.",
+      "incident_status filtering lets operators isolate unresolved queue posture before opening the full reports surface.",
+      "Summary reflects deterministic demo state so operators can compare route output without browser storage.",
       "Use /reports for richer interactive slicing after validating this contract.",
     ],
   };
@@ -1214,7 +1214,7 @@ export function buildControlTowerResponsePlaybook(input?: {
       escalation_gate: escalationGate,
       next_checkpoint_minutes:
         item.lane === "attention" ? 2 : item.lane === "dispatch" ? 5 : 10,
-      reviewer_safe_when:
+      architecture_safe_when:
         item.incident_status === "resolved"
           ? "digest and export bundle match the closed timeline"
           : item.lane === "attention"
@@ -1250,7 +1250,7 @@ export function buildControlTowerResponsePlaybook(input?: {
       dispatch_board: "/api/reports/dispatch-board",
       assignment_history: "/api/reports/assignment-history",
       report_handoff: "/api/reports/handoff",
-      reviewer_bundle: "/api/reports/reviewer-bundle",
+      architecture_bundle: "/api/reports/architecture-bundle",
       reports: "/reports",
     },
   };
