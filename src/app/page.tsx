@@ -5,7 +5,7 @@ import { buildControlTowerServiceMeta } from "@/lib/serviceMeta";
 export const metadata: Metadata = {
   title: "Proof-first control tower",
   description:
-    "Review TwinCity UI through its ingest posture, runtime contract, dispatch board, handoff brief, and operator console.",
+    "Check TwinCity UI through its ingest posture, runtime contract, dispatch board, handoff brief, and operator console.",
 };
 
 const PROOF_PATHS = [
@@ -91,7 +91,7 @@ const SURFACE_SIGNAL_CARDS = [
   },
 ] as const;
 
-const REVIEW_KIT_HREFS = [
+const ARCHITECTURE_KIT_HREFS = [
   "/api/meta",
   "/api/runtime-scorecard",
   "/api/reports/handoff",
@@ -102,7 +102,7 @@ const isApiHref = (href: string) => href.startsWith("/api/");
 
 export default function DashboardPage() {
   const serviceMeta = buildControlTowerServiceMeta();
-  const reviewKit = REVIEW_KIT_HREFS.flatMap((href) => {
+  const inspectionKit = ARCHITECTURE_KIT_HREFS.flatMap((href) => {
     const item = serviceMeta.proof_assets.find((candidate) => candidate.href === href);
     return item ? [item] : [];
   });
@@ -280,7 +280,7 @@ export default function DashboardPage() {
           </span>
         </div>
         <div className="landingSupportGrid">
-          {reviewKit.map((item) => (
+          {inspectionKit.map((item) => (
             isApiHref(item.href) ? (
               <a key={item.href} className="landingProofCard" href={item.href}>
                 <strong>{item.label}</strong>

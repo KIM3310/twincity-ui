@@ -462,10 +462,10 @@ export default function ReportsPage() {
     resolveSlaMet,
   ]);
 
-  const copyReviewRoutes = useCallback(async () => {
+  const copyArchitectureRoutes = useCallback(async () => {
     const text = [
       `TwinCity architecture routes (${filterSummary})`,
-      ...serviceMeta.review_flow.map((item) => `- ${item}`),
+      ...serviceMeta.architecture_flow.map((item) => `- ${item}`),
       "",
       "Routes",
       ...serviceMeta.routes.map((route) => `- ${route}`),
@@ -473,11 +473,11 @@ export default function ReportsPage() {
 
     try {
       await navigator.clipboard.writeText(text);
-      setNotice("리뷰 경로를 클립보드에 복사했습니다.");
+      setNotice("아키텍처 경로를 클립보드에 복사했습니다.");
     } catch {
       setNotice("복사 권한이 없어서 실패했습니다.");
     }
-  }, [filterSummary, serviceMeta.review_flow, serviceMeta.routes]);
+  }, [filterSummary, serviceMeta.architecture_flow, serviceMeta.routes]);
 
   const copyCurrentViewLink = useCallback(async () => {
     const shareUrl = buildAbsoluteShareUrl(
@@ -519,8 +519,8 @@ export default function ReportsPage() {
         ? `Latest action: ${latestAction.action.toUpperCase()} by ${latestAction.actor} @ ${new Date(latestAction.at).toISOString()}`
         : "Latest action: none",
       "",
-      "Review flow",
-      ...serviceMeta.review_flow.map((item) => `- ${item}`),
+      "Architecture flow",
+      ...serviceMeta.architecture_flow.map((item) => `- ${item}`),
     ].join("\n");
 
     try {
@@ -529,7 +529,7 @@ export default function ReportsPage() {
     } catch {
       setNotice("복사 권한이 없어서 실패했습니다.");
     }
-  }, [latestTimelineByEvent, serviceMeta.review_flow, spotlightEvents]);
+  }, [latestTimelineByEvent, serviceMeta.architecture_flow, spotlightEvents]);
 
   const copySlaSnapshot = async () => {
     const target = spotlightEvents[0];
@@ -757,7 +757,7 @@ export default function ReportsPage() {
         void copyCurrentViewLink();
       } else if (key === "r") {
         event.preventDefault();
-        void copyReviewRoutes();
+        void copyArchitectureRoutes();
       } else if (key === "s") {
         event.preventDefault();
         void copySummary();
@@ -798,7 +798,7 @@ export default function ReportsPage() {
     copyNextActions,
     copyOpsBundle,
     copyControlTowerClaim,
-    copyReviewRoutes,
+    copyArchitectureRoutes,
     copySpotlight,
     copySummary,
     criticalCount,
@@ -892,7 +892,7 @@ export default function ReportsPage() {
             </div>
           </div>
           <div className="readinessList">
-            {runtimeBrief.review_flow.slice(0, 3).map((item) => (
+            {runtimeBrief.architecture_flow.slice(0, 3).map((item) => (
               <div key={item} className="readinessListItem">
                 {item}
               </div>
@@ -948,8 +948,8 @@ export default function ReportsPage() {
             <button type="button" className="button buttonGhost" onClick={resetFilters}>
               필터 초기화
             </button>
-            <button type="button" className="button buttonGhost" onClick={copyReviewRoutes}>
-              리뷰 경로 복사
+            <button type="button" className="button buttonGhost" onClick={copyArchitectureRoutes}>
+              아키텍처 경로 복사
             </button>
             <button type="button" className="button buttonGhost" onClick={focusHighestRisk} disabled={inRangeEvents.length === 0}>
               최고 위험 집중
@@ -994,7 +994,7 @@ export default function ReportsPage() {
 
         {notice && <div className="reportNotice mono">{notice}</div>}
         <div className="reportNotice mono">
-          Shortcuts: ⇧L 링크 · ⇧R 리뷰 경로 · ⇧S 요약 · ⇧F 최고 위험 · ⇧D dispatch · ⇧N 다음 조치 · ⇧H handoff · ⇧B ops bundle · ⇧C control tower claim · ⇧K spotlight
+          Shortcuts: ⇧L 링크 · ⇧R 아키텍처 경로 · ⇧S 요약 · ⇧F 최고 위험 · ⇧D dispatch · ⇧N 다음 조치 · ⇧H handoff · ⇧B ops bundle · ⇧C control tower claim · ⇧K spotlight
         </div>
       </section>
 

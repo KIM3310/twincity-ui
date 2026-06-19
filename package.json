@@ -2,7 +2,7 @@
   "name": "twincity-ui",
   "version": "0.1.0",
   "private": true,
-  "description": "Digital twin operations console with reviewable replay, dispatch, and live-ingest surfaces.",
+  "description": "Digital twin operations console with inspectable replay, dispatch, and live-ingest surfaces.",
   "homepage": "https://twincity-ui.pages.dev",
   "repository": {
     "type": "git",

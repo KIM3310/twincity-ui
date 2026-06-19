@@ -34,11 +34,11 @@ export type ControlTowerArchitectureBundle = {
         latest_action: string;
       }>;
     };
-    review_routes: string[];
+    architecture_routes: string[];
   };
   handoff: {
     headline: string;
-    review_sequence: string[];
+    architecture_sequence: string[];
     export_routes: string[];
   };
   integrity: {
@@ -175,7 +175,7 @@ export async function buildControlTowerArchitectureBundle(input?: {
           latest_action: item.latest_action,
         })),
       },
-      review_routes: [
+      architecture_routes: [
         "/api/health",
         "/api/meta",
         "/api/runtime-brief",
@@ -190,7 +190,7 @@ export async function buildControlTowerArchitectureBundle(input?: {
     },
     handoff: {
       headline: "Deterministic operator handoff bundle for queue posture, SLA state, and export governance.",
-      review_sequence: [
+      architecture_sequence: [
         "Confirm /api/runtime-scorecard before sharing a status bundle.",
         "Use the bundle digest to verify queue posture and SLA summary were not altered after export.",
         "Pair the status bundle with /reports when a human needs the richer visual surface.",

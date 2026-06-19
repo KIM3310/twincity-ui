@@ -25,7 +25,7 @@ export default function ControlTowerReadiness({
   const stages = compact ? meta.stages.slice(0, 3) : meta.stages;
   const artifacts = compact ? meta.artifacts.slice(0, 4) : meta.artifacts;
   const proofAssets = compact ? meta.proof_assets.slice(0, 3) : meta.proof_assets;
-  const twoMinuteReview = compact ? meta.two_minute_review.slice(0, 3) : meta.two_minute_review;
+  const twoMinuteCheck = compact ? meta.two_minute_architecture.slice(0, 3) : meta.two_minute_architecture;
   const lensCopy = {
     operator: {
       title: "운영자 관점",
@@ -40,7 +40,7 @@ export default function ControlTowerReadiness({
       title: "검토 관점",
       summary: "health / meta / summary를 먼저 열고, 화면은 그 다음에 보는 편이 가장 설득력이 큽니다.",
       cards: [
-        ["01 · health", "ingest mode와 review 링크를 가장 먼저 확인합니다."],
+        ["01 · health", "ingest mode와 architecture 링크를 가장 먼저 확인합니다."],
         ["02 · meta + summary", "신뢰 경계와 SLA snapshot이 함께 읽혀야 합니다."],
         ["03 · handoff", "마지막엔 다음 shift digest가 자연스럽게 이어지는지 확인합니다."],
       ],
@@ -108,7 +108,7 @@ export default function ControlTowerReadiness({
               <small>처음 30초에 확인할 항목</small>
             </div>
             <div className="readinessMiniList">
-              {twoMinuteReview.slice(0, 3).map((item) => (
+              {twoMinuteCheck.slice(0, 3).map((item) => (
                 <div key={item} className="readinessMiniItem">
                   {item}
                 </div>
@@ -185,7 +185,7 @@ export default function ControlTowerReadiness({
             <small>처음 보는 사람도 바로 따라갈 수 있는 흐름</small>
           </div>
           <div className="readinessList">
-            {meta.review_flow.map((item) => (
+            {meta.architecture_flow.map((item) => (
               <div key={item} className="readinessListItem">
                 {item}
               </div>
@@ -213,7 +213,7 @@ export default function ControlTowerReadiness({
             <small>핵심 화면만 빠르게 훑는 경로</small>
           </div>
           <div className="readinessList">
-            {twoMinuteReview.map((item) => (
+            {twoMinuteCheck.map((item) => (
               <div key={item} className="readinessListItem">
                 {item}
               </div>

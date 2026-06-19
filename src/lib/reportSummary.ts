@@ -67,7 +67,7 @@ export type ControlTowerReportExport = {
     top_type: string | null;
     spotlight_id: string | null;
   };
-  review_routes: string[];
+  architecture_routes: string[];
   download_name: string;
 };
 
@@ -106,7 +106,7 @@ export type ControlTowerDispatchBoard = {
     resolve_sla_state: "met" | "missed" | "pending";
     note: string | null;
   }>;
-  review_actions: string[];
+  architecture_actions: string[];
   route_bundle: {
     dispatch_board: string;
     report_summary: string;
@@ -134,7 +134,7 @@ export type ControlTowerHandoffBrief = {
   handoff: {
     headline: string;
     focus_lane: "attention" | "dispatch" | "resolved" | "clear";
-    suggested_owner: "dispatch-lead" | "floor-ops" | "review-only";
+    suggested_owner: "dispatch-lead" | "floor-ops" | "read-only";
     top_zone: string | null;
     top_type: string | null;
   };
@@ -193,7 +193,7 @@ export type ControlTowerAssignmentHistory = {
       note: string | null;
     }>;
   }>;
-  review_actions: string[];
+  architecture_actions: string[];
   route_bundle: {
     assignment_history: string;
     dispatch_board: string;
@@ -224,7 +224,7 @@ export type ControlTowerResponsePlaybook = {
     incident_status: string;
     current_owner: string;
     response_drill: "ack-and-escalate" | "blocker-sync-and-reroute" | "closure-export-check";
-    escalation_gate: "dispatch-lead" | "floor-ops" | "review-only";
+    escalation_gate: "dispatch-lead" | "floor-ops" | "read-only";
     next_checkpoint_minutes: number;
     architecture_safe_when: string;
   }>;
@@ -727,7 +727,7 @@ export function buildControlTowerReportExport(input?: {
       top_type: summary.top_types[0]?.type ?? null,
       spotlight_id: summary.spotlight_incidents[0]?.id ?? null,
     },
-    review_routes: [
+    architecture_routes: [
       "/api/health",
       "/api/meta",
       "/api/runtime-brief",
@@ -907,8 +907,8 @@ export function buildControlTowerDispatchBoard(input?: {
     },
     spotlight,
     items,
-    review_actions: [
-      "Start with attention incidents before reviewing dispatched or resolved rows.",
+    architecture_actions: [
+      "Start with attention incidents before inspectioning dispatched or resolved rows.",
       "Keep report summary and dispatch board filters aligned during operator walkthroughs.",
       "Validate export payloads only after the dispatch board matches the expected operator queue.",
     ],
@@ -1032,10 +1032,10 @@ export function buildControlTowerAssignmentHistory(input?: {
       total_handoffs: items.reduce((sum, item) => sum + item.handoff_count, 0),
     },
     items,
-    review_actions: [
+    architecture_actions: [
       "Start with incidents that still have only the queue owner before walking the active handoff chain.",
       "Keep assignment history aligned with dispatch board filters during operator walkthroughs.",
-      "Review the handoff brief before exporting anything to the next shift.",
+      "Check the handoff brief before exporting anything to the next shift.",
     ],
     route_bundle: {
       assignment_history: "/api/reports/assignment-history",
@@ -1129,7 +1129,7 @@ export function buildControlTowerHandoffBrief(input?: {
           ? "dispatch-lead"
           : focusLane === "dispatch"
             ? "floor-ops"
-            : "review-only",
+            : "read-only",
       top_zone: priorities[0]?.zone_id ?? null,
       top_type: priorities[0]?.type ?? null,
     },
@@ -1201,7 +1201,7 @@ export function buildControlTowerResponsePlaybook(input?: {
         ? "dispatch-lead"
         : item.lane === "dispatch"
           ? "floor-ops"
-          : "review-only";
+          : "read-only";
 
     return {
       id: item.id,

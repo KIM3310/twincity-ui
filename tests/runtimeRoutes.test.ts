@@ -191,7 +191,7 @@ describe("runtime routes", () => {
         expect(body.report_contract.schema).toBe("twincity-report-v1");
         expect(body.public_api_readiness.schema).toBe("korean-public-api-readiness-v1");
         expect(Array.isArray(body.trust_boundary)).toBe(true);
-        expect(body.two_minute_review).toHaveLength(11);
+        expect(body.two_minute_architecture).toHaveLength(11);
         expect(body.proof_assets[0].href).toBe("/api/proof-route-map");
         expect(body.links.proof_route_map).toBe("/api/proof-route-map");
         expect(body.links.runtime_brief).toBe("/api/runtime-brief");
@@ -210,7 +210,7 @@ describe("runtime routes", () => {
     );
   });
 
-  test("runtime brief exposes review-first contract", async () => {
+  test("runtime brief exposes architecture-first contract", async () => {
     const response = await getRuntimeBriefRoute(
       new Request("https://example.com/api/runtime-brief")
     );
@@ -245,8 +245,8 @@ describe("runtime routes", () => {
       configured_group_count: 0,
     });
     expect(body.route_count).toBeGreaterThanOrEqual(10);
-    expect(body.review_flow[0]).toContain("/api/health");
-    expect(body.two_minute_review).toHaveLength(11);
+    expect(body.architecture_flow[0]).toContain("/api/health");
+    expect(body.two_minute_architecture).toHaveLength(11);
     expect(body.proof_assets[0].href).toBe("/api/proof-route-map");
     expect(response.headers.get("x-request-id")).toBe(body.request_id);
   });
@@ -359,7 +359,7 @@ describe("runtime routes", () => {
     expect(response.headers.get("x-request-id")).toBe(body.request_id);
   });
 
-  test("dispatch board route exposes attention lanes and review bundle", async () => {
+  test("dispatch board route exposes attention lanes and architecture bundle", async () => {
     const response = await getDispatchBoardRoute(
       new Request(
         "https://example.com/api/reports/dispatch-board?range=60m&severity=3&lane=attention"
@@ -524,7 +524,7 @@ describe("runtime routes", () => {
         severity: "3",
       },
     });
-    expect(jsonBody.review_routes).toContain("/api/reports/export");
+    expect(jsonBody.architecture_routes).toContain("/api/reports/export");
     expect(jsonBody.download_name.endsWith(".json")).toBe(true);
 
     const csvResponse = await getReportExportRoute(
@@ -558,7 +558,7 @@ describe("runtime routes", () => {
       },
     });
     expect(bundleBody.integrity.digest).toHaveLength(64);
-    expect(bundleBody.bundle.review_routes).toContain("/api/reports/architecture-bundle");
+    expect(bundleBody.bundle.architecture_routes).toContain("/api/reports/architecture-bundle");
 
     const verifyResponse = await getArchitectureBundleVerifyRoute(
       new Request(

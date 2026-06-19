@@ -15,10 +15,10 @@ describe("service meta evidence surface", () => {
     );
   });
 
-  test("includes the portfolio architecture guide in public artifacts", () => {
+  test("includes the architecture guide in public artifacts", () => {
     const meta = buildControlTowerServiceMeta();
 
-    expect(meta.artifacts.map((item) => item.href)).toContain("docs/PORTFOLIO_REVIEW_GUIDE.md");
+    expect(meta.artifacts.map((item) => item.href)).toContain("docs/architecture-pack.md");
     expect(meta.artifacts.map((item) => item.href)).toContain("/api/proof-route-map");
     expect(meta.artifacts.map((item) => item.href)).toContain("/api/public-apis");
     expect(meta.proof_assets.map((item) => item.href)).toContain("tests/runtimeRoutes.test.ts");

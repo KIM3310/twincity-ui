@@ -20,9 +20,9 @@ Architecture pack: [`docs/architecture-pack.md`](docs/architecture-pack.md)
 
 | Lens | Decision signal |
 |---|---|
-| Technical reader | Facilities, city operations, and industrial command centers that need spatial incidents, dispatch, and SLA evidence in one console. |
+| Technical stack | Facilities, city operations, and industrial command centers that need spatial incidents, dispatch, and SLA evidence in one console. |
 | Product proof | The demo, workflow loop, and static proof surface show the current product direction without extra claims. |
-| Technical reader proof | `/api/proof-route-map`, `/api/health`, `/api/meta`, runtime scorecard, reports, and screenshot evidence create a fast evaluation path. |
+| Architecture proof | `/api/proof-route-map`, `/api/health`, `/api/meta`, runtime scorecard, reports, and screenshot evidence create a fast evaluation path. |
 | Safety posture | Demo-mode defaults, trust-boundary metadata, normalized ingest, and explicit fallback behavior keep the archived surface understandable and low-risk. |
 
 ## System Fast Path
@@ -139,7 +139,7 @@ This repository includes a neutral cloud and AI engineering blueprint that maps 
 
 ## Enterprise Productization
 
-- [Product operating model](docs/product-operating-model.md) defines the technical reader, trust boundary, trust boundary, operating checks, and service path for this repository.
+- [Product operating model](docs/product-operating-model.md) defines the technical inspection, trust boundary, trust boundary, operating checks, and service path for this repository.
 
 ## System Architecture
 

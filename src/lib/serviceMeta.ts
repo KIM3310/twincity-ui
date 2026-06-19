@@ -48,8 +48,8 @@ export type ControlTowerServiceMeta = {
   operator_rules: string[];
   strengths: string[];
   watchouts: string[];
-  review_flow: string[];
-  two_minute_review: string[];
+  architecture_flow: string[];
+  two_minute_architecture: string[];
   stages: ServiceStage[];
   artifacts: ServiceArtifact[];
   proof_assets: ServiceArtifact[];
@@ -76,8 +76,8 @@ export type ControlTowerRuntimeBrief = {
   };
   report_contract: ReportSchema;
   evidence_counts: ControlTowerServiceMeta["evidence_counts"];
-  review_flow: string[];
-  two_minute_review: ControlTowerServiceMeta["two_minute_review"];
+  architecture_flow: string[];
+  two_minute_architecture: ControlTowerServiceMeta["two_minute_architecture"];
   watchouts: string[];
   proof_assets: ControlTowerServiceMeta["proof_assets"];
   route_count: number;
@@ -149,7 +149,7 @@ const CONTROL_TOWER_EVIDENCE: ServiceArtifact[] = [
     label: "Health API",
     href: "/api/health",
     kind: "route",
-    note: "ingest mode, readiness, review links",
+    note: "ingest mode, readiness, architecture links",
   },
   {
     label: "Service Meta",
@@ -161,7 +161,7 @@ const CONTROL_TOWER_EVIDENCE: ServiceArtifact[] = [
     label: "Runtime Brief",
     href: "/api/runtime-brief",
     kind: "route",
-    note: "review-first contract for reports and operator proof",
+    note: "architecture-first contract for reports and operator proof",
   },
   {
     label: "Runtime Scorecard",
@@ -227,7 +227,7 @@ const CONTROL_TOWER_EVIDENCE: ServiceArtifact[] = [
     label: "Operator Bundle API",
     href: "/api/reports/architecture-bundle",
     kind: "route",
-    note: "digest-backed operator handoff bundle for export-safe review",
+    note: "digest-backed operator handoff bundle for export-safe inspection",
   },
   {
     label: "Operator Bundle Verify API",
@@ -239,11 +239,11 @@ const CONTROL_TOWER_EVIDENCE: ServiceArtifact[] = [
     label: "README",
     href: "README.md",
     kind: "doc",
-    note: "repo entry point, review path, and local runtime commands",
+    note: "repo entry point, architecture path, and local runtime commands",
   },
   {
     label: "Portfolio Architecture Guide",
-    href: "docs/PORTFOLIO_REVIEW_GUIDE.md",
+    href: "docs/architecture-pack.md",
     kind: "doc",
     note: "2-minute operator path and capability evidence map",
   },
@@ -299,7 +299,7 @@ const CONTROL_TOWER_EVIDENCE: ServiceArtifact[] = [
     label: "Ops Console Screenshot",
     href: "public/screenshots/ops_console.png",
     kind: "asset",
-    note: "reviewable operator UI proof",
+    note: "inspectable operator UI proof",
   },
   {
     label: "Floorplan Reference",
@@ -327,7 +327,7 @@ const CONTROL_TOWER_ARTIFACT_HREFS = [
   "/api/reports/architecture-bundle",
   "/api/reports/architecture-bundle/verify",
   "README.md",
-  "docs/PORTFOLIO_REVIEW_GUIDE.md",
+  "docs/architecture-pack.md",
   "docs/LIVE_INTEGRATION.md",
   "docs/ops/RUNBOOK.md",
   "tests/runtimeRoutes.test.ts",
@@ -348,7 +348,7 @@ const CONTROL_TOWER_PROOF_ASSET_HREFS = [
   "/api/reports/response-playbook",
   "/api/reports/export",
   "/api/reports/architecture-bundle",
-  "docs/PORTFOLIO_REVIEW_GUIDE.md",
+  "docs/architecture-pack.md",
   "tests/runtimeRoutes.test.ts",
   "public/screenshots/ops_console.png",
 ] as const;
@@ -426,7 +426,7 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
     generated_at: runtimeMeta.generated_at,
     mode,
     headline:
-      "Digital twin UI that makes payload -> operator decision -> report flow reviewable in one pass.",
+      "Digital twin UI that makes payload -> operator decision -> report flow inspectable in one pass.",
     readiness_contract: "control-tower-readiness-v1",
     live_sources: runtimeMeta.live_sources,
     diagnostics: runtimeMeta.diagnostics,
@@ -442,16 +442,16 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
       "handoff: status bundles carry a deterministic digest before export approval",
       "public APIs: readiness exposes configured providers only, never secret values",
       "map: floorplan + zone polygons + optional homography",
-      "validation: 3D probe routes stay optional and review-only",
+      "validation: 3D probe routes stay optional and read-only",
     ],
     operator_rules: [
       "Keep the operator loop visible before any deep-dive debugging.",
       "Treat replay and live transport as separate trust domains.",
       "Prefer schema-backed summaries over free-form screenshots.",
-      "Do not mark weather, traffic, or safety overlays as live until provider fixtures pass review.",
+      "Do not mark weather, traffic, or safety overlays as live until provider fixtures pass inspection.",
     ],
     strengths: [
-      "No backend is required to review the end-to-end operator loop.",
+      "No backend is required to inspect the end-to-end operator loop.",
       "Payload normalization and spatial mapping are explicit, not implied.",
       "SLA metrics and exports are already present in the product surface.",
     ],
@@ -461,23 +461,23 @@ export function buildControlTowerServiceMeta(now = new Date()): ControlTowerServ
       "3D validation routes are for geometry checks, not production rendering.",
       "Public API enrichment needs provider keys plus station/zone matching before live use.",
     ],
-    review_flow: [
-      "Open /api/health to confirm ingest mode and review links.",
+    architecture_flow: [
+      "Open /api/health to confirm ingest mode and architecture links.",
       "Read /api/meta to see trust boundary, stages, and evidence counts.",
-      "Use /api/reports/summary to verify a deterministic SLA snapshot before UI review.",
+      "Use /api/reports/summary to verify a deterministic SLA snapshot before UI inspection.",
       "Use /api/reports/dispatch-board to isolate attention and dispatch lanes before opening exports.",
       "Use /api/reports/assignment-history to verify current owner and handoff chain before shift changes.",
       "Use /api/reports/handoff to verify the next-shift digest before copying or exporting operator artifacts.",
-      "Use /api/reports/response-playbook to review escalation drills, checkpoint timing, and operator-safe action gates.",
+      "Use /api/reports/response-playbook to inspect escalation drills, checkpoint timing, and operator-safe action gates.",
       "Use /api/public-apis to confirm which Korean public-data providers are configured before claiming live enrichment.",
       "Use /api/reports/export to validate server-generated JSON or CSV handoff payloads.",
       "Use /api/reports/architecture-bundle when an operator needs a digest-backed export bundle.",
       "Use /events or / to exercise triage and timeline handling.",
       "Open /reports for SLA proof and exported summary paths.",
     ],
-    two_minute_review: [
+    two_minute_architecture: [
       "Open /api/health to confirm whether the control tower is demo-first or live-wired.",
-      "Read /api/meta for trust boundary, stage ownership, and review artifacts.",
+      "Read /api/meta for trust boundary, stage ownership, and architecture artifacts.",
       "Use /api/reports/summary to validate spotlight incidents and SLA posture via API.",
       "Use /api/reports/dispatch-board to confirm unresolved queue posture and latest action lanes.",
       "Use /api/reports/assignment-history to confirm queue owner and operator handoff lineage.",
@@ -534,8 +534,8 @@ export function buildControlTowerRuntimeBrief(now = new Date()): ControlTowerRun
     },
     report_contract: serviceMeta.report_contract,
     evidence_counts: serviceMeta.evidence_counts,
-    review_flow: serviceMeta.review_flow,
-    two_minute_review: serviceMeta.two_minute_review,
+    architecture_flow: serviceMeta.architecture_flow,
+    two_minute_architecture: serviceMeta.two_minute_architecture,
     watchouts: serviceMeta.watchouts,
     proof_assets: serviceMeta.proof_assets,
     route_count: serviceMeta.routes.length,

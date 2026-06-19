@@ -45,14 +45,14 @@ export function buildControlTowerRuntimeScorecard(now = new Date()) {
     generated_at: now.toISOString(),
     readiness_contract: "twincity-runtime-scorecard-v1",
     headline:
-      "Runtime scorecard for ingest posture, report export governance, and deterministic SLA review in the control tower.",
+      "Runtime scorecard for ingest posture, report export governance, and deterministic SLA inspection in the control tower.",
     runtime: {
       execution_model: "edge",
       live_sources: runtimeMeta.live_sources,
       diagnostics: runtimeMeta.diagnostics,
       public_api_readiness: runtimeMeta.public_api_readiness,
       operator_auth: operatorAuth,
-      review_routes: [
+      architecture_routes: [
         "/api/health",
         "/api/meta",
         "/api/runtime-brief",
