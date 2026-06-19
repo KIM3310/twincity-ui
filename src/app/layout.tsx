@@ -15,12 +15,19 @@ export const metadata: Metadata = {
   },
   description:
     "Digital twin ops console with inspectable runtime, dispatch, handoff, and export status pages.",
+  alternates: {
+    canonical: "/",
+  },
   keywords: [
     "digital twin",
     "operations console",
     "dispatch board",
     "incident triage",
     "shift handoff",
+    "private workspace",
+    "event ingestion",
+    "readiness reports",
+    "service offer",
     "next.js operations dashboard",
     "ai systems engineering",
   ],

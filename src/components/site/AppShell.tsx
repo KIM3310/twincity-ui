@@ -9,6 +9,7 @@ function isBrandRoute(pathname: string) {
     pathname === "/brand" ||
     pathname === "/explore" ||
     pathname === "/journal" ||
+    pathname === "/services" ||
     pathname === "/about"
   );
 }

@@ -148,3 +148,17 @@ This repository includes a neutral cloud and AI engineering blueprint that maps 
 ## Service Architecture
 
 - [Service architecture](docs/service-architecture.md) defines the cloud resources, account information, cost controls, and production guardrails needed to turn this repo into a scoped service without publishing public financial assumptions.
+
+<!-- search-growth-readme:start -->
+
+## Search And Service Surface
+
+- Public entry: public demo with synthetic city/facility events
+- Paid boundary: paid workspace for private maps, event ingestion, and monthly readiness reports
+- Canonical URL: https://twincity-ui.pages.dev/
+- Lead capture: mailto:ehdjs1351@gmail.com?subject=TwinCity%20UI%20private%20workspace&body=I%20am%20interested%20in%20paid%20workspace%20for%20private%20maps%2C%20event%20ingestion%2C%20and%20monthly%20readiness%20reports%20for%20TwinCity%20UI.
+- Machine-readable offer: [docs/service-offer.json](docs/service-offer.json)
+- Search growth implementation: [docs/search-growth-implementation.md](docs/search-growth-implementation.md)
+- Revenue architecture: [docs/revenue-architecture.md](docs/revenue-architecture.md)
+
+<!-- search-growth-readme:end -->

@@ -1,0 +1,73 @@
+{
+  "name": "TwinCity UI",
+  "slug": "twincity-ui",
+  "canonical_url": "https://twincity-ui.pages.dev/",
+  "repository_url": "https://github.com/KIM3310/twincity-ui",
+  "architecture_url": "https://github.com/KIM3310/twincity-ui/blob/main/docs/system-architecture.md",
+  "revenue_architecture_url": "https://github.com/KIM3310/twincity-ui/blob/main/docs/revenue-architecture.md",
+  "lead_capture_url": "mailto:ehdjs1351@gmail.com?subject=TwinCity%20UI%20private%20workspace&body=I%20am%20interested%20in%20paid%20workspace%20for%20private%20maps%2C%20event%20ingestion%2C%20and%20monthly%20readiness%20reports%20for%20TwinCity%20UI.",
+  "productized_offer": "digital twin operations console with replay, dispatch, readiness, and report surfaces",
+  "first_paid_sku": "paid workspace for private maps, event ingestion, and monthly readiness reports",
+  "free_lead_magnet": "public demo with synthetic city/facility events",
+  "search_positioning": {
+    "primary_query": "TwinCity UI digital twin operations",
+    "secondary_queries": [
+      "TwinCity UI demo",
+      "TwinCity UI system architecture",
+      "TwinCity UI business tool",
+      "digital twin operations console with replay, dispatch, readiness, and report surfaces service"
+    ],
+    "audience_intent": "Find a runnable demo, inspect the system architecture, and decide whether a private workspace or implementation package is useful."
+  },
+  "monetization_boundary": {
+    "free": "public demo with synthetic city/facility events",
+    "paid": "paid workspace for private maps, event ingestion, and monthly readiness reports",
+    "metering_hooks": [
+      "workspace_id",
+      "plan",
+      "quota_day",
+      "export_count",
+      "lead_source"
+    ],
+    "cost_guardrails": [
+      "static first",
+      "edge functions",
+      "customer API keys",
+      "cached AI outputs",
+      "synthetic public data"
+    ]
+  },
+  "structured_data": {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "TwinCity UI",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web, serverless, and local development environments",
+    "url": "https://twincity-ui.pages.dev/",
+    "codeRepository": "https://github.com/KIM3310/twincity-ui",
+    "description": "TwinCity UI: digital twin operations console with replay, dispatch, readiness, and report surfaces. Free entry point: public demo with synthetic city/facility events. Paid path: paid workspace for private maps, event.",
+    "creator": {
+      "@type": "Person",
+      "name": "KIM3310",
+      "url": "https://github.com/KIM3310"
+    },
+    "offers": [
+      {
+        "@type": "Offer",
+        "name": "public demo with synthetic city/facility events",
+        "price": "0",
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock",
+        "url": "https://twincity-ui.pages.dev/"
+      },
+      {
+        "@type": "Offer",
+        "name": "paid workspace for private maps, event ingestion, and monthly readiness reports",
+        "availability": "https://schema.org/LimitedAvailability",
+        "url": "https://github.com/KIM3310/twincity-ui/blob/main/docs/revenue-architecture.md"
+      }
+    ],
+    "isAccessibleForFree": true,
+    "keywords": "twincity-ui, TwinCity, digital, twin, operations, console, replay, dispatch, readiness, surfaces, maps, event, ingestion, monthly, synthetic, city, facility, events, tier, Cloudflare, Pages, serverless, launch"
+  }
+}

@@ -22,6 +22,11 @@ const BRAND_LINKS = [
     note: "SLA와 운영 통계",
   },
   {
+    href: "/services",
+    label: "서비스",
+    note: "무료 진입과 유료 전환",
+  },
+  {
     href: "/journal",
     label: "운영 메모",
     note: "개선 기록 모음",
