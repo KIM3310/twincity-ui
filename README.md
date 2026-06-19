@@ -156,7 +156,7 @@ This repository includes a neutral cloud and AI engineering blueprint that maps 
 - Public entry: public demo with synthetic city/facility events
 - Paid boundary: paid workspace for private maps, event ingestion, and monthly readiness reports
 - Canonical URL: https://twincity-ui.pages.dev/
-- Lead capture: mailto:ehdjs1351@gmail.com?subject=TwinCity%20UI%20private%20workspace&body=I%20am%20interested%20in%20paid%20workspace%20for%20private%20maps%2C%20event%20ingestion%2C%20and%20monthly%20readiness%20reports%20for%20TwinCity%20UI.
+- Lead capture: https://github.com/KIM3310/twincity-ui/issues/new?template=service-inquiry.yml&title=Private+workspace+inquiry%3A+TwinCity+UI
 - Machine-readable offer: [docs/service-offer.json](docs/service-offer.json)
 - Search growth implementation: [docs/search-growth-implementation.md](docs/search-growth-implementation.md)
 - Revenue architecture: [docs/revenue-architecture.md](docs/revenue-architecture.md)
