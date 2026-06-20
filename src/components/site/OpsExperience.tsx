@@ -135,6 +135,25 @@ function clampRange(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
+function deferEffectState(apply: () => void) {
+  let cancelled = false;
+  const run = () => {
+    if (!cancelled) {
+      apply();
+    }
+  };
+
+  if (typeof window.queueMicrotask === "function") {
+    window.queueMicrotask(run);
+  } else {
+    window.setTimeout(run, 0);
+  }
+
+  return () => {
+    cancelled = true;
+  };
+}
+
 async function copyTextValue(text: string) {
   if (typeof navigator === "undefined" || !text) return false;
   try {
@@ -1044,109 +1063,111 @@ export default function OpsExperience() {
   const isAdmin = role === "admin";
 
   useEffect(() => {
-    const seededFromPhoto = buildPhotoSeedEvents(Date.now());
-    const fallback =
-      seededFromPhoto.length > 0
-        ? seededFromPhoto
-        : generateDummyEvents(72, {
-            liveWindowMs: DEFAULT_LIVE_WINDOW_MS,
-            historyRatio: 0.32,
-          });
-    const urlState =
-      typeof window === "undefined"
-        ? {}
-        : parseOpsUrlState(window.location.search);
+    return deferEffectState(() => {
+      const seededFromPhoto = buildPhotoSeedEvents(Date.now());
+      const fallback =
+        seededFromPhoto.length > 0
+          ? seededFromPhoto
+          : generateDummyEvents(72, {
+              liveWindowMs: DEFAULT_LIVE_WINDOW_MS,
+              historyRatio: 0.32,
+            });
+      const urlState =
+        typeof window === "undefined"
+          ? {}
+          : parseOpsUrlState(window.location.search);
 
-    const applyUrlState = () => {
-      if (typeof urlState.liveWindowMin === "number") {
-        setLiveWindowMin(clampRange(Math.round(urlState.liveWindowMin), 10, 240));
-      }
-      if (EVENT_TYPE_FILTERS.has(urlState.typeFilter as EventTypeFilter)) {
-        setTypeFilter(urlState.typeFilter as EventTypeFilter);
-      }
-      if (typeof urlState.zoneFilter === "string") {
-        setZoneFilter(urlState.zoneFilter);
-      }
-      if (urlState.minSeverity === 1 || urlState.minSeverity === 2 || urlState.minSeverity === 3) {
-        setMinSeverity(urlState.minSeverity);
-      }
-      if (typeof urlState.openOnly === "boolean") {
-        setOpenOnly(urlState.openOnly);
-      }
-      if (urlState.feedMode === "live" || urlState.feedMode === "demo") {
-        setFeedMode(HAS_LIVE_SOURCE ? urlState.feedMode : "demo");
-      }
-      if (urlState.role === "viewer" || urlState.role === "operator" || urlState.role === "admin") {
-        setRole(urlState.role);
-      }
-      if (typeof urlState.selectedId === "string") {
-        setSelectedId(urlState.selectedId);
-      }
-    };
+      const applyUrlState = () => {
+        if (typeof urlState.liveWindowMin === "number") {
+          setLiveWindowMin(clampRange(Math.round(urlState.liveWindowMin), 10, 240));
+        }
+        if (EVENT_TYPE_FILTERS.has(urlState.typeFilter as EventTypeFilter)) {
+          setTypeFilter(urlState.typeFilter as EventTypeFilter);
+        }
+        if (typeof urlState.zoneFilter === "string") {
+          setZoneFilter(urlState.zoneFilter);
+        }
+        if (urlState.minSeverity === 1 || urlState.minSeverity === 2 || urlState.minSeverity === 3) {
+          setMinSeverity(urlState.minSeverity);
+        }
+        if (typeof urlState.openOnly === "boolean") {
+          setOpenOnly(urlState.openOnly);
+        }
+        if (urlState.feedMode === "live" || urlState.feedMode === "demo") {
+          setFeedMode(HAS_LIVE_SOURCE ? urlState.feedMode : "demo");
+        }
+        if (urlState.role === "viewer" || urlState.role === "operator" || urlState.role === "admin") {
+          setRole(urlState.role);
+        }
+        if (typeof urlState.selectedId === "string") {
+          setSelectedId(urlState.selectedId);
+        }
+      };
 
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (!raw) {
+      try {
+        const raw = window.localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+          applyUrlState();
+          setEvents(fallback);
+          setHydrated(true);
+          return;
+        }
+
+        const parsed = JSON.parse(raw) as PersistedState;
+        if (parsed.playing === true || parsed.playing === false) setPlaying(parsed.playing);
+        if (parsed.speed === 1 || parsed.speed === 2 || parsed.speed === 4) setSpeed(parsed.speed);
+
+        if (typeof parsed.liveWindowMin === "number") {
+          setLiveWindowMin(clampRange(Math.round(parsed.liveWindowMin), 10, 240));
+        }
+        if (EVENT_TYPE_FILTERS.has(parsed.typeFilter as EventTypeFilter)) {
+          setTypeFilter(parsed.typeFilter as EventTypeFilter);
+        }
+        if (typeof parsed.zoneFilter === "string") {
+          const trimmed = parsed.zoneFilter.trim();
+          if (trimmed.length > 0) setZoneFilter(trimmed);
+        }
+        if (parsed.minSeverity === 1 || parsed.minSeverity === 2 || parsed.minSeverity === 3) {
+          setMinSeverity(parsed.minSeverity);
+        }
+        if (parsed.openOnly === true || parsed.openOnly === false) {
+          setOpenOnly(parsed.openOnly);
+        }
+        if (parsed.debugOverlay === true || parsed.debugOverlay === false) {
+          setDebugOverlay(parsed.debugOverlay);
+        }
+        if (parsed.showDiagnostics === true || parsed.showDiagnostics === false) {
+          setShowDiagnostics(parsed.showDiagnostics);
+        }
+
+        const restoredMaxEvents =
+          typeof parsed.maxEvents === "number"
+            ? clampRange(Math.round(parsed.maxEvents), 120, 800)
+            : DEFAULT_MAX_EVENTS;
+        setMaxEvents(restoredMaxEvents);
+
+        if (parsed.feedMode === "live" || parsed.feedMode === "demo") {
+          setFeedMode(HAS_LIVE_SOURCE ? parsed.feedMode : "demo");
+        }
+        if (parsed.role === "viewer" || parsed.role === "operator" || parsed.role === "admin") {
+          setRole(parsed.role);
+        }
+
         applyUrlState();
+
+        const restoredEvents = normalizeEventFeed(parsed.events, {
+          maxEvents: restoredMaxEvents,
+          fallbackStoreId: "s001",
+          defaultSource: "demo",
+        });
+        setEvents(restoredEvents.length > 0 ? restoredEvents : fallback);
+        setTimeline(parseTimeline(parsed.timeline));
+      } catch {
         setEvents(fallback);
+      } finally {
         setHydrated(true);
-        return;
       }
-
-      const parsed = JSON.parse(raw) as PersistedState;
-      if (parsed.playing === true || parsed.playing === false) setPlaying(parsed.playing);
-      if (parsed.speed === 1 || parsed.speed === 2 || parsed.speed === 4) setSpeed(parsed.speed);
-
-      if (typeof parsed.liveWindowMin === "number") {
-        setLiveWindowMin(clampRange(Math.round(parsed.liveWindowMin), 10, 240));
-      }
-      if (EVENT_TYPE_FILTERS.has(parsed.typeFilter as EventTypeFilter)) {
-        setTypeFilter(parsed.typeFilter as EventTypeFilter);
-      }
-      if (typeof parsed.zoneFilter === "string") {
-        const trimmed = parsed.zoneFilter.trim();
-        if (trimmed.length > 0) setZoneFilter(trimmed);
-      }
-      if (parsed.minSeverity === 1 || parsed.minSeverity === 2 || parsed.minSeverity === 3) {
-        setMinSeverity(parsed.minSeverity);
-      }
-      if (parsed.openOnly === true || parsed.openOnly === false) {
-        setOpenOnly(parsed.openOnly);
-      }
-      if (parsed.debugOverlay === true || parsed.debugOverlay === false) {
-        setDebugOverlay(parsed.debugOverlay);
-      }
-      if (parsed.showDiagnostics === true || parsed.showDiagnostics === false) {
-        setShowDiagnostics(parsed.showDiagnostics);
-      }
-
-      const restoredMaxEvents =
-        typeof parsed.maxEvents === "number"
-          ? clampRange(Math.round(parsed.maxEvents), 120, 800)
-          : DEFAULT_MAX_EVENTS;
-      setMaxEvents(restoredMaxEvents);
-
-      if (parsed.feedMode === "live" || parsed.feedMode === "demo") {
-        setFeedMode(HAS_LIVE_SOURCE ? parsed.feedMode : "demo");
-      }
-      if (parsed.role === "viewer" || parsed.role === "operator" || parsed.role === "admin") {
-        setRole(parsed.role);
-      }
-
-      applyUrlState();
-
-      const restoredEvents = normalizeEventFeed(parsed.events, {
-        maxEvents: restoredMaxEvents,
-        fallbackStoreId: "s001",
-        defaultSource: "demo",
-      });
-      setEvents(restoredEvents.length > 0 ? restoredEvents : fallback);
-      setTimeline(parseTimeline(parsed.timeline));
-    } catch {
-      setEvents(fallback);
-    } finally {
-      setHydrated(true);
-    }
+    });
   }, []);
 
   useEffect(() => {
@@ -1164,16 +1185,19 @@ export default function OpsExperience() {
   useEffect(() => {
     if (!hydrated) return;
     if (photoSeedAppliedRef.current) return;
-    photoSeedAppliedRef.current = true;
 
     const seeded = buildPhotoSeedEvents(Date.now());
     if (seeded.length === 0) return;
 
-    setEvents((prev) => {
-      const manualOnly = prev.filter((event) => isManualMapEventId(event.id));
-      return mergeEvents(seeded, manualOnly, maxEvents);
+    return deferEffectState(() => {
+      if (photoSeedAppliedRef.current) return;
+      photoSeedAppliedRef.current = true;
+      setEvents((prev) => {
+        const manualOnly = prev.filter((event) => isManualMapEventId(event.id));
+        return mergeEvents(seeded, manualOnly, maxEvents);
+      });
+      setSelectedId((prev) => (prev && isManualMapEventId(prev) ? prev : seeded[0]?.id));
     });
-    setSelectedId((prev) => (prev && isManualMapEventId(prev) ? prev : seeded[0]?.id));
   }, [hydrated, maxEvents]);
 
   useEffect(() => {
@@ -1247,7 +1271,9 @@ export default function OpsExperience() {
   ]);
 
   useEffect(() => {
-    setEvents((prev) => prev.slice(0, maxEvents));
+    return deferEffectState(() => {
+      setEvents((prev) => (prev.length > maxEvents ? prev.slice(0, maxEvents) : prev));
+    });
   }, [maxEvents]);
 
   useEffect(() => {
@@ -1275,23 +1301,26 @@ export default function OpsExperience() {
 
     if (feedMode !== "live") {
       reconnectAttemptRef.current = 0;
-      setConnection("idle");
-      setTransport("demo");
-      setConnectionNote("연습 데이터로 화면을 보여주고 있습니다.");
-      return;
+      return deferEffectState(() => {
+        setConnection("idle");
+        setTransport("demo");
+        setConnectionNote("연습 데이터로 화면을 보여주고 있습니다.");
+      });
     }
 
     if (!HAS_LIVE_SOURCE) {
-      setConnection("error");
-      setTransport("none");
-      setConnectionNote("실시간 연결 주소가 없어 연습 모드만 사용할 수 있습니다.");
-      return;
+      return deferEffectState(() => {
+        setConnection("error");
+        setTransport("none");
+        setConnectionNote("실시간 연결 주소가 없어 연습 모드만 사용할 수 있습니다.");
+      });
     }
 
     if (!playing) {
-      setConnection("idle");
-      setConnectionNote("실시간 연결을 잠시 멈췄습니다.");
-      return;
+      return deferEffectState(() => {
+        setConnection("idle");
+        setConnectionNote("실시간 연결을 잠시 멈췄습니다.");
+      });
     }
 
     let cancelled = false;
@@ -1520,11 +1549,17 @@ export default function OpsExperience() {
 
   useEffect(() => {
     if (visibleEvents.length === 0) {
-      setSelectedId(undefined);
-      return;
+      if (selectedId === undefined) return;
+      return deferEffectState(() => {
+        setSelectedId(undefined);
+      });
     }
     if (selectedId && !visibleEvents.some((event) => event.id === selectedId)) {
-      setSelectedId(visibleEvents[0].id);
+      const nextSelectedId = visibleEvents[0]?.id;
+      if (nextSelectedId === selectedId) return;
+      return deferEffectState(() => {
+        setSelectedId(nextSelectedId);
+      });
     }
   }, [selectedId, visibleEvents]);
 
