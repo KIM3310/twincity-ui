@@ -1121,7 +1121,7 @@ export function buildControlTowerHandoffBrief(input?: {
           : dispatchCount > 0
             ? `${dispatchCount} active dispatch incident needs a clean blocker/ETA handoff.`
             : rows.length > 0
-              ? "Queue is stable enough for a operator-safe handoff summary."
+              ? "Queue is stable enough for an operator-safe handoff summary."
               : "No visible incidents match the current handoff filter.",
       focus_lane: focusLane,
       suggested_owner:
