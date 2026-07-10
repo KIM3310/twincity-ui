@@ -147,16 +147,25 @@ contains_any() {
 check_robots_quality() {
   local path="$1"
   local fail=0
+  local user_agent_pattern="^User-agent:"
+  local allow_pattern="^Allow:"
+  local sitemap_pattern="^Sitemap:"
 
-  if ! rg -n "^User-agent:" "$path" >/dev/null; then
+  if [[ "$path" == *.ts ]]; then
+    user_agent_pattern="userAgent[[:space:]]*:"
+    allow_pattern="allow[[:space:]]*:"
+    sitemap_pattern="sitemap[[:space:]]*:"
+  fi
+
+  if ! rg -n "$user_agent_pattern" "$path" >/dev/null; then
     log "FAIL robots: missing User-agent"
     fail=1
   fi
-  if ! rg -n "^Allow:" "$path" >/dev/null; then
+  if ! rg -n "$allow_pattern" "$path" >/dev/null; then
     log "FAIL robots: missing Allow"
     fail=1
   fi
-  if ! rg -n "^Sitemap:" "$path" >/dev/null; then
+  if ! rg -n "$sitemap_pattern" "$path" >/dev/null; then
     log "FAIL robots: missing Sitemap"
     fail=1
   fi
@@ -304,16 +313,27 @@ check_optional_embed_signal() {
 check_review() {
   local fail=0
   local web_root
+  local robots_path
+  local sitemap_path
   web_root="$(detect_web_root)"
+  robots_path="$ROOT/$web_root/robots.txt"
+  sitemap_path="$ROOT/$web_root/sitemap.xml"
+
+  if [[ ! -f "$robots_path" && -f "$ROOT/src/app/robots.ts" ]]; then
+    robots_path="$ROOT/src/app/robots.ts"
+  fi
+  if [[ ! -f "$sitemap_path" && -f "$ROOT/src/app/sitemap.ts" ]]; then
+    sitemap_path="$ROOT/src/app/sitemap.ts"
+  fi
 
   log "[External Script/Cloudflare Review Check]"
   log "repo: $(basename "$ROOT")"
   log "web_root: $web_root"
-  check_one_file "$ROOT/$web_root/robots.txt" "robots.txt" || fail=1
-  check_one_file "$ROOT/$web_root/sitemap.xml" "sitemap.xml" || fail=1
-  check_robots_quality "$ROOT/$web_root/robots.txt" || fail=1
+  check_one_file "$robots_path" "robots route" || fail=1
+  check_one_file "$sitemap_path" "sitemap route" || fail=1
+  check_robots_quality "$robots_path" || fail=1
 
-  if [[ -f "$ROOT/$web_root/_headers" || -f "$ROOT/_headers" ]]; then
+  if [[ -f "$ROOT/$web_root/_headers" || -f "$ROOT/public/_headers" || -f "$ROOT/_headers" ]]; then
     log "OK   _headers"
   else
     log "WARN _headers (recommended)"
