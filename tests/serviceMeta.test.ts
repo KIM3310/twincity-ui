@@ -15,7 +15,7 @@ describe("service meta evidence surface", () => {
     );
   });
 
-  test("includes the architecture guide in public artifacts", () => {
+  test("includes the technical review pack in public artifacts", () => {
     const meta = buildControlTowerServiceMeta();
 
     expect(meta.artifacts.map((item) => item.href)).toContain("docs/architecture-pack.md");

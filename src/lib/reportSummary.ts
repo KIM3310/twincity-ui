@@ -686,8 +686,8 @@ export function buildControlTowerReportSummary(input?: {
     spotlight_incidents: spotlight,
     operator_notes: [
       "ACK SLA and resolve SLA are calculated separately to keep dispatch latency visible.",
-      "incident_status filtering lets operators isolate unresolved queue posture before opening the full reports surface.",
-      "Summary reflects deterministic demo state so operators can compare route output without browser storage.",
+      "incident_status filtering lets reviewers isolate unresolved queue posture before opening the full reports surface.",
+      "Summary reflects deterministic demo state so reviewers can compare route output without browser storage.",
       "Use /reports for richer interactive slicing after validating this contract.",
     ],
   };
@@ -908,7 +908,7 @@ export function buildControlTowerDispatchBoard(input?: {
     spotlight,
     items,
     architecture_actions: [
-      "Start with attention incidents before inspectioning dispatched or resolved rows.",
+      "Start with attention incidents before reviewing dispatched or resolved rows.",
       "Keep report summary and dispatch board filters aligned during operator walkthroughs.",
       "Validate export payloads only after the dispatch board matches the expected operator queue.",
     ],
@@ -1035,7 +1035,7 @@ export function buildControlTowerAssignmentHistory(input?: {
     architecture_actions: [
       "Start with incidents that still have only the queue owner before walking the active handoff chain.",
       "Keep assignment history aligned with dispatch board filters during operator walkthroughs.",
-      "Check the handoff brief before exporting anything to the next shift.",
+      "Review the handoff brief before exporting anything to the next shift.",
     ],
     route_bundle: {
       assignment_history: "/api/reports/assignment-history",

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     template: "%s | TwinCity UI",
   },
   description:
-    "Digital twin ops console with inspectable runtime, dispatch, handoff, and export status pages.",
+    "Digital twin ops console with reviewable runtime, dispatch, handoff, and export status pages.",
   alternates: {
     canonical: "/",
   },
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "TwinCity UI — Proof-first Ops Control Tower",
     description:
-      "Inspect ingest posture, runtime contract, dispatch lanes, handoff risk, and operator proof in one pass.",
+      "Review ingest posture, runtime contract, dispatch lanes, handoff risk, and operator proof in one pass.",
     url: "https://twincity-ui.pages.dev",
     siteName: "TwinCity UI",
     images: [
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "TwinCity UI — Proof-first Ops Control Tower",
     description:
-      "Digital twin ops console with inspectable runtime, dispatch, handoff, and export surfaces.",
+      "Digital twin ops console with reviewable runtime, dispatch, handoff, and export surfaces.",
     images: ["/screenshots/ops_console.png"],
   },
   robots: {

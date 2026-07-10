@@ -1,15 +1,15 @@
-# TwinCity UI - 한국어 기술 개요
+# TwinCity UI — 한국어 리뷰 입구
 
-가장 빠른 구조 파악 순서는 아래 두 파일입니다.
+가장 빠른 리뷰 순서는 아래 두 파일입니다.
 - `README.md`
 - `docs/architecture-pack.md`
 
 TwinCity UI는 **디지털 트윈 관제 / 운영 control tower** 성격의 Next.js(React/TypeScript) 프로젝트입니다.
-핵심은 지도 자체보다도 아래 흐름을 **검증 가능한 운영 시스템**으로 구성한 데 있습니다.
+핵심은 지도 자체보다도 아래 흐름을 **검토 가능한 운영 시스템**으로 보여주는 데 있습니다.
 
 `ingest posture -> payload normalization -> triage -> dispatch -> SLA/report -> shift handoff`
 
-## 2분 아키텍처 경로
+## 2분 리뷰 경로
 1. `/api/health`
 2. `/api/meta`
 3. `/api/runtime-scorecard`
@@ -48,9 +48,9 @@ NEXT_PUBLIC_EVENT_API_URL=https://example.com/events
 NEXT_PUBLIC_EVENT_POLL_MS=5000
 ```
 
-아무 설정이 없으면 앱은 demo 상태로 동작하며, 그 상태에서도 확인 가능한 surface를 유지합니다.
+아무 설정이 없으면 앱은 demo 상태로 동작하며, 그 상태에서도 리뷰 가능한 surface를 유지합니다.
 
 ## 미리 말해둘 한계
 - demo 모드는 auth, noisy traffic, 중앙 저장소까지 증명하지는 않습니다.
 - report는 중앙 incident store가 아니라 브라우저 로컬 상태를 요약합니다.
-- 3D route는 production 렌더링 claim이 아니라 probe/architecture surface입니다.
+- 3D route는 production 렌더링 claim이 아니라 probe/review surface입니다.

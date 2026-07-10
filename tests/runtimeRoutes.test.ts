@@ -210,7 +210,7 @@ describe("runtime routes", () => {
     );
   });
 
-  test("runtime brief exposes architecture-first contract", async () => {
+  test("runtime brief exposes review-first contract", async () => {
     const response = await getRuntimeBriefRoute(
       new Request("https://example.com/api/runtime-brief")
     );
@@ -292,7 +292,7 @@ describe("runtime routes", () => {
     );
   });
 
-  test("proof route map exposes the first-click architecture sequence", async () => {
+  test("proof route map exposes the first-click review sequence", async () => {
     const response = await getProofRouteMapRoute(
       new Request("https://example.com/api/proof-route-map")
     );
@@ -359,7 +359,7 @@ describe("runtime routes", () => {
     expect(response.headers.get("x-request-id")).toBe(body.request_id);
   });
 
-  test("dispatch board route exposes attention lanes and architecture bundle", async () => {
+  test("dispatch board route exposes attention lanes and review bundle", async () => {
     const response = await getDispatchBoardRoute(
       new Request(
         "https://example.com/api/reports/dispatch-board?range=60m&severity=3&lane=attention"

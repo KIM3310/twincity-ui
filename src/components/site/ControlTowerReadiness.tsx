@@ -40,7 +40,7 @@ export default function ControlTowerReadiness({
       title: "검토 관점",
       summary: "health / meta / summary를 먼저 열고, 화면은 그 다음에 보는 편이 가장 설득력이 큽니다.",
       cards: [
-        ["01 · health", "ingest mode와 architecture 링크를 가장 먼저 확인합니다."],
+        ["01 · health", "ingest mode와 review 링크를 가장 먼저 확인합니다."],
         ["02 · meta + summary", "신뢰 경계와 SLA snapshot이 함께 읽혀야 합니다."],
         ["03 · handoff", "마지막엔 다음 shift digest가 자연스럽게 이어지는지 확인합니다."],
       ],

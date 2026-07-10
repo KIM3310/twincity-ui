@@ -19,7 +19,7 @@ describe("landing page front door", () => {
     expect(source).toContain("운영 관점별로 어떤 근거를 먼저 읽어야 하는지 바로 보이게 정리했습니다");
     expect(source).toContain("AI pipeline signal");
     expect(source).toContain("Systems reliability signal");
-    expect(source).toContain("Architecture rollout signal");
+    expect(source).toContain("Review rollout signal");
     expect(source).toContain("Operator-ready kit");
   });
 });

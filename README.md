@@ -12,32 +12,32 @@
 
 Next.js (React/TypeScript) operations console for spatial event management. Overlays zones and events on a floorplan, connecting the spatial view to the full operator workflow: ingest, normalization, triage, dispatch, SLA reporting, and shift handoff.
 
-Architecture pack: [`docs/architecture-pack.md`](docs/architecture-pack.md)
+Technical review pack: [`docs/architecture-pack.md`](docs/architecture-pack.md)
 
 ![Ops console screenshot](public/screenshots/ops_console.png)
 
-## Product and System Surface
+## System Overview
 
 | Lens | Decision signal |
 |---|---|
 | Technical stack | Facilities, city operations, and industrial command centers that need spatial incidents, dispatch, and SLA evidence in one console. |
 | Product proof | The demo, workflow loop, and static proof surface show the current product direction without extra claims. |
-| Architecture proof | `/api/proof-route-map`, `/api/health`, `/api/meta`, runtime scorecard, reports, and screenshot evidence create a fast evaluation path. |
+| Review proof | `/api/proof-route-map`, `/api/health`, `/api/meta`, runtime scorecard, reports, and screenshot evidence create a fast evaluation path. |
 | Safety posture | Demo-mode defaults, trust-boundary metadata, normalized ingest, and explicit fallback behavior keep the archived surface understandable and low-risk. |
 
-## System Fast Path
+## Evaluation Path
 
-- **First minute:** Use `/api/proof-route-map`, then open `/events` and `/reports`.
+- **Start here:** Use `/api/proof-route-map`, then open `/events` and `/reports`.
 - **Local demo:** Run `npm ci && npm run dev`, then open `http://127.0.0.1:3000/events`.
-- **Verification:** Run `npm run test:proof` for proof routes or `npm run verify` for the full gate.
+- **Checks:** Run `npm run test:proof` for proof routes or `npm run verify` for the full gate.
 
 ## Service Launch Playbook
 
-- [Service launch playbook](docs/service-launch-playbook.md) maps the repository to architecture audiences, operating gates, operating boundaries, and risk controls.
+- [Service launch playbook](docs/service-launch-playbook.md) maps the repository to its product scope, proof gates, operating boundaries, and risk controls.
 
 ## Architecture Notes
 
-- [Architecture guide](docs/architecture-evidence-map.md) summarizes the project angle, first files to inspect, runtime commands, and known boundaries.
+- [Review guide](docs/architecture-evidence-map.md) summarizes the system scope, first files to inspect, verification commands, and known boundaries.
 - [Quality notes](docs/quality-gate.md) lists the local checks, CI surface, and release expectations for this repository.
 - [Enterprise readiness notes](docs/enterprise-readiness.md) outlines security, data, operations, integration, and handoff expectations.
 
@@ -131,15 +131,13 @@ The readiness registry is aligned with [public-apis-4Kr](https://github.com/yybm
 
 ## Cloud + AI Architecture
 
-This repository includes a neutral cloud and AI engineering blueprint that maps the current proof surface to runtime boundaries, data contracts, model-risk controls, deployment posture, and validation hooks.
-
 - [Cloud + AI architecture blueprint](docs/cloud-ai-architecture.md)
 - [Machine-readable architecture manifest](docs/architecture/blueprint.json)
 - Validation command: `python3 scripts/validate_architecture_blueprint.py`
 
 ## Enterprise Productization
 
-- [Product operating model](docs/product-operating-model.md) defines the technical inspection, trust boundary, trust boundary, operating checks, and service path for this repository.
+- [Product operating model](docs/product-operating-model.md) defines the product scope, trust boundary, operating checks, and service path for this repository.
 
 ## System Architecture
 

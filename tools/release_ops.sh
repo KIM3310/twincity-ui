@@ -306,7 +306,7 @@ check_review() {
   local web_root
   web_root="$(detect_web_root)"
 
-  log "[External Script/Cloudflare Architecture Check]"
+  log "[External Script/Cloudflare Review Check]"
   log "repo: $(basename "$ROOT")"
   log "web_root: $web_root"
   check_one_file "$ROOT/$web_root/robots.txt" "robots.txt" || fail=1
@@ -350,11 +350,11 @@ check_review() {
   show_cloudflare
 
   if [[ $fail -eq 0 ]]; then
-    log "PASS architecture gate"
+    log "PASS review gate"
     return 0
   fi
 
-  log "FAIL architecture gate"
+  log "FAIL review gate"
   return 1
 }
 

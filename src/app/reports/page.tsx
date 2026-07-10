@@ -464,7 +464,7 @@ export default function ReportsPage() {
 
   const copyArchitectureRoutes = useCallback(async () => {
     const text = [
-      `TwinCity architecture routes (${filterSummary})`,
+      `TwinCity review routes (${filterSummary})`,
       ...serviceMeta.architecture_flow.map((item) => `- ${item}`),
       "",
       "Routes",
@@ -473,7 +473,7 @@ export default function ReportsPage() {
 
     try {
       await navigator.clipboard.writeText(text);
-      setNotice("아키텍처 경로를 클립보드에 복사했습니다.");
+      setNotice("리뷰 경로를 클립보드에 복사했습니다.");
     } catch {
       setNotice("복사 권한이 없어서 실패했습니다.");
     }
@@ -519,7 +519,7 @@ export default function ReportsPage() {
         ? `Latest action: ${latestAction.action.toUpperCase()} by ${latestAction.actor} @ ${new Date(latestAction.at).toISOString()}`
         : "Latest action: none",
       "",
-      "Architecture flow",
+      "Review flow",
       ...serviceMeta.architecture_flow.map((item) => `- ${item}`),
     ].join("\n");
 
@@ -558,7 +558,7 @@ export default function ReportsPage() {
     const text = [
       `TwinCity control tower claim (${filterSummary})`,
       `Headline: ${runtimeBrief.headline}`,
-      `Architecture routes: ${runtimeBrief.route_count}`,
+      `Review routes: ${runtimeBrief.route_count}`,
       `Open incidents: ${openCount}`,
       `Critical incidents: ${criticalCount}`,
       `ACK SLA: ${ackDurations.length > 0 ? `${ackSlaMet}/${ackDurations.length}` : "-"}`,
@@ -690,7 +690,7 @@ export default function ReportsPage() {
       `Top zone: ${byZone[0] ? `${getZoneLabel(byZone[0][0])} (${byZone[0][1]})` : "-"}`,
       `Spotlight: ${target ? `${target.id} / ${getZoneLabel(target.zone_id)} / S${target.severity}` : "-"}`,
       "",
-      "Architecture routes",
+      "Review routes",
       ...serviceMeta.routes.slice(0, 5).map((route) => `- ${route}`),
       "",
       "Dispatch lanes",
@@ -864,7 +864,7 @@ export default function ReportsPage() {
               <span className="mono">{runtimeBrief.evidence_counts.routes}</span>
             </div>
             <div className="reportRow">
-              <span>Architecture route count</span>
+              <span>Review route count</span>
               <span className="mono">{runtimeBrief.route_count}</span>
             </div>
           </div>
@@ -949,7 +949,7 @@ export default function ReportsPage() {
               필터 초기화
             </button>
             <button type="button" className="button buttonGhost" onClick={copyArchitectureRoutes}>
-              아키텍처 경로 복사
+              리뷰 경로 복사
             </button>
             <button type="button" className="button buttonGhost" onClick={focusHighestRisk} disabled={inRangeEvents.length === 0}>
               최고 위험 집중
@@ -994,7 +994,7 @@ export default function ReportsPage() {
 
         {notice && <div className="reportNotice mono">{notice}</div>}
         <div className="reportNotice mono">
-          Shortcuts: ⇧L 링크 · ⇧R 아키텍처 경로 · ⇧S 요약 · ⇧F 최고 위험 · ⇧D dispatch · ⇧N 다음 조치 · ⇧H handoff · ⇧B ops bundle · ⇧C control tower claim · ⇧K spotlight
+          Shortcuts: ⇧L 링크 · ⇧R 리뷰 경로 · ⇧S 요약 · ⇧F 최고 위험 · ⇧D dispatch · ⇧N 다음 조치 · ⇧H handoff · ⇧B ops bundle · ⇧C control tower claim · ⇧K spotlight
         </div>
       </section>
 

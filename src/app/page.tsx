@@ -5,7 +5,7 @@ import { buildControlTowerServiceMeta } from "@/lib/serviceMeta";
 export const metadata: Metadata = {
   title: "Proof-first control tower",
   description:
-    "Check TwinCity UI through its ingest posture, runtime contract, dispatch board, handoff brief, and operator console.",
+    "Review TwinCity UI through its ingest posture, runtime contract, dispatch board, handoff brief, and operator console.",
 };
 
 const PROOF_PATHS = [
@@ -85,7 +85,7 @@ const SURFACE_SIGNAL_CARDS = [
     proof: "/api/health → /api/meta → /api/runtime-scorecard",
   },
   {
-    title: "Architecture rollout signal",
+    title: "Review rollout signal",
     body: "dispatch lane, shift handoff, export payload를 같은 이야기로 읽게 해서 운영 continuity와 rollout 대화를 쉽게 만듭니다.",
     proof: "/api/runtime-brief → /api/reports/handoff → /api/reports/export",
   },
