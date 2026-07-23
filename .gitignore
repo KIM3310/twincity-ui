@@ -5,6 +5,7 @@ dist/
 *.tsbuildinfo
 .turbo/
 .vercel/
+.wrangler/
 
 .env
 .env.*
