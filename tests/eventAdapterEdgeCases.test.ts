@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest";
 
 import { adaptRawEvent, normalizeEventFeed } from "../src/lib/eventAdapter";
-import type { EventItem } from "../src/lib/types";
 
 describe("eventAdapter edge cases", () => {
   test("adaptRawEvent returns null for non-object values", () => {

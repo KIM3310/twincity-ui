@@ -37,7 +37,6 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const body = document.body;
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const reveals = Array.from(document.querySelectorAll<HTMLElement>(".reveal"));
     const revealAll = () => {

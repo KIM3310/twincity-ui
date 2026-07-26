@@ -1,7 +1,10 @@
-import nextVitals from "eslint-config-next/core-web-vitals";
+import js from "@eslint/js";
+import nextPlugin from "@next/eslint-plugin-next";
+import reactHooks from "eslint-plugin-react-hooks";
+import globals from "globals";
+import tseslint from "typescript-eslint";
 
-const config = [
-  ...nextVitals,
+export default tseslint.config(
   {
     ignores: [
       ".next/**",
@@ -11,6 +14,31 @@ const config = [
       "next-env.d.ts",
     ],
   },
-];
-
-export default config;
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    files: ["**/*.{js,mjs,cjs,ts,tsx}"],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
+    },
+  },
+  nextPlugin.configs.recommended,
+  nextPlugin.configs["core-web-vitals"],
+  reactHooks.configs.flat["recommended-latest"],
+  {
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          ignoreRestSiblings: true,
+          varsIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
+);
