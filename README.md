@@ -155,6 +155,7 @@ The readiness registry is aligned with [public-apis-4Kr](https://github.com/yybm
 - Paid boundary: paid workspace for private maps, event ingestion, and monthly readiness reports
 - Canonical URL: https://twincity-ui.pages.dev/
 - Lead capture: https://github.com/KIM3310/twincity-ui/issues/new?template=service-inquiry.yml&title=Private+workspace+inquiry%3A+TwinCity+UI
+- Commercial route: https://kim3310-doeon-kim-portfolio.pages.dev/?offer=twincity-ui#service-offers
 - Machine-readable offer: [docs/service-offer.json](docs/service-offer.json)
 - Search growth implementation: [docs/search-growth-implementation.md](docs/search-growth-implementation.md)
 - Revenue architecture: [docs/revenue-architecture.md](docs/revenue-architecture.md)

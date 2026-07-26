@@ -69,5 +69,29 @@
     ],
     "isAccessibleForFree": true,
     "keywords": "twincity-ui, TwinCity, digital, twin, operations, console, replay, dispatch, readiness, surfaces, maps, event, ingestion, monthly, synthetic, city, facility, events, tier, Cloudflare, Pages, serverless, launch"
+  },
+  "commerce": {
+    "gateway_url": "https://kim3310-doeon-kim-portfolio.pages.dev/?offer=twincity-ui#service-offers",
+    "lane_id": "digital-twin-ops-readiness",
+    "lane_name": "Digital Twin Ops Readiness",
+    "billing_mode": "one-time",
+    "price_unit": "readiness review from USD 350",
+    "fulfillment_kind": "synthetic event replay, readiness dashboard notes, dispatch-flow sketch, and ingestion boundary",
+    "risk_bucket": "standard-b2b",
+    "checkout": {
+      "provider": "lemon-squeezy",
+      "status": "account-onboarding-required",
+      "fallback_url": "https://kim3310-doeon-kim-portfolio.pages.dev/?offer=twincity-ui#service-offers"
+    },
+    "sponsorship": {
+      "provider": "github-sponsors",
+      "eligible": true,
+      "status": "account-onboarding-required"
+    },
+    "advertising": {
+      "provider": null,
+      "eligible": false,
+      "status": "not-applicable"
+    }
   }
 }
