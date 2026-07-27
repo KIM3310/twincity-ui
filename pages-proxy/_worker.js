@@ -1,4 +1,5 @@
 const TARGET_ORIGIN = "https://twincity-ui-app-811356341663.asia-northeast3.run.app";
+const STATIC_ASSET_PATHS = new Set(["/llms.txt", "/service-offer.json"]);
 
 function proxiedUrl(requestUrl) {
   const incoming = new URL(requestUrl);
@@ -38,7 +39,12 @@ async function injectMainLandmark(response) {
 }
 
 const worker = {
-  async fetch(request) {
+  async fetch(request, env) {
+    const incomingUrl = new URL(request.url);
+    if (STATIC_ASSET_PATHS.has(incomingUrl.pathname)) {
+      return env.ASSETS.fetch(request);
+    }
+
     const targetUrl = proxiedUrl(request.url);
     const headers = new Headers(request.headers);
     headers.delete("host");

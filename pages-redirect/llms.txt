@@ -1,0 +1,13 @@
+# TwinCity UI
+
+Purpose: digital twin operations console with replay, dispatch, readiness, and report surfaces
+Free entry point: public demo with synthetic city/facility events
+Paid boundary: paid workspace for private maps, event ingestion, and monthly readiness reports
+Canonical URL: https://twincity-ui.pages.dev/
+Repository: https://github.com/KIM3310/twincity-ui
+System architecture: https://github.com/KIM3310/twincity-ui/blob/main/docs/system-architecture.md
+Revenue architecture: https://github.com/KIM3310/twincity-ui/blob/main/docs/revenue-architecture.md
+Lead capture: https://github.com/KIM3310/twincity-ui/issues/new?template=service-inquiry.yml&title=Private+workspace+inquiry%3A+TwinCity+UI
+Commercial route: https://kim3310-doeon-kim-portfolio.pages.dev/?offer=twincity-ui#service-offers
+
+Use this project as a runnable or inspectable reference for TwinCity UI demo, TwinCity UI system architecture, TwinCity UI business tool, digital twin operations console with replay, dispatch, readiness, and report surfaces service.
