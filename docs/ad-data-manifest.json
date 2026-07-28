@@ -6,7 +6,7 @@
   "audience": "public API integrators and operations dashboard builders",
   "public_resource": {
     "url": "https://kim3310-doeon-kim-portfolio.pages.dev/resources/twincity-ui/",
-    "live_demo": "https://twincity-ui.pages.dev",
+    "live_demo": "https://twincity-ui.pages.dev/",
     "readiness_checklist": [
       "Architecture Summary",
       "Runtime And Data Flow",

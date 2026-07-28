@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Project Guide | TwinCity UI</title>
+  <meta name="description" content="Free public-API readiness worksheet for city/service dashboards and runtime scorecards. Source-backed guide for public API integrators and operations…">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="google-adsense-account" content="ca-pub-4973160293737562">
+  <link rel="canonical" href="https://twincity-ui.pages.dev/guide.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Project Guide | TwinCity UI">
+  <meta property="og:description" content="Free public-API readiness worksheet for city/service dashboards and runtime scorecards. Source-backed guide for public API integrators and operations dashboard builders.">
+  <meta property="og:url" content="https://twincity-ui.pages.dev/guide.html">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Project Guide | TwinCity UI","description":"Free public-API readiness worksheet for city/service dashboards and runtime scorecards. Source-backed guide for public API integrators and operations dashboard builders.","url":"https://twincity-ui.pages.dev/guide.html","dateModified":"2026-07-28","author":{"@type":"Person","name":"KIM3310","url":"https://github.com/KIM3310"},"publisher":{"@type":"Person","name":"KIM3310","url":"https://kim3310-doeon-kim-portfolio.pages.dev"},"isAccessibleForFree":true}</script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4973160293737562" crossorigin="anonymous"></script>
+  <style>
+    :root { color-scheme: light; --ink: #17201f; --muted: #52605d; --line: #cbd2ce; --paper: #ffffff; --ground: #f5f6f4; --green: #126455; --coral: #c94732; --gold: #b67a00; }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--ground); color: var(--ink); font: 17px/1.72 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    a { color: var(--green); text-underline-offset: 3px; }
+    .site-header { border-bottom: 1px solid var(--line); background: rgba(245, 246, 244, .97); }
+    .site-nav, .article-shell, .site-footer-inner { width: min(920px, calc(100% - 32px)); margin: 0 auto; }
+    .site-nav { min-height: 62px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .site-nav strong { font-size: .92rem; }
+    .nav-links { display: flex; flex-wrap: wrap; gap: 14px; font-size: .84rem; }
+    .article-shell { padding: 54px 0 72px; }
+    .breadcrumbs { color: var(--muted); font-size: .82rem; }
+    .article-intro { padding: 28px 0 36px; border-bottom: 2px solid var(--ink); }
+    .kicker { color: var(--coral); font-size: .76rem; font-weight: 800; text-transform: uppercase; }
+    h1 { margin: 10px 0 16px; max-width: 18ch; font-size: 3.5rem; line-height: 1.04; letter-spacing: 0; overflow-wrap: anywhere; }
+    .lede { max-width: 68ch; color: var(--muted); font-size: 1.08rem; }
+    .review-note { margin-top: 18px; color: var(--muted); font-size: .84rem; }
+    article { padding-top: 24px; }
+    article h2 { margin: 42px 0 12px; padding-top: 6px; font-size: 1.75rem; line-height: 1.2; letter-spacing: 0; }
+    article h3 { margin: 30px 0 8px; font-size: 1.2rem; letter-spacing: 0; }
+    article h4 { margin: 24px 0 6px; font-size: 1.02rem; letter-spacing: 0; }
+    article p, article li { max-width: 76ch; }
+    article li + li { margin-top: 6px; }
+    pre { max-width: 100%; overflow: auto; border-left: 4px solid var(--gold); background: #1d2423; color: #f6f8f7; padding: 18px; border-radius: 4px; font-size: .86rem; }
+    code { overflow-wrap: anywhere; }
+    :not(pre) > code { border: 1px solid var(--line); background: var(--paper); padding: 1px 5px; border-radius: 3px; font-size: .9em; }
+    .table-scroll { overflow-x: auto; margin: 20px 0; }
+    table { width: 100%; border-collapse: collapse; background: var(--paper); font-size: .9rem; }
+    th, td { border: 1px solid var(--line); padding: 10px; text-align: left; vertical-align: top; }
+    th { background: #e9eeeb; }
+    .boundary-note { margin: 30px 0 4px; border-left: 4px solid var(--coral); background: var(--paper); padding: 18px; }
+    .source-basis { margin-top: 48px; border-top: 1px solid var(--line); padding-top: 22px; color: var(--muted); }
+    .site-footer { border-top: 1px solid var(--line); background: var(--paper); }
+    .site-footer-inner { padding: 28px 0 44px; color: var(--muted); font-size: .84rem; }
+    .site-footer-links { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 12px; }
+    @media (max-width: 720px) {
+      .site-nav { align-items: flex-start; flex-direction: column; padding: 14px 0; }
+      .article-shell { padding-top: 32px; }
+      h1 { font-size: 2.35rem; }
+    }
+  </style>
+</head>
+<body data-ad-surface="editorial">
+  <header class="site-header">
+    <nav class="site-nav" aria-label="Primary">
+      <strong>TwinCity UI</strong>
+      <div class="nav-links"><a href="/">Home</a><a href="/guide.html">Project guide</a><a href="/architecture.html">Architecture</a><a href="/verification.html">Verification</a><a href="/publisher.html">Publisher</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a></div>
+    </nav>
+  </header>
+  <main class="article-shell">
+    <p class="breadcrumbs"><a href="/">Home</a> / Project guide</p>
+    <header class="article-intro">
+      <div class="kicker">Project guide</div>
+      <h1>Project Guide | TwinCity UI</h1>
+      <p class="lede">Free public-API readiness worksheet for city/service dashboards and runtime scorecards. This guide organizes the repository&#039;s original implementation notes for public API integrators and operations dashboard builders.</p>
+      <p class="review-note">Reviewed 2026-07-28. This page is derived from checked-in repository evidence and links back to its source.</p>
+    </header>
+
+    <article><h2>TwinCity UI — Digital Twin Ops Console</h2>
+<p><strong>Product proof surface</strong> TwinCity UI leads with the working spatial operations console: synthetic event replay, dispatch queues, readiness checks, report exports, and handoff surfaces. Commercial exploration is limited to the private inquiry lane listed in the service manifest.</p>
+<p>Next.js (React/TypeScript) operations console for spatial event management. Overlays zones and events on a floorplan, connecting the spatial view to the full operator workflow: ingest, normalization, triage, dispatch, SLA reporting, and shift handoff.</p>
+<p>Technical review pack: <a href="https://github.com/KIM3310/twincity-ui/blob/main/docs/architecture-pack.md" rel="noopener">`docs/architecture-pack.md`</a></p>
+<h3>System Overview</h3>
+<div class="table-scroll"><table><thead><tr><th>Lens</th><th>Decision signal</th></tr></thead><tbody><tr><td>Technical stack</td><td>Facilities, city operations, and industrial command centers that need spatial incidents, dispatch, and SLA evidence in one console.</td></tr><tr><td>Product proof</td><td>The demo, workflow loop, and static proof surface show the current product direction without production or customer claims.</td></tr><tr><td>Review proof</td><td><code>/api/proof-route-map</code>, <code>/api/health</code>, <code>/api/meta</code>, runtime scorecard, reports, and screenshot evidence create a fast evaluation path.</td></tr><tr><td>Safety posture</td><td>Demo-mode defaults, trust-boundary metadata, normalized ingest, and explicit fallback behavior keep the public surface understandable and low-risk.</td></tr></tbody></table></div>
+<h3>Evaluation Path</h3>
+<ul><li><strong>Start here:</strong> Use <code>/api/proof-route-map</code>, then open <code>/events</code> and <code>/reports</code>.</li><li><strong>Local demo:</strong> Run <code>npm ci &amp;&amp; npm run dev</code>, then open <code>http://127.0.0.1:3000/events</code>.</li><li><strong>Checks:</strong> Run <code>npm run test:proof</code> for proof routes or <code>npm run verify</code> for the full gate.</li></ul>
+<h3>Architecture Notes</h3>
+<ul><li><a href="https://github.com/KIM3310/twincity-ui/blob/main/docs/architecture-evidence-map.md" rel="noopener">Review guide</a> summarizes the system scope, first files to inspect, verification commands, and known boundaries.</li><li><a href="https://github.com/KIM3310/twincity-ui/blob/main/docs/quality-gate.md" rel="noopener">Quality notes</a> lists the local checks, CI surface, and release expectations for this repository.</li><li><a href="https://github.com/KIM3310/twincity-ui/blob/main/docs/enterprise-readiness.md" rel="noopener">Enterprise readiness notes</a> outlines security, data, operations, integration, and handoff expectations.</li></ul>
+<h3>Product capabilities</h3>
+<ul><li>End-to-end operator UX: live/history views, filters, detail panel, action timeline, list/map/detail sync</li><li>Transport fallback chain: WebSocket -&gt; SSE -&gt; HTTP polling with auto-retry</li><li>Event normalization: inconsistent provider payloads -&gt; single <code>EventItem</code> schema</li><li>Spatial mapping: percent/world/bbox -&gt; normalized coordinates with camera homography support</li><li>Reporting: SLA summary, dispatch board, shift handoff, export routes</li></ul>
+<h3>Quick start</h3>
+<pre><code>npm ci
+npm run dev</code></pre>
+<p>Open <code>http://127.0.0.1:3000/events</code>.</p>
+<h3>Walk Through This First</h3>
+<p>If you only have a minute, use this order:</p>
+<ol><li><code>/api/proof-route-map</code> — pick the right first proof lane before opening the full console</li><li><code>/api/health</code> — confirm whether the console is in demo mode or attached to live ingest</li><li><code>/api/meta</code> — read the trust boundary and evidence bundle</li><li><code>/api/runtime-scorecard</code> — inspect ingest posture and SLA summary together</li><li><code>/reports</code> — see the dispatch, handoff, and export surfaces that make the operator story concrete</li></ol>
+<h3>Hosted demo runtime</h3>
+<ul><li>Hosted runtime: <code>https://twincity-ui-app-811356341663.asia-northeast3.run.app</code></li><li>Public Pages front door: <code>https://twincity-ui.pages.dev</code> -&gt; redirects to the hosted demo runtime</li></ul>
+<h3>Verify</h3>
+<pre><code>npm run test:proof
+npm run verify</code></pre>
+<h3>Key routes</h3>
+<ul><li><code>/events</code> - Main operator console</li><li><code>/reports</code> - SLA, dispatch, handoff, export</li><li><code>/api/health</code> - Ingest mode + readiness</li><li><code>/api/proof-route-map</code> - Front-door operator route chooser</li><li><code>/api/meta</code> - Trust boundary + evidence bundle</li><li><code>/api/runtime-scorecard</code> - Ingest posture + SLA snapshot</li><li><code>/api/public-apis</code> - Korean public API enrichment readiness</li><li><code>/api/reports/summary</code> - Deterministic SLA summary</li><li><code>/api/reports/dispatch-board</code> - Attention / dispatch / resolved queues</li><li><code>/api/reports/handoff</code> - Next-shift digest + overdue risk</li><li><code>/api/reports/export</code> - JSON / CSV report export</li></ul>
+<h3>Live sources (optional)</h3>
+<p>Create <code>.env.local</code> from <code>.env.local.example</code>:</p>
+<pre><code>NEXT_PUBLIC_EVENT_WS_URL=wss://example.com/events
+NEXT_PUBLIC_EVENT_STREAM_URL=https://example.com/events/stream
+NEXT_PUBLIC_EVENT_API_URL=https://example.com/events
+NEXT_PUBLIC_EVENT_POLL_MS=5000</code></pre>
+<p>Without live sources, the app runs in demo mode with mock data.</p>
+<p>Optional Korean public-data enrichment is exposed through <code>/api/public-apis</code>. The readiness registry is aligned with <a href="https://github.com/yybmion/public-apis-4Kr" rel="noopener">public-apis-4Kr</a> and checks for server-side provider secrets such as <code>SEOUL_OPEN_DATA_API_KEY</code>, <code>KMA_API_KEY</code>, <code>AIRKOREA_API_KEY</code>, and <code>PUBLIC_SAFETY_API_KEY</code> without returning secret values.</p>
+<h3>Mock endpoints</h3>
+<ul><li><code>GET /api/mock/events?shape=a&amp;count=4</code></li><li><code>GET /api/mock/events?shape=b&amp;count=4</code></li><li><code>GET /api/mock/events?shape=single</code></li><li><code>GET /api/mock/events?shape=edge&amp;count=4</code></li></ul>
+<h3>Docs</h3>
+<ul><li><code>docs/LIVE_INTEGRATION.md</code> - Payload examples + transport fallbacks</li><li><code>docs/ops/RUNBOOK.md</code> - Operator/release guidance</li><li><code>docs/ops/POSTMORTEM_TEMPLATE.md</code> - Incident follow-up template</li></ul>
+<h3>Current limitations</h3>
+<ul><li>Demo mode doesn&#039;t cover auth, backpressure, or central persistence</li><li>Reports summarize browser-local state, not a central store</li><li>3D routes are experimental, not production-grade</li></ul>
+<h3>Next</h3>
+<ul><li>Deeper report aggregation beyond handoff + replay</li><li>More adapters for edge-device / VLM payload variants</li><li>Better calibration tooling for camera homography</li></ul>
+<h3>Cloud + AI Architecture</h3>
+<ul><li><a href="https://github.com/KIM3310/twincity-ui/blob/main/docs/cloud-ai-architecture.md" rel="noopener">Cloud + AI architecture blueprint</a></li><li><a href="https://github.com/KIM3310/twincity-ui/blob/main/docs/architecture/blueprint.json" rel="noopener">Machine-readable architecture manifest</a></li><li>Validation command: <code>python3 scripts/validate_architecture_blueprint.py</code></li></ul>
+<h3>Enterprise Productization</h3>
+<ul><li><a href="https://github.com/KIM3310/twincity-ui/blob/main/docs/product-operating-model.md" rel="noopener">Product operating model</a> defines the product scope, trust boundary, operating checks, and service path for this repository.</li></ul>
+<h3>System Architecture</h3>
+<ul><li><a href="https://github.com/KIM3310/twincity-ui/blob/main/docs/system-architecture.md" rel="noopener">System architecture</a> maps the runtime boundary, data/control flow, cloud or local deployment surface, and operating assumptions for this repository.</li></ul>
+<h3>Service Architecture</h3>
+<ul><li><a href="https://github.com/KIM3310/twincity-ui/blob/main/docs/service-architecture.md" rel="noopener">Service architecture</a> defines the cloud resources, account information, cost controls, and production guardrails needed to turn this repo into a scoped service without publishing public financial assumptions.</li></ul>
+<h3>Search And Service Surface</h3>
+<ul><li>Public entry: public demo with synthetic city/facility events</li><li>Paid boundary: Architecture Scope Sprint</li><li>Canonical URL: https://twincity-ui.pages.dev/</li><li>Lead capture: https://kim3310-doeon-kim-portfolio.pages.dev/?offer=twincity-ui&amp;inquiry=architecture-scope-sprint#private-inquiry</li><li>Resource route: https://kim3310-doeon-kim-portfolio.pages.dev/resources/twincity-ui/</li><li>Commercial route: https://kim3310-doeon-kim-portfolio.pages.dev/?offer=twincity-ui#service-offers</li><li>Machine-readable offer: <a href="https://github.com/KIM3310/twincity-ui/blob/main/docs/service-offer.json" rel="noopener">docs/service-offer.json</a></li><li>Search growth implementation: <a href="https://github.com/KIM3310/twincity-ui/blob/main/docs/search-growth-implementation.md" rel="noopener">docs/search-growth-implementation.md</a></li><li>Revenue architecture: <a href="https://github.com/KIM3310/twincity-ui/blob/main/docs/revenue-architecture.md" rel="noopener">docs/revenue-architecture.md</a></li></ul></article>
+    <aside class="source-basis">
+      <strong>Source basis:</strong> <a href="https://github.com/KIM3310/twincity-ui/blob/main/README.md" rel="noopener">README.md</a>. Corrections can be proposed through the public repository without submitting private data.
+    </aside>
+  </main>
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <div class="site-footer-links"><a href="/">Home</a><a href="/guide.html">Project guide</a><a href="/architecture.html">Architecture</a><a href="/verification.html">Verification</a><a href="/publisher.html">Publisher</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="https://kim3310-doeon-kim-portfolio.pages.dev/">Resource atlas</a></div>
+      <p>Advertising may appear on this public editorial page after Google approves the site. Ads are not placed inside private, transactional, diagnostic, security-response, or operational workflows.</p>
+    </div>
+  </footer>
+</body>
+</html>

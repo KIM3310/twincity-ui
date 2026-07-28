@@ -8,7 +8,7 @@ Free public-API readiness worksheet for city/service dashboards and runtime scor
 
 - Audience: public API integrators and operations dashboard builders
 - Central resource: https://kim3310-doeon-kim-portfolio.pages.dev/resources/twincity-ui/
-- Live system: https://twincity-ui.pages.dev
+- Live system: https://twincity-ui.pages.dev/
 - Advertising boundary: ads allowed only on public API-readiness pages; operational dashboards, API keys, result views, and admin pages are ad-free
 - Current ad state: code-ready on the central resource; serving depends on Google AdSense site approval and consent policy.
 

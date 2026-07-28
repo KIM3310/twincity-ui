@@ -19,7 +19,15 @@ describe("Cloudflare Pages redirect surface", () => {
     );
 
     const sitemap = readFileSync(resolve(redirectRoot, "sitemap.xml"), "utf8");
-    for (const route of ["/", "/privacy/", "/terms/", "/service-offer.json", "/llms.txt", "/ads.txt"]) {
+    for (const route of [
+      "/",
+      "/guide.html",
+      "/architecture.html",
+      "/verification.html",
+      "/publisher.html",
+      "/privacy/",
+      "/terms/",
+    ]) {
       expect(sitemap).toContain(`https://twincity-ui.pages.dev${route === "/" ? "/" : route}`);
     }
 
@@ -30,7 +38,11 @@ describe("Cloudflare Pages redirect surface", () => {
 
     const loader =
       `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`;
-    expect(readFileSync(resolve(redirectRoot, "index.html"), "utf8")).toContain(loader);
+    expect(readFileSync(resolve(redirectRoot, "index.html"), "utf8")).not.toContain(loader);
+    for (const file of ["guide.html", "architecture.html", "verification.html"]) {
+      expect(readFileSync(resolve(redirectRoot, file), "utf8")).toContain(loader);
+    }
+    expect(readFileSync(resolve(redirectRoot, "publisher.html"), "utf8")).not.toContain(loader);
     expect(readFileSync(resolve(redirectRoot, "privacy/index.html"), "utf8")).not.toContain(loader);
     expect(readFileSync(resolve(redirectRoot, "terms/index.html"), "utf8")).not.toContain(loader);
   });

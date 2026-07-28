@@ -12,3 +12,9 @@ Resource route: https://kim3310-doeon-kim-portfolio.pages.dev/resources/twincity
 Commercial route: https://kim3310-doeon-kim-portfolio.pages.dev/?offer=twincity-ui#service-offers
 
 Use this project as a runnable or inspectable reference for TwinCity UI demo, TwinCity UI system architecture, TwinCity UI business tool, digital twin operations console with replay, dispatch, readiness, and report surfaces service.
+# ADSENSE-PUBLICATION:START
+Editorial guide: https://twincity-ui.pages.dev/guide.html
+Architecture article: https://twincity-ui.pages.dev/architecture.html
+Verification article: https://twincity-ui.pages.dev/verification.html
+Publisher information: https://twincity-ui.pages.dev/publisher.html
+# ADSENSE-PUBLICATION:END
