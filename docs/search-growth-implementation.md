@@ -10,7 +10,7 @@ This repository now exposes a search-readable service surface in addition to the
 | Revenue architecture | [docs/revenue-architecture.md](./revenue-architecture.md) |
 | System architecture | [docs/system-architecture.md](./system-architecture.md) |
 | Public canonical URL | https://twincity-ui.pages.dev/ |
-| Lead capture URL | https://github.com/KIM3310/twincity-ui/issues/new?template=service-inquiry.yml&title=Private+workspace+inquiry%3A+TwinCity+UI |
+| Lead capture URL | https://kim3310-doeon-kim-portfolio.pages.dev/?offer=twincity-ui&inquiry=architecture-scope-sprint#private-inquiry |
 | Commercial route | https://kim3310-doeon-kim-portfolio.pages.dev/?offer=twincity-ui#service-offers |
 
 ## Search Positioning
@@ -18,15 +18,17 @@ This repository now exposes a search-readable service surface in addition to the
 - Primary query: TwinCity UI digital twin operations
 - Secondary queries: TwinCity UI demo; TwinCity UI system architecture; TwinCity UI business tool; digital twin operations console with replay, dispatch, readiness, and report surfaces service
 - Public entry point: public demo with synthetic city/facility events
-- Paid boundary: paid workspace for private maps, event ingestion, and monthly readiness reports
+- Paid boundary: Architecture Scope Sprint
 
 ## Conversion Boundary
 
-The public surface stays crawlable and free. Paid value starts when a visitor wants private data, saved history, branded export packs, customer-specific connectors, recurring reports, or implementation support.
+The public surface stays crawlable and free. Paid value starts with the Architecture Scope Sprint. Private maps, event ingestion, and monthly readiness reports are post-scope expansion candidates after the sprint defines the delivery boundary.
+
+Public CTA rule: paid or research interest routes to the central private inquiry URL with lane `architecture-scope-sprint`. Checkout, sponsorship, and advertising are not configured in this repository.
 
 ## Deployment Notes
 
 - Keep the sitemap and robots file aligned with the final production domain.
 - Submit the canonical URL and sitemap in Google Search Console after the domain is connected.
-- The lead-capture path is a GitHub Issue Form so private workspace and paid-package requests create a trackable queue before payment infrastructure is added.
+- The lead-capture path is the central private inquiry form, so paid-package requests avoid public issue threads and stay aligned with the service manifest.
 - Keep exact free-tier quotas out of public promises because provider limits change.

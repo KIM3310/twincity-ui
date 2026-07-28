@@ -5,7 +5,7 @@ import serviceOffer from "../../../public/service-offer.json";
 export const metadata: Metadata = {
   title: "서비스",
   description:
-    "TwinCity UI service offer with a free public demo, private workspace boundary, event ingestion, and monthly readiness reports.",
+    "TwinCity UI service offer with a free public demo and Architecture Scope Sprint inquiry lane.",
   alternates: {
     canonical: "/services",
   },
@@ -26,10 +26,12 @@ export default function ServicesPage() {
 
       <header className="pageHeading reveal">
         <p className="kicker">Service</p>
-        <h1 className="pageTitle">무료 데모에서 private workspace로 이어지는 운영 서비스</h1>
+        <h1 className="pageTitle">무료 데모에서 Architecture Scope Sprint로 이어지는 운영 서비스</h1>
         <p className="pageLead">
-          TwinCity UI는 synthetic event demo를 먼저 공개하고, 실제 수익화는 private map, event ingestion,
-          monthly readiness report처럼 고객 데이터와 반복 운영 가치가 생기는 지점에서 시작합니다.
+          TwinCity UI는 synthetic event demo를 먼저 공개하고, 실제 수익화는 Architecture Scope Sprint로
+          시작합니다. private map, event ingestion, monthly readiness report는 sprint 이후 범위가 확인된
+          확장안으로만 다룹니다. 현재 checkout은 연결하지 않고, manifest의 private inquiry lane으로만 유료 또는
+          리서치 문의를 받습니다.
         </p>
       </header>
 
@@ -47,7 +49,7 @@ export default function ServicesPage() {
           </article>
           <article className="metricCard">
             <p className="metricLabel">Paid boundary</p>
-            <p className="metricValue">Workspace</p>
+            <p className="metricValue">Sprint</p>
             <p className="metricNote">{serviceOffer.first_paid_sku}</p>
           </article>
           <article className="metricCard">
@@ -77,7 +79,7 @@ export default function ServicesPage() {
             {costGuardrails.map((guardrail) => (
               <article key={guardrail} className="principleCard">
                 <h3>{guardrail}</h3>
-                <p>Keep the public surface lightweight until a private workspace or recurring report proves demand.</p>
+                <p>Keep the public surface lightweight until the Architecture Scope Sprint proves a scoped expansion.</p>
               </article>
             ))}
           </div>
@@ -96,13 +98,13 @@ export default function ServicesPage() {
             <strong>docs/revenue-architecture.md</strong>
           </article>
           <article className="contactCard">
-            <p>Machine readable</p>
-            <strong>/service-offer.json</strong>
+            <p>Inquiry lane</p>
+            <strong>{serviceOffer.commerce.lane_id}</strong>
           </article>
         </div>
         <div className="ctaRow" style={{ marginTop: "1rem" }}>
           <a className="button" href={serviceOffer.lead_capture_url}>
-            Private workspace 문의
+            Paid or research inquiry
           </a>
           <Link className="button" href="/">
             상황판 열기

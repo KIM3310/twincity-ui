@@ -11,7 +11,7 @@ This note defines what an enterprise reviewer, public-sector reviewer, serious u
 | Repository | `twincity-ui` |
 | Lane | B2B spatial operations UX |
 | Primary reader or reviewer | Facilities, city operations, industrial command centers, and spatial event teams. |
-| Core wedge | Supporting spatial console proof for incident zones, dispatch, SLA reporting, and shift handoff. |
+| Core wedge | Spatial console proof for incident zones, dispatch, SLA reporting, and shift handoff. |
 | Stack | TypeScript/JavaScript, Terraform, Cloudflare, Docker |
 | Readiness posture | Pilot-ready technical surface; production use requires customer-specific identity, monitoring, data, and support controls. |
 
@@ -75,7 +75,7 @@ This note defines what an enterprise reviewer, public-sector reviewer, serious u
 
 ## Open Risks
 
-- Archived/supporting status clear
+- Product proof scope and private inquiry lane stay clear
 - Live ingest requires tenant controls
 - Demo mode boundaries explicit
 

@@ -1,8 +1,9 @@
 # TwinCity UI — Digital Twin Ops Console
 
-> **Archived / Supporting repo**  
-> The active operator-surface story now lives primarily in **AegisOps**, **ops-reliability-workbench**, and the manufacturing-facing control surfaces.  
-> Keep this repo as historical proof for the spatial / digital-twin operations console lane.
+> **Product proof surface**
+> TwinCity UI leads with the working spatial operations console: synthetic event replay,
+> dispatch queues, readiness checks, report exports, and handoff surfaces.
+> Commercial exploration is limited to the private inquiry lane listed in the service manifest.
 
 [![CI](https://github.com/KIM3310/twincity-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/KIM3310/twincity-ui/actions/workflows/ci.yml)
 ![Node >=20](https://img.shields.io/badge/node-%3E%3D20-brightgreen)
@@ -21,9 +22,9 @@ Technical review pack: [`docs/architecture-pack.md`](docs/architecture-pack.md)
 | Lens | Decision signal |
 |---|---|
 | Technical stack | Facilities, city operations, and industrial command centers that need spatial incidents, dispatch, and SLA evidence in one console. |
-| Product proof | The demo, workflow loop, and static proof surface show the current product direction without extra claims. |
+| Product proof | The demo, workflow loop, and static proof surface show the current product direction without production or customer claims. |
 | Review proof | `/api/proof-route-map`, `/api/health`, `/api/meta`, runtime scorecard, reports, and screenshot evidence create a fast evaluation path. |
-| Safety posture | Demo-mode defaults, trust-boundary metadata, normalized ingest, and explicit fallback behavior keep the archived surface understandable and low-risk. |
+| Safety posture | Demo-mode defaults, trust-boundary metadata, normalized ingest, and explicit fallback behavior keep the public surface understandable and low-risk. |
 
 ## Evaluation Path
 
@@ -41,7 +42,7 @@ Technical review pack: [`docs/architecture-pack.md`](docs/architecture-pack.md)
 - [Quality notes](docs/quality-gate.md) lists the local checks, CI surface, and release expectations for this repository.
 - [Enterprise readiness notes](docs/enterprise-readiness.md) outlines security, data, operations, integration, and handoff expectations.
 
-## What I built
+## Product capabilities
 
 - End-to-end operator UX: live/history views, filters, detail panel, action timeline, list/map/detail sync
 - Transport fallback chain: WebSocket -> SSE -> HTTP polling with auto-retry
@@ -67,10 +68,10 @@ If you only have a minute, use this order:
 4. `/api/runtime-scorecard` — inspect ingest posture and SLA summary together
 5. `/reports` — see the dispatch, handoff, and export surfaces that make the operator story concrete
 
-## Hosted runtime
+## Hosted demo runtime
 
-- Live runtime: `https://twincity-ui-app-811356341663.asia-northeast3.run.app`
-- Public Pages front door: `https://twincity-ui.pages.dev` → redirects to the live runtime
+- Hosted runtime: `https://twincity-ui-app-811356341663.asia-northeast3.run.app`
+- Public Pages front door: `https://twincity-ui.pages.dev` -> redirects to the hosted demo runtime
 
 ## Verify
 ```bash
@@ -152,9 +153,9 @@ The readiness registry is aligned with [public-apis-4Kr](https://github.com/yybm
 ## Search And Service Surface
 
 - Public entry: public demo with synthetic city/facility events
-- Paid boundary: paid workspace for private maps, event ingestion, and monthly readiness reports
+- Paid boundary: Architecture Scope Sprint
 - Canonical URL: https://twincity-ui.pages.dev/
-- Lead capture: https://github.com/KIM3310/twincity-ui/issues/new?template=service-inquiry.yml&title=Private+workspace+inquiry%3A+TwinCity+UI
+- Lead capture: https://kim3310-doeon-kim-portfolio.pages.dev/?offer=twincity-ui&inquiry=architecture-scope-sprint#private-inquiry
 - Commercial route: https://kim3310-doeon-kim-portfolio.pages.dev/?offer=twincity-ui#service-offers
 - Machine-readable offer: [docs/service-offer.json](docs/service-offer.json)
 - Search growth implementation: [docs/search-growth-implementation.md](docs/search-growth-implementation.md)

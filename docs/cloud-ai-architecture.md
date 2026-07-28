@@ -6,7 +6,7 @@ This blueprint is a neutral technical operating model for the repository. It des
 
 - **Domain:** operations control surfaces and reliability automation
 - **Current proof surface:** Repository-local proof surface for operations control surfaces and reliability automation, backed by Node/TypeScript runtime, Terraform infrastructure modules, Container build surface.
-- **Status:** archived-supporting
+- **Status:** product-proof
 - **Primary stack:** Node/TypeScript runtime, Terraform infrastructure modules, Container build surface, GitHub Actions validation
 - **Architecture axes:** cloud architecture, AI engineering, reliability, security, operator experience
 

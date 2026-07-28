@@ -9,7 +9,7 @@ Use this page as the short path through the repository. It keeps the review grou
 | Field | Notes |
 |---|---|
 | Lane | B2B spatial operations UX |
-| Core idea | Supporting spatial console proof for incident zones, dispatch, SLA reporting, and shift handoff. |
+| Core idea | Spatial console proof for incident zones, dispatch, SLA reporting, and shift handoff. |
 | Primary reader | Facilities, city operations, industrial command centers, and spatial event teams. |
 | Stack | TypeScript/JavaScript, Terraform, Cloudflare, Docker |
 
@@ -62,7 +62,7 @@ Use this page as the short path through the repository. It keeps the review grou
 
 ## Boundaries
 
-- Archived/supporting status clear
+- Product proof scope and private inquiry lane stay clear
 - Live ingest requires tenant controls
 - Demo mode boundaries explicit
 

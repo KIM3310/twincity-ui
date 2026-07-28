@@ -5,9 +5,9 @@
   "repository_url": "https://github.com/KIM3310/twincity-ui",
   "architecture_url": "https://github.com/KIM3310/twincity-ui/blob/main/docs/system-architecture.md",
   "revenue_architecture_url": "https://github.com/KIM3310/twincity-ui/blob/main/docs/revenue-architecture.md",
-  "lead_capture_url": "https://github.com/KIM3310/twincity-ui/issues/new?template=service-inquiry.yml&title=Private+workspace+inquiry%3A+TwinCity+UI",
+  "lead_capture_url": "https://kim3310-doeon-kim-portfolio.pages.dev/?offer=twincity-ui&inquiry=architecture-scope-sprint#private-inquiry",
   "productized_offer": "digital twin operations console with replay, dispatch, readiness, and report surfaces",
-  "first_paid_sku": "paid workspace for private maps, event ingestion, and monthly readiness reports",
+  "first_paid_sku": "Architecture Scope Sprint",
   "free_lead_magnet": "public demo with synthetic city/facility events",
   "search_positioning": {
     "primary_query": "TwinCity UI digital twin operations",
@@ -17,11 +17,11 @@
       "TwinCity UI business tool",
       "digital twin operations console with replay, dispatch, readiness, and report surfaces service"
     ],
-    "audience_intent": "Find a runnable demo, inspect the system architecture, and decide whether a private workspace or implementation package is useful."
+    "audience_intent": "Find a runnable demo, inspect the system architecture, and decide whether an Architecture Scope Sprint is useful before any private-map or reporting expansion."
   },
   "monetization_boundary": {
     "free": "public demo with synthetic city/facility events",
-    "paid": "paid workspace for private maps, event ingestion, and monthly readiness reports",
+    "paid": "Architecture Scope Sprint",
     "metering_hooks": [
       "workspace_id",
       "plan",
@@ -45,7 +45,7 @@
     "operatingSystem": "Web, serverless, and local development environments",
     "url": "https://twincity-ui.pages.dev/",
     "codeRepository": "https://github.com/KIM3310/twincity-ui",
-    "description": "TwinCity UI: digital twin operations console with replay, dispatch, readiness, and report surfaces. Free entry point: public demo with synthetic city/facility events. Paid path: paid workspace for private maps, event.",
+    "description": "TwinCity UI: digital twin operations console with replay, dispatch, readiness, and report surfaces. Free entry point: public demo with synthetic city/facility events. Paid or research inquiries route through the private inquiry lane.",
     "creator": {
       "@type": "Person",
       "name": "KIM3310",
@@ -62,30 +62,30 @@
       },
       {
         "@type": "Offer",
-        "name": "paid workspace for private maps, event ingestion, and monthly readiness reports",
+        "name": "Architecture Scope Sprint",
         "availability": "https://schema.org/LimitedAvailability",
-        "url": "https://github.com/KIM3310/twincity-ui/blob/main/docs/revenue-architecture.md"
+        "url": "https://kim3310-doeon-kim-portfolio.pages.dev/?offer=twincity-ui&inquiry=architecture-scope-sprint#private-inquiry"
       }
     ],
     "isAccessibleForFree": true,
-    "keywords": "twincity-ui, TwinCity, digital, twin, operations, console, replay, dispatch, readiness, surfaces, maps, event, ingestion, monthly, synthetic, city, facility, events, tier, Cloudflare, Pages, serverless, launch"
+    "keywords": "twincity-ui, TwinCity, digital, twin, operations, console, replay, dispatch, readiness, surfaces, architecture, scope, sprint, synthetic, city, facility, events, tier, Cloudflare, Pages, serverless, launch"
   },
   "commerce": {
     "gateway_url": "https://kim3310-doeon-kim-portfolio.pages.dev/?offer=twincity-ui#service-offers",
-    "lane_id": "digital-twin-ops-readiness",
-    "lane_name": "Digital Twin Ops Readiness",
+    "lane_id": "architecture-scope-sprint",
+    "lane_name": "Architecture Scope Sprint",
     "billing_mode": "one-time",
-    "price_unit": "readiness review from USD 350",
-    "fulfillment_kind": "synthetic event replay, readiness dashboard notes, dispatch-flow sketch, and ingestion boundary",
-    "risk_bucket": "standard-b2b",
+    "price_unit": "fixed scope from USD 900",
+    "fulfillment_kind": "system context map, architecture diagram, risk register, delivery slices, and implementation estimate",
+    "risk_bucket": "standard",
     "checkout": {
-      "provider": "lemon-squeezy",
-      "status": "account-onboarding-required",
-      "fallback_url": "https://kim3310-doeon-kim-portfolio.pages.dev/?offer=twincity-ui#service-offers"
+      "provider": null,
+      "status": "not-configured",
+      "fallback_url": "https://kim3310-doeon-kim-portfolio.pages.dev/?offer=twincity-ui&inquiry=architecture-scope-sprint#private-inquiry"
     },
     "sponsorship": {
       "provider": "github-sponsors",
-      "eligible": true,
+      "eligible": false,
       "status": "sponsors-listing-not-configured"
     },
     "advertising": {

@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "repository": "twincity-ui",
-  "status": "archived-supporting",
+  "status": "product-proof",
   "neutrality": {
     "positioning": "technical operating model",
     "scope_note": "Describes current proof surfaces and extension seams; does not claim external production traffic or certification unless separately evidenced.",
