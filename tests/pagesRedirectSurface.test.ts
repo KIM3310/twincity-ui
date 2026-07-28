@@ -21,10 +21,10 @@ describe("Cloudflare Pages redirect surface", () => {
     const sitemap = readFileSync(resolve(redirectRoot, "sitemap.xml"), "utf8");
     for (const route of [
       "/",
-      "/guide.html",
-      "/architecture.html",
-      "/verification.html",
-      "/publisher.html",
+      "/guide",
+      "/architecture",
+      "/verification",
+      "/publisher",
       "/privacy/",
       "/terms/",
     ]) {
@@ -49,7 +49,18 @@ describe("Cloudflare Pages redirect surface", () => {
 
   test("keeps worker static exceptions explicit", () => {
     const worker = readFileSync(resolve(redirectRoot, "_worker.js"), "utf8");
-    for (const route of ["/", "/ads.txt", "/robots.txt", "/sitemap.xml", "/privacy", "/terms"]) {
+    for (const route of [
+      "/",
+      "/ads.txt",
+      "/architecture",
+      "/guide",
+      "/privacy",
+      "/publisher",
+      "/robots.txt",
+      "/sitemap.xml",
+      "/terms",
+      "/verification",
+    ]) {
       expect(worker).toContain(`"${route}"`);
     }
     expect(worker).toContain('redirect: "manual"');
@@ -83,6 +94,21 @@ describe("Cloudflare Pages redirect surface", () => {
 
     expect(response.status).toBe(200);
     await expect(response.text()).resolves.toBe("/privacy/");
+    expect(assetsFetch).toHaveBeenCalledOnce();
+    expect(upstreamFetch).not.toHaveBeenCalled();
+  });
+
+  test("serves extensionless editorial routes from Pages assets", async () => {
+    const assetsFetch = vi.fn(async (request: Request) => {
+      return new Response(new URL(request.url).pathname, { status: 200 });
+    });
+    const upstreamFetch = vi.spyOn(globalThis, "fetch");
+
+    const response = await worker.fetch(new Request("https://twincity-ui.pages.dev/guide"), {
+      ASSETS: { fetch: assetsFetch },
+    });
+
+    await expect(response.text()).resolves.toBe("/guide");
     expect(assetsFetch).toHaveBeenCalledOnce();
     expect(upstreamFetch).not.toHaveBeenCalled();
   });

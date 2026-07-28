@@ -2,15 +2,23 @@ const TARGET_ORIGIN = "https://twincity-ui-app-811356341663.asia-northeast3.run.
 const STATIC_ASSET_PATHS = new Set([
   "/",
   "/ads.txt",
+  "/architecture",
+  "/architecture.html",
+  "/guide",
+  "/guide.html",
   "/index.html",
   "/llms.txt",
   "/privacy",
   "/privacy/",
+  "/publisher",
+  "/publisher.html",
   "/robots.txt",
   "/service-offer.json",
   "/sitemap.xml",
   "/terms",
   "/terms/",
+  "/verification",
+  "/verification.html",
 ]);
 
 function staticAssetRequest(request, pathname) {
