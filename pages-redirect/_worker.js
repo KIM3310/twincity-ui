@@ -2,24 +2,12 @@ const TARGET_ORIGIN = "https://twincity-ui-app-811356341663.asia-northeast3.run.
 const STATIC_ASSET_PATHS = new Set([
   "/ads.txt",
   "/llms.txt",
-  "/privacy",
   "/privacy.html",
   "/robots.txt",
   "/service-offer.json",
   "/sitemap.xml",
-  "/terms",
   "/terms.html",
 ]);
-
-function staticAssetRequest(request, pathname) {
-  if (pathname === "/privacy") {
-    return new Request(new URL("/privacy.html", request.url), request);
-  }
-  if (pathname === "/terms") {
-    return new Request(new URL("/terms.html", request.url), request);
-  }
-  return request;
-}
 
 function proxiedUrl(requestUrl) {
   const incoming = new URL(requestUrl);
@@ -38,7 +26,7 @@ const worker = {
   async fetch(request, env) {
     const incomingUrl = new URL(request.url);
     if (STATIC_ASSET_PATHS.has(incomingUrl.pathname)) {
-      return env.ASSETS.fetch(staticAssetRequest(request, incomingUrl.pathname));
+      return env.ASSETS.fetch(request);
     }
 
     const targetUrl = proxiedUrl(request.url);

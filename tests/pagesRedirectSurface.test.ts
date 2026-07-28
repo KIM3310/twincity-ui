@@ -37,7 +37,7 @@ describe("Cloudflare Pages redirect surface", () => {
 
   test("keeps worker static exceptions explicit", () => {
     const worker = readFileSync(resolve(redirectRoot, "_worker.js"), "utf8");
-    for (const route of ["/ads.txt", "/robots.txt", "/sitemap.xml", "/privacy", "/terms"]) {
+    for (const route of ["/ads.txt", "/robots.txt", "/sitemap.xml", "/privacy.html", "/terms.html"]) {
       expect(worker).toContain(`"${route}"`);
     }
     expect(worker).toContain('redirect: "manual"');
@@ -57,6 +57,23 @@ describe("Cloudflare Pages redirect surface", () => {
     await expect(response.text()).resolves.toBe("/ads.txt");
     expect(assetsFetch).toHaveBeenCalledOnce();
     expect(upstreamFetch).not.toHaveBeenCalled();
+  });
+
+  test("proxies clean policy routes without a Pages clean-URL redirect loop", async () => {
+    const assetsFetch = vi.fn();
+    const upstreamFetch = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("<main>Privacy policy</main>", { status: 200 }),
+    );
+
+    const response = await worker.fetch(new Request("https://twincity-ui.pages.dev/privacy"), {
+      ASSETS: { fetch: assetsFetch },
+    });
+
+    expect(response.status).toBe(200);
+    expect(assetsFetch).not.toHaveBeenCalled();
+    expect(String(upstreamFetch.mock.calls[0]?.[0])).toBe(
+      "https://twincity-ui-app-811356341663.asia-northeast3.run.app/privacy",
+    );
   });
 
   test("proxies app routes with same-origin 200 content instead of redirecting to Cloud Run", async () => {
