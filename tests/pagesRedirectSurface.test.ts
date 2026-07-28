@@ -19,11 +19,11 @@ describe("Cloudflare Pages redirect surface", () => {
     );
 
     const sitemap = readFileSync(resolve(redirectRoot, "sitemap.xml"), "utf8");
-    for (const route of ["/", "/privacy", "/terms", "/service-offer.json", "/llms.txt", "/ads.txt"]) {
+    for (const route of ["/", "/privacy/", "/terms/", "/service-offer.json", "/llms.txt", "/ads.txt"]) {
       expect(sitemap).toContain(`https://twincity-ui.pages.dev${route === "/" ? "/" : route}`);
     }
 
-    for (const file of ["index.html", "privacy.html", "terms.html"]) {
+    for (const file of ["index.html", "privacy/index.html", "terms/index.html"]) {
       const html = readFileSync(resolve(redirectRoot, file), "utf8");
       expect(html).toContain(`name="google-adsense-account" content="${adsenseClient}"`);
     }
@@ -31,13 +31,13 @@ describe("Cloudflare Pages redirect surface", () => {
     const loader =
       `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`;
     expect(readFileSync(resolve(redirectRoot, "index.html"), "utf8")).toContain(loader);
-    expect(readFileSync(resolve(redirectRoot, "privacy.html"), "utf8")).not.toContain(loader);
-    expect(readFileSync(resolve(redirectRoot, "terms.html"), "utf8")).not.toContain(loader);
+    expect(readFileSync(resolve(redirectRoot, "privacy/index.html"), "utf8")).not.toContain(loader);
+    expect(readFileSync(resolve(redirectRoot, "terms/index.html"), "utf8")).not.toContain(loader);
   });
 
   test("keeps worker static exceptions explicit", () => {
     const worker = readFileSync(resolve(redirectRoot, "_worker.js"), "utf8");
-    for (const route of ["/ads.txt", "/robots.txt", "/sitemap.xml", "/privacy.html", "/terms.html"]) {
+    for (const route of ["/", "/ads.txt", "/robots.txt", "/sitemap.xml", "/privacy", "/terms"]) {
       expect(worker).toContain(`"${route}"`);
     }
     expect(worker).toContain('redirect: "manual"');
@@ -59,21 +59,20 @@ describe("Cloudflare Pages redirect surface", () => {
     expect(upstreamFetch).not.toHaveBeenCalled();
   });
 
-  test("proxies clean policy routes without a Pages clean-URL redirect loop", async () => {
-    const assetsFetch = vi.fn();
-    const upstreamFetch = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response("<main>Privacy policy</main>", { status: 200 }),
-    );
+  test("serves clean policy routes from directory assets without an upstream redirect", async () => {
+    const assetsFetch = vi.fn(async (request: Request) => {
+      return new Response(new URL(request.url).pathname, { status: 200 });
+    });
+    const upstreamFetch = vi.spyOn(globalThis, "fetch");
 
     const response = await worker.fetch(new Request("https://twincity-ui.pages.dev/privacy"), {
       ASSETS: { fetch: assetsFetch },
     });
 
     expect(response.status).toBe(200);
-    expect(assetsFetch).not.toHaveBeenCalled();
-    expect(String(upstreamFetch.mock.calls[0]?.[0])).toBe(
-      "https://twincity-ui-app-811356341663.asia-northeast3.run.app/privacy",
-    );
+    await expect(response.text()).resolves.toBe("/privacy/");
+    expect(assetsFetch).toHaveBeenCalledOnce();
+    expect(upstreamFetch).not.toHaveBeenCalled();
   });
 
   test("proxies app routes with same-origin 200 content instead of redirecting to Cloud Run", async () => {

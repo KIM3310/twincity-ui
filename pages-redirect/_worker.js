@@ -1,13 +1,27 @@
 const TARGET_ORIGIN = "https://twincity-ui-app-811356341663.asia-northeast3.run.app";
 const STATIC_ASSET_PATHS = new Set([
+  "/",
   "/ads.txt",
+  "/index.html",
   "/llms.txt",
-  "/privacy.html",
+  "/privacy",
+  "/privacy/",
   "/robots.txt",
   "/service-offer.json",
   "/sitemap.xml",
-  "/terms.html",
+  "/terms",
+  "/terms/",
 ]);
+
+function staticAssetRequest(request, pathname) {
+  if (pathname === "/privacy" || pathname === "/privacy/") {
+    return new Request(new URL("/privacy/", request.url), request);
+  }
+  if (pathname === "/terms" || pathname === "/terms/") {
+    return new Request(new URL("/terms/", request.url), request);
+  }
+  return request;
+}
 
 function proxiedUrl(requestUrl) {
   const incoming = new URL(requestUrl);
@@ -26,7 +40,7 @@ const worker = {
   async fetch(request, env) {
     const incomingUrl = new URL(request.url);
     if (STATIC_ASSET_PATHS.has(incomingUrl.pathname)) {
-      return env.ASSETS.fetch(request);
+      return env.ASSETS.fetch(staticAssetRequest(request, incomingUrl.pathname));
     }
 
     const targetUrl = proxiedUrl(request.url);
