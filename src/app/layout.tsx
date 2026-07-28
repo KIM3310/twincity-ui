@@ -57,11 +57,21 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  other: {
+    "google-adsense-account": "ca-pub-4973160293737562",
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ko" data-theme="atelier">
+      <head>
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4973160293737562"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body>
         <ThemeProvider>
           <AppShell>{children}</AppShell>
