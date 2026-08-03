@@ -42,7 +42,6 @@ jobs:
             "/ads.txt"
             "/robots.txt"
             "/sitemap.xml"
-            "/api/health"
           )
 
           for path in "${paths[@]}"; do
@@ -64,3 +63,10 @@ jobs:
               exit 1
             fi
           done
+
+          api_body=$(mktemp)
+          trap 'rm -f "$api_body"' EXIT
+          api_code=$(curl -sS -o "$api_body" -w "%{http_code}" --connect-timeout 8 --max-time 25 "$base/api/health")
+          echo "/api/health -> $api_code"
+          test "$api_code" = "410"
+          grep -q '"code":"HOSTED_RUNTIME_RETIRED"' "$api_body"
