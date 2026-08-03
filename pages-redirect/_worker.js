@@ -1,4 +1,3 @@
-const TARGET_ORIGIN = "https://twincity-ui-app-811356341663.asia-northeast3.run.app";
 const STATIC_ASSET_PATHS = new Set([
   "/",
   "/ads.txt",
@@ -21,6 +20,18 @@ const STATIC_ASSET_PATHS = new Set([
   "/verification.html",
 ]);
 
+const RECORDED_APP_ROUTES = [
+  "/about",
+  "/brand",
+  "/compliance",
+  "/contact",
+  "/events",
+  "/explore",
+  "/journal",
+  "/reports",
+  "/services",
+];
+
 function staticAssetRequest(request, pathname) {
   if (pathname === "/privacy" || pathname === "/privacy/") {
     return new Request(new URL("/privacy/", request.url), request);
@@ -31,17 +42,10 @@ function staticAssetRequest(request, pathname) {
   return request;
 }
 
-function proxiedUrl(requestUrl) {
-  const incoming = new URL(requestUrl);
-  return new URL(`${incoming.pathname}${incoming.search}`, TARGET_ORIGIN);
-}
-
-function rewriteLocation(location, publicOrigin) {
-  if (!location) return location;
-  const target = new URL(TARGET_ORIGIN);
-  const next = new URL(location, TARGET_ORIGIN);
-  if (next.origin !== target.origin) return location;
-  return `${publicOrigin}${next.pathname}${next.search}${next.hash}`;
+function isRecordedAppRoute(pathname) {
+  return RECORDED_APP_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  );
 }
 
 const worker = {
@@ -51,28 +55,28 @@ const worker = {
       return env.ASSETS.fetch(staticAssetRequest(request, incomingUrl.pathname));
     }
 
-    const targetUrl = proxiedUrl(request.url);
-    const headers = new Headers(request.headers);
-    headers.delete("host");
-    headers.set("x-forwarded-host", incomingUrl.host);
-
-    const upstream = await fetch(targetUrl, {
-      body: ["GET", "HEAD"].includes(request.method) ? undefined : request.body,
-      headers,
-      method: request.method,
-      redirect: "manual",
-    });
-    const responseHeaders = new Headers(upstream.headers);
-
-    if (upstream.status >= 300 && upstream.status < 400) {
-      responseHeaders.set("location", rewriteLocation(responseHeaders.get("location"), incomingUrl.origin));
+    if (incomingUrl.pathname === "/api" || incomingUrl.pathname.startsWith("/api/")) {
+      return Response.json(
+        {
+          code: "HOSTED_RUNTIME_RETIRED",
+          message: "The public site runs in recorded review mode. Start the repository locally for API routes.",
+          status: "offline",
+        },
+        {
+          headers: { "cache-control": "no-store" },
+          status: 410,
+        },
+      );
     }
 
-    return new Response(upstream.body, {
-      status: upstream.status,
-      statusText: upstream.statusText,
-      headers: responseHeaders,
-    });
+    if (isRecordedAppRoute(incomingUrl.pathname)) {
+      const fallback = new URL("/", request.url);
+      fallback.searchParams.set("route", incomingUrl.pathname);
+      fallback.hash = "recorded-demo";
+      return Response.redirect(fallback, 302);
+    }
+
+    return env.ASSETS.fetch(request);
   },
 };
 

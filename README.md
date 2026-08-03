@@ -68,10 +68,11 @@ If you only have a minute, use this order:
 4. `/api/runtime-scorecard` — inspect ingest posture and SLA summary together
 5. `/reports` — see the dispatch, handoff, and export surfaces that make the operator story concrete
 
-## Hosted demo runtime
+## Public review surface
 
-- Hosted runtime: `https://twincity-ui-app-811356341663.asia-northeast3.run.app`
-- Public Pages front door: `https://twincity-ui.pages.dev` -> redirects to the hosted demo runtime
+- Public Pages overview: `https://twincity-ui.pages.dev`
+- The public site is a recorded, synthetic review surface with console evidence and architecture notes.
+- Run the repository locally for interactive routes and API responses.
 
 ## Verify
 ```bash

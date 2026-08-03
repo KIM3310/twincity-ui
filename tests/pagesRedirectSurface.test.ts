@@ -63,8 +63,8 @@ describe("Cloudflare Pages redirect surface", () => {
     ]) {
       expect(worker).toContain(`"${route}"`);
     }
-    expect(worker).toContain('redirect: "manual"');
-    expect(worker).toContain("rewriteLocation");
+    expect(worker).toContain("HOSTED_RUNTIME_RETIRED");
+    expect(worker).not.toContain("run.app");
   });
 
   test("serves static policy and monetization files from Pages assets first", async () => {
@@ -113,41 +113,30 @@ describe("Cloudflare Pages redirect surface", () => {
     expect(upstreamFetch).not.toHaveBeenCalled();
   });
 
-  test("proxies app routes with same-origin 200 content instead of redirecting to Cloud Run", async () => {
-    const upstreamFetch = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response("<main>TwinCity app</main>", {
-        headers: { "content-type": "text/html" },
-        status: 200,
-      }),
-    );
-
+  test("redirects retired hosted app routes to the recorded public review", async () => {
+    const upstreamFetch = vi.spyOn(globalThis, "fetch");
     const response = await worker.fetch(new Request("https://twincity-ui.pages.dev/services?mode=ops"), {
       ASSETS: { fetch: vi.fn() },
     });
 
-    expect(response.status).toBe(200);
-    await expect(response.text()).resolves.toContain("TwinCity app");
-    expect(upstreamFetch).toHaveBeenCalledOnce();
-    expect(String(upstreamFetch.mock.calls[0]?.[0])).toBe(
-      "https://twincity-ui-app-811356341663.asia-northeast3.run.app/services?mode=ops",
+    expect(response.status).toBe(302);
+    expect(response.headers.get("location")).toBe(
+      "https://twincity-ui.pages.dev/?route=%2Fservices#recorded-demo",
     );
+    expect(upstreamFetch).not.toHaveBeenCalled();
   });
 
-  test("rewrites upstream Cloud Run redirects back to the Pages origin", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(null, {
-        headers: {
-          location: "https://twincity-ui-app-811356341663.asia-northeast3.run.app/reports?ok=1",
-        },
-        status: 302,
-      }),
-    );
-
-    const response = await worker.fetch(new Request("https://twincity-ui.pages.dev/reporting"), {
+  test("returns an explicit retired-runtime response for public API routes", async () => {
+    const upstreamFetch = vi.spyOn(globalThis, "fetch");
+    const response = await worker.fetch(new Request("https://twincity-ui.pages.dev/api/health"), {
       ASSETS: { fetch: vi.fn() },
     });
 
-    expect(response.status).toBe(302);
-    expect(response.headers.get("location")).toBe("https://twincity-ui.pages.dev/reports?ok=1");
+    expect(response.status).toBe(410);
+    await expect(response.json()).resolves.toMatchObject({
+      code: "HOSTED_RUNTIME_RETIRED",
+      status: "offline",
+    });
+    expect(upstreamFetch).not.toHaveBeenCalled();
   });
 });
