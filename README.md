@@ -1,5 +1,7 @@
 # TwinCity UI — Digital Twin Ops Console
 
+[English](README.en.md) | [한국어](README.ko.md)
+
 > **Product proof surface**
 > TwinCity UI leads with the working spatial operations console: synthetic event replay,
 > dispatch queues, readiness checks, report exports, and handoff surfaces.
@@ -21,7 +23,7 @@ Technical review pack: [`docs/architecture-pack.md`](docs/architecture-pack.md)
 
 | Lens | Decision signal |
 |---|---|
-| Technical stack | Facilities, city operations, and industrial command centers that need spatial incidents, dispatch, and SLA evidence in one console. |
+| Users | Facilities, city operations, and industrial command centers that need spatial incidents, dispatch, and SLA evidence in one console. |
 | Product proof | The demo, workflow loop, and static proof surface show the current product direction without production or customer claims. |
 | Review proof | `/api/proof-route-map`, `/api/health`, `/api/meta`, runtime scorecard, reports, and screenshot evidence create a fast evaluation path. |
 | Safety posture | Demo-mode defaults, trust-boundary metadata, normalized ingest, and explicit fallback behavior keep the public surface understandable and low-risk. |
