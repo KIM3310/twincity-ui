@@ -1,4 +1,4 @@
-.SHELLFLAGS := -eu -o pipefail -c
+.SHELLFLAGS := -eu -c
 
 .PHONY: install dev open-local lint typecheck test build verify ci
 
