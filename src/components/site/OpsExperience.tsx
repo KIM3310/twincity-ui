@@ -1,5 +1,6 @@
 "use client";
 
+import { startLiveFeed } from "@/lib/liveFeed";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "@/components/site/theme";
 import ControlTowerReadiness from "@/components/site/ControlTowerReadiness";
@@ -1323,43 +1324,6 @@ export default function OpsExperience() {
       });
     }
 
-    let cancelled = false;
-    let reconnectTimer: number | null = null;
-    let pollTimer: number | null = null;
-    let ws: WebSocket | null = null;
-    let es: EventSource | null = null;
-    let inFlightController: AbortController | null = null;
-
-    const closeAll = () => {
-      if (reconnectTimer !== null) {
-        window.clearTimeout(reconnectTimer);
-        reconnectTimer = null;
-      }
-      if (pollTimer !== null) {
-        window.clearInterval(pollTimer);
-        pollTimer = null;
-      }
-      if (inFlightController) {
-        inFlightController.abort();
-        inFlightController = null;
-      }
-      if (ws) {
-        ws.onopen = null;
-        ws.onclose = null;
-        ws.onerror = null;
-        ws.onmessage = null;
-        ws.close();
-        ws = null;
-      }
-      if (es) {
-        es.onopen = null;
-        es.onerror = null;
-        es.onmessage = null;
-        es.close();
-        es = null;
-      }
-    };
-
     const pushIncoming = (payload: unknown) => {
       const incoming = normalizeIncomingPayload(payload, maxEvents);
       const hasMutation =
@@ -1377,146 +1341,18 @@ export default function OpsExperience() {
       setLastSyncAt(Date.now());
     };
 
-    const markLive = (via: FeedTransport, note: string) => {
-      reconnectAttemptRef.current = 0;
-      setTransport(via);
-      setConnection("live");
-      setConnectionNote(note);
-    };
-
-    const scheduleReconnect = (via: FeedTransport, reason: string) => {
-      if (cancelled) return;
-      reconnectAttemptRef.current += 1;
-      const delay = Math.min(12000, 800 * 2 ** Math.min(reconnectAttemptRef.current, 4));
-      setTransport(via);
-      setConnection("connecting");
-      setConnectionNote(`${reason} · ${Math.round(delay / 1000)}초 후 재시도`);
-
-      if (reconnectTimer !== null) {
-        window.clearTimeout(reconnectTimer);
-      }
-      reconnectTimer = window.setTimeout(() => {
-        start();
-      }, delay);
-    };
-
-    const connectWebSocket = () => {
-      setTransport("ws");
-      setConnection("connecting");
-      setConnectionNote("웹소켓 연결을 시도하고 있습니다...");
-
-      try {
-        ws = new WebSocket(LIVE_WS_URL);
-      } catch {
-        scheduleReconnect("ws", "실시간 연결 시작 실패");
-        return;
-      }
-
-      ws.onopen = () => {
-        if (cancelled) return;
-        markLive("ws", "웹소켓 실시간 연결됨");
-      };
-
-      ws.onmessage = (event) => {
-        if (cancelled) return;
-        pushIncoming(event.data);
-      };
-
-      ws.onerror = () => {
-        if (cancelled) return;
-        setConnection("error");
-        setConnectionNote("웹소켓 연결 오류가 발생했습니다.");
-      };
-
-      ws.onclose = (event) => {
-        if (cancelled) return;
-        scheduleReconnect("ws", `웹소켓 연결 종료 (${event.code})`);
-      };
-    };
-
-    const connectSse = () => {
-      setTransport("sse");
-      setConnection("connecting");
-      setConnectionNote("스트림 연결을 시도하고 있습니다...");
-
-      es = new EventSource(LIVE_SSE_URL);
-
-      es.onopen = () => {
-        if (cancelled) return;
-        markLive("sse", "스트림 연결됨");
-      };
-
-      es.onmessage = (event) => {
-        if (cancelled) return;
-        pushIncoming(event.data);
-      };
-
-      es.onerror = () => {
-        if (cancelled) return;
-        if (es) {
-          es.close();
-          es = null;
-        }
-        scheduleReconnect("sse", "스트림 연결 오류");
-      };
-    };
-
-    const connectPolling = () => {
-      setTransport("poll");
-      setConnection("connecting");
-      setConnectionNote(`주기 조회 중 (${LIVE_POLL_MS}ms)`);
-
-      const poll = async () => {
-        if (cancelled) return;
-        try {
-          inFlightController = new AbortController();
-          const res = await fetch(LIVE_API_URL, {
-            method: "GET",
-            cache: "no-store",
-            signal: inFlightController.signal,
-          });
-          if (!res.ok) {
-            throw new Error(`HTTP ${res.status}`);
-          }
-          const payload = (await res.json()) as unknown;
-          pushIncoming(payload);
-          if (!cancelled) {
-            markLive("poll", `주기 조회 중 (${LIVE_POLL_MS}ms)`);
-          }
-        } catch (error) {
-          if (cancelled) return;
-          const note = error instanceof Error ? error.message : "알 수 없는 오류";
-          setConnection("error");
-          setConnectionNote(`주기 조회 오류: ${note}`);
-        }
-      };
-
-      void poll();
-      pollTimer = window.setInterval(() => {
-        void poll();
-      }, LIVE_POLL_MS);
-    };
-
-    const start = () => {
-      if (cancelled) return;
-      closeAll();
-      if (LIVE_WS_URL) {
-        connectWebSocket();
-        return;
-      }
-      if (LIVE_SSE_URL) {
-        connectSse();
-        return;
-      }
-      connectPolling();
-    };
-
-    start();
-
-    return () => {
-      cancelled = true;
-      closeAll();
-    };
+    return startLiveFeed({
+      websocketUrl: LIVE_WS_URL,
+      sseUrl: LIVE_SSE_URL,
+      pollUrl: LIVE_API_URL,
+      pollMs: LIVE_POLL_MS,
+      onPayload: pushIncoming,
+      onState: ({ transport: via, connection: status, note }) => {
+        setTransport(via);
+        setConnection(status);
+        setConnectionNote(note);
+      },
+    });
   }, [feedMode, hydrated, maxEvents, playing]);
 
   const filteredEvents = useMemo(

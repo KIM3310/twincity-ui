@@ -8,6 +8,7 @@ export default tseslint.config(
   {
     ignores: [
       ".next/**",
+      "dist/**",
       ".vercel/**",
       "out/**",
       "build/**",
