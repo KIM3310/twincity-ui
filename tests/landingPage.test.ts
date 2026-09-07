@@ -32,8 +32,8 @@ describe("landing page front door", () => {
   });
 
   test("keeps public positioning product-led and private-inquiry based", () => {
-    expect(readme).toContain("Product proof surface");
-    expect(readme).toContain("Commercial exploration is limited to the private inquiry lane");
+    expect(readme).toContain("docs/VERIFICATION.md");
+    expect(readme).toContain("synthetic events");
     expect(readme).not.toContain("Archived / Supporting repo");
     expect(readme).not.toContain("historical proof");
     expect(searchGrowth).toContain("architecture-scope-sprint");

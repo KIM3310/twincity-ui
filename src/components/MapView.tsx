@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import zoneMap from "@/data/zone_map_s001.json";
-import MapWorld3D from "@/components/MapWorld3D";
+const MapWorld3D = lazy(() => import("@/components/MapWorld3D"));
 import { MODEL_REF_DEPTH_M, MODEL_REF_WIDTH_M } from "@/lib/coordinateTransform";
 import { clamp01, isLive } from "@/lib/geo";
 import { getEventTypeLabel, getTrackLabel, getZoneLabel } from "@/lib/labels";
@@ -19,8 +19,9 @@ type Props = {
 };
 
 const FALLBACK_FLOOR_IMAGE = "/floorplan_wireframe_20241027_clean.png";
-const EXTERNAL_FLOORPLAN_IMAGE = "/api/3d-test/floorplan";
-const EXTERNAL_3D_TEST_MODEL = "/api/3d-test/model";
+const STATIC_PREVIEW = process.env.NEXT_PUBLIC_STATIC_PREVIEW === "1";
+const EXTERNAL_FLOORPLAN_IMAGE = STATIC_PREVIEW ? "./3d/floorplan_wireframe_20241027_clean.png" : "/api/3d-test/floorplan";
+const EXTERNAL_3D_TEST_MODEL = STATIC_PREVIEW ? "./3d/models/store_13x13.glb" : "/api/3d-test/model";
 
 function formatMeters(value?: number) {
   return Number.isFinite(value) ? Number(value).toFixed(2) : "-";
@@ -221,6 +222,7 @@ export default function MapView({
             </svg>
           </>
         ) : (
+          <Suspense fallback={<p role="status">3D 지도를 불러오는 중…</p>}>
           <MapWorld3D
             events={events}
             selectedId={selectedId}
@@ -230,9 +232,10 @@ export default function MapView({
             modelSrc={model3dSrc}
             worldWidthM={worldWidthM}
             worldDepthM={worldDepthM}
-            resourceSource="downloads"
-            modelSource="downloads"
+            resourceSource={STATIC_PREVIEW ? "fallback" : "downloads"}
+            modelSource={STATIC_PREVIEW ? "fallback" : "downloads"}
           />
+          </Suspense>
         )}
 
         <div style={{ position: "absolute", right: 10, top: 10, display: "flex", gap: 6 }}>

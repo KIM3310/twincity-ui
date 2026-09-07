@@ -1,178 +1,45 @@
-# TwinCity UI — Digital Twin Ops Console
+# TwinCity UI
 
-[English](README.en.md) | [한국어](README.ko.md)
+A spatial operations console that turns mixed event feeds into map positions, incident decisions, timelines and handoff records.
 
-> **Product proof surface**
-> TwinCity UI leads with the working spatial operations console: synthetic event replay,
-> dispatch queues, readiness checks, report exports, and handoff surfaces.
-> Commercial exploration is limited to the private inquiry lane listed in the service manifest.
+**Spatial interfaces · resilient event ingestion · operator state**
 
-[![CI](https://github.com/KIM3310/twincity-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/KIM3310/twincity-ui/actions/workflows/ci.yml)
-![Node >=20](https://img.shields.io/badge/node-%3E%3D20-brightgreen)
-![Next.js](https://img.shields.io/badge/Next.js-16-black)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow)
+[Preview](https://twincity-ui.pages.dev) · [Verification and design](docs/VERIFICATION.md) · [CI](https://github.com/KIM3310/twincity-ui/actions) · [Detailed setup](REFERENCE.md)
 
-Next.js (React/TypeScript) operations console for spatial event management. Overlays zones and events on a floorplan, connecting the spatial view to the full operator workflow: ingest, normalization, triage, dispatch, SLA reporting, and shift handoff.
+```mermaid
+flowchart LR
+    Feed --> Normalize --> Coordinates --> Map
+    Map --> Incident
+    Incident --> Timeline
+    Timeline --> Handoff
+```
 
-Technical review pack: [`docs/architecture-pack.md`](docs/architecture-pack.md)
+## Inspect the implementation
 
-![Ops console screenshot](public/screenshots/ops_console.png)
-
-## System Overview
-
-| Lens | Decision signal |
+| Source | What it demonstrates |
 |---|---|
-| Users | Facilities, city operations, and industrial command centers that need spatial incidents, dispatch, and SLA evidence in one console. |
-| Product proof | The demo, workflow loop, and static proof surface show the current product direction without production or customer claims. |
-| Review proof | `/api/proof-route-map`, `/api/health`, `/api/meta`, runtime scorecard, reports, and screenshot evidence create a fast evaluation path. |
-| Safety posture | Demo-mode defaults, trust-boundary metadata, normalized ingest, and explicit fallback behavior keep the public surface understandable and low-risk. |
+| [src/lib/liveFeed.ts](src/lib/liveFeed.ts) | WebSocket → SSE → HTTP fallback, cancellation and late-response fencing |
+| [src/lib/coordinateTransform.ts](src/lib/coordinateTransform.ts) | World and image coordinate transforms |
+| [src/components/site/OpsExperience.tsx](src/components/site/OpsExperience.tsx) | Production incident state and operator actions |
+| [src/components/MapView.tsx](src/components/MapView.tsx) | 2D/3D event selection using the same data |
+| [tests/liveFeedHttp.test.ts](tests/liveFeedHttp.test.ts) | Real local HTTP recovery from a refused WebSocket upgrade |
 
-## Evaluation Path
+## Run it
 
-- **Start here:** Use `/api/proof-route-map`, then open `/events` and `/reports`.
-- **Local demo:** Run `npm ci && npm run dev`, then open `http://127.0.0.1:3000/events`.
-- **Checks:** Run `npm run test:proof` for proof routes or `npm run verify` for the full gate.
-
-## Service Launch Playbook
-
-- [Service launch playbook](docs/service-launch-playbook.md) maps the repository to its product scope, proof gates, operating boundaries, and risk controls.
-
-## Architecture Notes
-
-- [Review guide](docs/architecture-evidence-map.md) summarizes the system scope, first files to inspect, verification commands, and known boundaries.
-- [Quality notes](docs/quality-gate.md) lists the local checks, CI surface, and release expectations for this repository.
-- [Enterprise readiness notes](docs/enterprise-readiness.md) outlines security, data, operations, integration, and handoff expectations.
-
-## Product capabilities
-
-- End-to-end operator UX: live/history views, filters, detail panel, action timeline, list/map/detail sync
-- Transport fallback chain: WebSocket -> SSE -> HTTP polling with auto-retry
-- Event normalization: inconsistent provider payloads -> single `EventItem` schema
-- Spatial mapping: percent/world/bbox -> normalized coordinates with camera homography support
-- Reporting: SLA summary, dispatch board, shift handoff, export routes
-
-## Quick start
-```bash
+```sh
 npm ci
-npm run dev
-```
-
-Open `http://127.0.0.1:3000/events`.
-
-## Walk Through This First
-
-If you only have a minute, use this order:
-
-1. `/api/proof-route-map` — pick the right first proof lane before opening the full console
-2. `/api/health` — confirm whether the console is in demo mode or attached to live ingest
-3. `/api/meta` — read the trust boundary and evidence bundle
-4. `/api/runtime-scorecard` — inspect ingest posture and SLA summary together
-5. `/reports` — see the dispatch, handoff, and export surfaces that make the operator story concrete
-
-## Public review surface
-
-- Public Pages overview: `https://twincity-ui.pages.dev`
-- The public site is a recorded, synthetic review surface with console evidence and architecture notes.
-- Run the repository locally for interactive routes and API responses.
-
-## Verify
-```bash
-npm run test:proof
 npm run verify
+npm run dev:preview
 ```
 
-## Key routes
+## Evidence
 
-- `/events` - Main operator console
-- `/reports` - SLA, dispatch, handoff, export
-- `/api/health` - Ingest mode + readiness
-- `/api/proof-route-map` - Front-door operator route chooser
-- `/api/meta` - Trust boundary + evidence bundle
-- `/api/runtime-scorecard` - Ingest posture + SLA snapshot
-- `/api/public-apis` - Korean public API enrichment readiness
-- `/api/reports/summary` - Deterministic SLA summary
-- `/api/reports/dispatch-board` - Attention / dispatch / resolved queues
-- `/api/reports/handoff` - Next-shift digest + overdue risk
-- `/api/reports/export` - JSON / CSV report export
+157 tests passed, including transport failure, stale callback rejection, slow-poll ownership and real HTTP recovery. Both the Next.js app and a static interactive preview build from the same console components.
 
-## Live sources (optional)
+## Scope
 
-Create `.env.local` from `.env.local.example`:
+The public preview uses synthetic events and checked-in spatial assets. It has no external event source or server-side report API. Source links explain server-only routes. The streaming failure test injects SSE unavailability; it is not a deployed SSE integration or a production reliability measurement.
 
-```bash
-NEXT_PUBLIC_EVENT_WS_URL=wss://example.com/events
-NEXT_PUBLIC_EVENT_STREAM_URL=https://example.com/events/stream
-NEXT_PUBLIC_EVENT_API_URL=https://example.com/events
-NEXT_PUBLIC_EVENT_POLL_MS=5000
-```
+## Further reading
 
-Without live sources, the app runs in demo mode with mock data.
-
-Optional Korean public-data enrichment is exposed through `/api/public-apis`.
-The readiness registry is aligned with [public-apis-4Kr](https://github.com/yybmion/public-apis-4Kr) and checks for server-side provider secrets such as `SEOUL_OPEN_DATA_API_KEY`, `KMA_API_KEY`, `AIRKOREA_API_KEY`, and `PUBLIC_SAFETY_API_KEY` without returning secret values.
-
-## Mock endpoints
-- `GET /api/mock/events?shape=a&count=4`
-- `GET /api/mock/events?shape=b&count=4`
-- `GET /api/mock/events?shape=single`
-- `GET /api/mock/events?shape=edge&count=4`
-
-## Docs
-- `docs/LIVE_INTEGRATION.md` - Payload examples + transport fallbacks
-- `docs/ops/RUNBOOK.md` - Operator/release guidance
-- `docs/ops/POSTMORTEM_TEMPLATE.md` - Incident follow-up template
-
-## Current limitations
-- Demo mode doesn't cover auth, backpressure, or central persistence
-- Reports summarize browser-local state, not a central store
-- 3D routes are experimental, not production-grade
-
-## Next
-- Deeper report aggregation beyond handoff + replay
-- More adapters for edge-device / VLM payload variants
-- Better calibration tooling for camera homography
-
-## Cloud + AI Architecture
-
-- [Cloud + AI architecture blueprint](docs/cloud-ai-architecture.md)
-- [Machine-readable architecture manifest](docs/architecture/blueprint.json)
-- Validation command: `python3 scripts/validate_architecture_blueprint.py`
-
-## Enterprise Productization
-
-- [Product operating model](docs/product-operating-model.md) defines the product scope, trust boundary, operating checks, and service path for this repository.
-
-## System Architecture
-
-- [System architecture](docs/system-architecture.md) maps the runtime boundary, data/control flow, cloud or local deployment surface, and operating assumptions for this repository.
-
-## Service Architecture
-
-- [Service architecture](docs/service-architecture.md) defines the cloud resources, account information, cost controls, and production guardrails needed to turn this repo into a scoped service without publishing public financial assumptions.
-
-<!-- search-growth-readme:start -->
-
-## Search And Service Surface
-
-- Public entry: public demo with synthetic city/facility events
-- Paid boundary: Architecture Scope Sprint
-- Canonical URL: https://twincity-ui.pages.dev/
-- Lead capture: https://kim3310-doeon-kim-portfolio.pages.dev/?offer=twincity-ui&inquiry=architecture-scope-sprint#private-inquiry
-- Resource route: https://kim3310-doeon-kim-portfolio.pages.dev/resources/twincity-ui/
-- Commercial route: https://kim3310-doeon-kim-portfolio.pages.dev/?offer=twincity-ui#service-offers
-- Machine-readable offer: [docs/service-offer.json](docs/service-offer.json)
-- Search growth implementation: [docs/search-growth-implementation.md](docs/search-growth-implementation.md)
-- Revenue architecture: [docs/revenue-architecture.md](docs/revenue-architecture.md)
-
-<!-- search-growth-readme:end -->
-
-<!-- KIM3310:AD-DATA-PIVOT:START -->
-## Free Resource, Advertising, and Aggregate Data
-
-- [Public utility and architecture checklist](https://kim3310-doeon-kim-portfolio.pages.dev/resources/twincity-ui/)
-- Revenue model: contextual advertising on the policy-eligible central resource page.
-- Aggregate value: anonymous aggregate public-API readiness topic interest and worksheet usage counts
-- Boundary: ads allowed only on public API-readiness pages; operational dashboards, API keys, result views, and admin pages are ad-free
-- Consent defaults off, DNT/GPC fail closed, and personal or sensitive data is never sold.
-<!-- KIM3310:AD-DATA-PIVOT:END -->
+[Architecture](docs/cloud-ai-architecture.md) · [Architecture manifest](docs/architecture/blueprint.json) · [Architecture validator](scripts/validate_architecture_blueprint.py) · [Original reference](REFERENCE.md)
