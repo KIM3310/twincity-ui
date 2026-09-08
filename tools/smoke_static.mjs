@@ -1,7 +1,7 @@
 import { pathToFileURL } from 'node:url';
 
 function attributes(tag) {
-  return Object.fromEntries([...tag.matchAll(/([\w-]+)=["']([^"']*)["']/g)].map((m) => [m[1], m[2]]));
+  return Object.fromEntries([...tag.matchAll(/([\w-]+)=["']([^"']*)["']/g)].map((m) => [m[1].toLowerCase(), m[2]]));
 }
 
 // HTTP 200 alone also accepts a host's SPA fallback for a missing JS/CSS file.
@@ -15,8 +15,8 @@ export async function smokeStatic(baseUrl, expectedTitle, fetcher = fetch) {
   if (!html.includes(`<title>${expectedTitle}</title>`) || !html.includes('id="root"')) {
     throw new Error(`Unexpected application identity at ${base.href}`);
   }
-  const scripts = [...html.matchAll(/<script\b[^>]*>/g)].map((m) => attributes(m[0]));
-  const links = [...html.matchAll(/<link\b[^>]*>/g)].map((m) => attributes(m[0]));
+  const scripts = [...html.matchAll(/<script\b[^>]*>/gi)].map((m) => attributes(m[0]));
+  const links = [...html.matchAll(/<link\b[^>]*>/gi)].map((m) => attributes(m[0]));
   const modules = scripts.filter((a) => a.type === 'module' && a.src);
   const styles = links.filter((a) => a.rel === 'stylesheet' && a.href);
   if (!modules.length || !styles.length) throw new Error('Built module or stylesheet is missing');

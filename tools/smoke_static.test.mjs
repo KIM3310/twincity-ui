@@ -34,3 +34,8 @@ test('rejects an unbuilt HTML shell and assets outside the deployment base', asy
   await assert.rejects(smokeStatic(base, 'Preview', fixture({ [base]: ['<title>Preview</title><div id="root"></div>', 'text/html'] })), /module or stylesheet/);
   await assert.rejects(smokeStatic(base, 'Preview', fixture({ [base]: [html.replace('./assets/app.js', '/assets/app.js'), 'text/html'] })), /leaves deployment base/);
 });
+
+test('recognizes uppercase script and stylesheet tags and attribute names', async () => {
+  const mixed = html.replace('<script type="module" src=', '<SCRIPT TYPE="module" SRC=').replace('</script>', '</SCRIPT>').replace('<link rel=', '<LINK REL=').replace(' href=', ' HREF=');
+  assert.equal((await smokeStatic(base, 'Preview', fixture({ [base]: [mixed, 'text/html'] }))).assets, 2);
+});
