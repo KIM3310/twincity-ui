@@ -24,6 +24,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
+      - name: Setup Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22"
+
       - name: Allow deployment propagation
         if: github.event_name == 'push'
         run: sleep 30
@@ -64,9 +69,6 @@ jobs:
             fi
           done
 
-          api_body=$(mktemp)
-          trap 'rm -f "$api_body"' EXIT
-          api_code=$(curl -sS -o "$api_body" -w "%{http_code}" --connect-timeout 8 --max-time 25 "$base/api/health")
-          echo "/api/health -> $api_code"
-          test "$api_code" = "410"
-          grep -q '"code":"HOSTED_RUNTIME_RETIRED"' "$api_body"
+          # The hosted preview is a static, synthetic console with no runtime API.
+          # Validate its actual module and CSS files so an HTML fallback cannot pass.
+          node tools/smoke_static.mjs "$base" "TwinCity · Interactive Operations Console"
