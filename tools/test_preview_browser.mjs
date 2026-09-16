@@ -150,9 +150,21 @@ try {
   assert.equal(manualReload.selected, manualEvent.id);
   assert.equal(eventById(manualReload, "photo-log-0").incident_status, "ack");
   assert.equal(eventById(manualReload, "photo-log-1").incident_status, "resolved");
+  await click("관리");
+  await click("전체 지우기");
+  await load("Page.reload", { ignoreCache: true });
+  const cleared = await capture("cleared-reloaded");
+  assert.deepEqual(cleared.storage.events, []);
+  assert.deepEqual(cleared.storage.timeline, []);
+  assert.equal(cleared.selected, null);
+  await evaluate("localStorage.setItem('twincity-ops-experience-v3', '{invalid'); history.replaceState(null,'','?event=photo-log-2')");
+  await load("Page.reload", { ignoreCache: true });
+  const recovered = await capture("corrupt-storage-recovered");
+  assert.equal(recovered.selected, "photo-log-2");
+  assert.equal(eventById(recovered, "photo-log-2").incident_status, "new");
   assert.deepEqual(exceptions, []);
   assert.deepEqual(externalRequests, []);
-  console.log("PASS first-launch seeds, ACK/reload, resolve/reload, selection, timeline, timestamps, manual event/reload; no external requests or page exceptions");
+  console.log("PASS first-launch seeds, ACK/reload, resolve/reload, selection, timeline, timestamps, manual event/reload, cleared state, corrupt-storage fallback; no external requests or page exceptions");
 } finally {
   await writeFile(join(outputDir, "browser-result.json"), JSON.stringify({ ...evidence, exceptions, externalRequests }, null, 2));
   ws.close();

@@ -1021,7 +1021,6 @@ function getSignalToneDisplay(tone: SignalTone) {
 export default function OpsExperience() {
   const { meta } = useTheme();
   const reconnectAttemptRef = useRef(0);
-  const photoSeedAppliedRef = useRef(false);
 
   const [hydrated, setHydrated] = useState(false);
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -1078,7 +1077,7 @@ export default function OpsExperience() {
           ? {}
           : parseOpsUrlState(window.location.search);
 
-      const applyUrlState = () => {
+      const applyUrlState = (initialEvents: EventItem[]) => {
         if (typeof urlState.liveWindowMin === "number") {
           setLiveWindowMin(clampRange(Math.round(urlState.liveWindowMin), 10, 240));
         }
@@ -1100,15 +1099,17 @@ export default function OpsExperience() {
         if (urlState.role === "viewer" || urlState.role === "operator" || urlState.role === "admin") {
           setRole(urlState.role);
         }
-        if (typeof urlState.selectedId === "string") {
-          setSelectedId(urlState.selectedId);
-        }
+        setSelectedId(
+          initialEvents.some((event) => event.id === urlState.selectedId)
+            ? urlState.selectedId
+            : initialEvents[0]?.id
+        );
       };
 
       try {
         const raw = window.localStorage.getItem(STORAGE_KEY);
         if (!raw) {
-          applyUrlState();
+          applyUrlState(fallback);
           setEvents(fallback);
           setHydrated(true);
           return;
@@ -1154,17 +1155,21 @@ export default function OpsExperience() {
           setRole(parsed.role);
         }
 
-        applyUrlState();
-
         const restoredEvents = normalizeEventFeed(parsed.events, {
           maxEvents: restoredMaxEvents,
           fallbackStoreId: "s001",
           defaultSource: "demo",
         });
-        setEvents(restoredEvents.length > 0 ? restoredEvents : fallback);
+        const initialEvents =
+          restoredEvents.length > 0 || (Array.isArray(parsed.events) && parsed.events.length === 0)
+            ? restoredEvents
+            : fallback;
+        setEvents(initialEvents);
+        applyUrlState(initialEvents);
         setTimeline(parseTimeline(parsed.timeline));
       } catch {
         setEvents(fallback);
+        applyUrlState(fallback);
       } finally {
         setHydrated(true);
       }
@@ -1182,24 +1187,6 @@ export default function OpsExperience() {
     const timer = window.setTimeout(() => setToast(null), 2400);
     return () => window.clearTimeout(timer);
   }, [toast]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    if (photoSeedAppliedRef.current) return;
-
-    const seeded = buildPhotoSeedEvents(Date.now());
-    if (seeded.length === 0) return;
-
-    return deferEffectState(() => {
-      if (photoSeedAppliedRef.current) return;
-      photoSeedAppliedRef.current = true;
-      setEvents((prev) => {
-        const manualOnly = prev.filter((event) => isManualMapEventId(event.id));
-        return mergeEvents(seeded, manualOnly, maxEvents);
-      });
-      setSelectedId((prev) => (prev && isManualMapEventId(prev) ? prev : seeded[0]?.id));
-    });
-  }, [hydrated, maxEvents]);
 
   useEffect(() => {
     if (!hydrated) return;

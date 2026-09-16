@@ -336,8 +336,8 @@ function extractCoordinates(record: RawRecord): NormalizedCoordinates | null {
     return {
       x: explicit.x,
       y: explicit.y,
-      worldX: world.worldX,
-      worldZ: world.worldZ,
+      worldX: parseNumber(record.world_x_m) ?? world.worldX,
+      worldZ: parseNumber(record.world_z_m) ?? world.worldZ,
     };
   }
   const world = extractWorldCoordinates(record);
@@ -459,6 +459,7 @@ export function adaptRawEvent(value: unknown, options: Omit<NormalizeOptions, "m
   );
 
   const objectLabelRaw = pickValue(record, [
+    "object_label",
     "label",
     "object.label",
     "class",
@@ -466,7 +467,7 @@ export function adaptRawEvent(value: unknown, options: Omit<NormalizeOptions, "m
     "object.class",
     "event_label",
   ]);
-  const statusRaw = pickValue(record, ["status", "state", "event_status", "result.status", "payload.status"]);
+  const statusRaw = pickValue(record, ["raw_status", "status", "state", "event_status", "result.status", "payload.status"]);
   const modelVersion = parseId(pickValue(record, ["model_version", "modelVersion", "model.version"]));
 
   return {
