@@ -1018,7 +1018,7 @@ function getSignalToneDisplay(tone: SignalTone) {
   return { className: "tone-idle", label: "대기" };
 }
 
-export default function OpsExperience() {
+export default function OpsExperience({ staticPreview = false }: { staticPreview?: boolean }) {
   const { meta } = useTheme();
   const reconnectAttemptRef = useRef(0);
 
@@ -2042,7 +2042,7 @@ export default function OpsExperience() {
           <p>{meta.opsLead}</p>
         </div>
 
-        <ControlTowerReadiness variant="compact" />
+        <ControlTowerReadiness variant={staticPreview ? "static" : "compact"} />
 
         <div className="opsMetricRow">
           <article className="opsMetricCard">
@@ -2175,6 +2175,7 @@ export default function OpsExperience() {
           <span>구역</span>
           <select
             className="opsSelect"
+            aria-label="구역 필터"
             value={zoneFilter}
             onChange={(event) => setZoneFilter(event.target.value)}
           >
@@ -2544,7 +2545,7 @@ export default function OpsExperience() {
         </div>
       )}
 
-      <div className="opsGrid">
+      <div className="opsGrid" id="incident-console" tabIndex={-1}>
         <article className="opsCard opsMapCard">
           <MapView
             events={visibleEvents}

@@ -1,1 +1,12 @@
 .preview-context{display:flex;gap:1.5rem;align-items:center;justify-content:space-between;padding:1rem 1.5rem;border-bottom:1px solid currentColor;font-size:14px}.preview-context p{max-width:58rem;margin:0}.preview-context a{white-space:nowrap}main{padding:1rem;max-width:1600px;margin:auto}.preview-context a:focus-visible{outline:3px solid #d08a27;outline-offset:4px}@media(max-width:700px){.preview-context{flex-wrap:wrap;gap:.7rem}.preview-context p{order:3;width:100%}main{padding:.5rem}}
+
+.readinessPreview { padding: 1.25rem; }
+.readinessPreview p { margin: .6rem 0; }
+.readinessPreviewLinks { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1.25rem; }
+.readinessPreview a:focus-visible, #incident-console:focus-visible { outline: 3px solid #d08a27; outline-offset: 4px; }
+#incident-console { scroll-margin-top: 1rem; }
+.readinessPreview summary { cursor: pointer; }
+.readinessPreview details[open] nav { padding-top: .75rem; }
+@media (max-width: 900px) {
+  .opsMetricRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
