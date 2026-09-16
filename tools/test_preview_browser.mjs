@@ -81,6 +81,7 @@ const snapshot = () => evaluate(`({
   selected: new URLSearchParams(location.search).get('event'),
   status: document.querySelector('.detailBadges .statusBadge')?.className,
   detail: document.querySelector('.detailRoot')?.innerText,
+  timelineActions: [...document.querySelectorAll('.timelineBadge')].map(node => node.innerText),
   title: document.title
 })`);
 const capture = async (name) => {
@@ -119,6 +120,7 @@ try {
   const ackReload = await capture("ack-reloaded");
   assert.equal(eventById(ackReload, "photo-log-0").incident_status, "ack", "acknowledged photo event survives reload");
   assert.equal(ackReload.status, "statusBadge ack");
+  assert.deepEqual(ackReload.timelineActions, ["확인함", "처음 알림"]);
   assert.deepEqual(ackReload.storage.timeline, acknowledged.storage.timeline);
   assert.equal(eventById(ackReload, "photo-log-0").detected_at, eventById(initial, "photo-log-0").detected_at);
   await send("Input.dispatchKeyEvent", { type: "keyDown", key: "]", code: "BracketRight" });
@@ -134,6 +136,7 @@ try {
   assert.equal(resolveReload.selected, "photo-log-1", "non-default photo selection survives reload");
   assert.equal(eventById(resolveReload, "photo-log-1").incident_status, "resolved");
   assert.equal(resolveReload.status, "statusBadge resolved");
+  assert.deepEqual(resolveReload.timelineActions, ["처리 완료", "확인함", "처음 알림"]);
   assert.deepEqual(resolveReload.storage.timeline, resolved.storage.timeline);
   assert.deepEqual(resolveReload.storage.timeline.filter(entry => entry.event_id === "photo-log-1").map(entry => [entry.from_status, entry.to_status]), [["ack", "resolved"], ["new", "ack"]]);
   for (const [label, value] of [["월드 X 좌표", "1.2"], ["월드 Z 좌표", "1.5"]]) {
