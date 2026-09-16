@@ -32,9 +32,11 @@ npm run verify
 npm run dev:preview
 ```
 
+`dev:preview` runs the synthetic static console. Run `npm run dev` for the separate Next.js app and its local API routes. The public preview links to API source on GitHub, not hosted endpoints.
+
 ## Evidence
 
-157 tests passed, including transport failure, stale callback rejection, slow-poll ownership and real HTTP recovery. Both the Next.js app and a static interactive preview build from the same console components.
+The native tests cover transport failure, stale callback rejection, slow-poll ownership, real HTTP recovery, and saved incident fields. The isolated Chrome regression in `tools/test_preview_browser.mjs` checks incident actions across reloads. Both the Next.js app and a static interactive preview build from the same console components. See the [Pages build and browser checks](docs/deployment/CLOUDFLARE_PAGES.md) for the separate deployment path.
 
 ## Scope
 

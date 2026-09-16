@@ -27,8 +27,10 @@ jobs:
         run: npm run test
       - name: Test deployed asset validation
         run: node --test tools/smoke_static.test.mjs
-      - name: Build
+      - name: Build Next runtime
         run: npm run build
+      - name: Build and verify static Pages artifact
+        run: npm run build:preview
 
   review-gate:
     runs-on: ubuntu-latest

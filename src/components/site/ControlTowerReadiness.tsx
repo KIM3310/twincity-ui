@@ -5,7 +5,7 @@ import { useState } from "react";
 import { buildControlTowerReportSchema, buildControlTowerServiceMeta } from "@/lib/serviceMeta";
 
 type ControlTowerReadinessProps = {
-  variant?: "full" | "compact";
+  variant?: "full" | "compact" | "static";
 };
 
 function artifactLabel(kind: "route" | "doc" | "test" | "asset") {
@@ -21,6 +21,28 @@ export default function ControlTowerReadiness({
   const meta = buildControlTowerServiceMeta();
   const schema = buildControlTowerReportSchema();
   const [lens, setLens] = useState<"operator" | "architecture" | "executive">("operator");
+
+  if (variant === "static") {
+    return (
+      <section className="panel readinessPreview" aria-label="합성 데이터 체험 안내">
+        <h2 className="panelTitle">지도에서 합성 이벤트를 처리해 보세요</h2>
+        <p>이벤트를 선택하고 확인한 뒤 처리를 종료하세요. 처리 상태는 이 브라우저에 저장됩니다.</p>
+        <p>평면과 입체 지도를 전환할 수 있습니다. 실시간 연결과 서버 리포트 API는 이 체험에서 제공하지 않습니다.</p>
+        <div className="readinessPreviewLinks">
+          <Link className="opsBtn primary" href="/events">지도에서 체험 시작</Link>
+          <details>
+            <summary>GitHub 소스와 로컬 실행 안내</summary>
+            <nav className="readinessPreviewLinks" aria-label="소스 안내">
+              <Link href="/reports">리포트 소스 · GitHub</Link>
+              <Link href="/api/runtime-brief">런타임 API 소스 · GitHub</Link>
+              <a href="https://github.com/KIM3310/twincity-ui#run-it">로컬 Next 실행 안내 · GitHub</a>
+            </nav>
+          </details>
+        </div>
+      </section>
+    );
+  }
+
   const compact = variant === "compact";
   const stages = compact ? meta.stages.slice(0, 3) : meta.stages;
   const artifacts = compact ? meta.artifacts.slice(0, 4) : meta.artifacts;

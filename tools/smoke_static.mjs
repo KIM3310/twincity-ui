@@ -1,4 +1,6 @@
 import { pathToFileURL } from 'node:url';
+import { readFile } from 'node:fs/promises';
+import { retainedPages } from './static_pages.mjs';
 
 function attributes(tag) {
   return Object.fromEntries([...tag.matchAll(/([\w-]+)=["']([^"']*)["']/g)].map((m) => [m[1].toLowerCase(), m[2]]));
@@ -38,7 +40,41 @@ export async function smokeStatic(baseUrl, expectedTitle, fetcher = fetch) {
       throw new Error(`Invalid ${kind} asset at ${url.href}: ${result.status} ${type}`);
     }
   }
-  return { base: base.href, assets: assets.length };
+  const aliases = ['about', 'contact', 'compliance'];
+  for (const alias of aliases) {
+    const url = new URL(alias, base);
+    let response = await fetcher(url.href, { redirect: 'manual', signal: AbortSignal.timeout(25000) });
+    if ([301, 302, 303, 307, 308].includes(response.status)) {
+      const location = response.headers.get('location');
+      if (!location) throw new Error(`Invalid legacy alias redirect at ${url.href}: missing location`);
+      const target = new URL(location, url);
+      if (target.origin !== base.origin || target.pathname !== base.pathname) {
+        throw new Error(`Invalid legacy alias redirect at ${url.href}: ${target.href}`);
+      }
+      response = await fetcher(target.href, { redirect: 'error', signal: AbortSignal.timeout(25000) });
+    }
+    const type = response.headers.get('content-type')?.split(';')[0];
+    if (!response.ok || type !== 'text/html' || await response.text() !== html) {
+      throw new Error(`Invalid legacy alias at ${url.href}: ${response.status} ${type}`);
+    }
+  }
+  return { base: base.href, assets: assets.length, aliases: aliases.length };
+}
+
+export async function smokeRetainedPages(baseUrl, fetcher = fetch) {
+  const base = new URL(baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`);
+  for (const { file, route, types } of retainedPages) {
+    const url = new URL(route, base);
+    const response = await fetcher(url.href, { redirect: 'error', signal: AbortSignal.timeout(25000) });
+    const type = response.headers.get('content-type')?.split(';')[0];
+    if (!response.ok || !types.includes(type)) {
+      throw new Error(`Invalid retained page at ${url.href}: ${response.status} ${type}`);
+    }
+    const expected = await readFile(new URL(`../pages-redirect/${file}`, import.meta.url));
+    const actual = Buffer.from(await response.arrayBuffer());
+    if (!actual.equals(expected)) throw new Error(`Retained content mismatch at ${url.href}`);
+  }
+  return { pages: retainedPages.length };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
@@ -47,7 +83,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     try {
       const result = await smokeStatic(base, title);
-      console.log(`Static application verified: ${result.base} (${result.assets} JS/CSS assets)`);
+      const retained = await smokeRetainedPages(base);
+      console.log(`Static application verified: ${result.base} (${result.assets} JS/CSS assets, ${retained.pages} retained files, ${result.aliases} legacy aliases)`);
       break;
     } catch (error) {
       if (attempt === 3) throw error;
