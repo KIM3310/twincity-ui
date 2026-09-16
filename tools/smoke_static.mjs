@@ -40,7 +40,25 @@ export async function smokeStatic(baseUrl, expectedTitle, fetcher = fetch) {
       throw new Error(`Invalid ${kind} asset at ${url.href}: ${result.status} ${type}`);
     }
   }
-  return { base: base.href, assets: assets.length };
+  const aliases = ['about', 'contact', 'compliance'];
+  for (const alias of aliases) {
+    const url = new URL(alias, base);
+    let response = await fetcher(url.href, { redirect: 'manual', signal: AbortSignal.timeout(25000) });
+    if ([301, 302, 303, 307, 308].includes(response.status)) {
+      const location = response.headers.get('location');
+      if (!location) throw new Error(`Invalid legacy alias redirect at ${url.href}: missing location`);
+      const target = new URL(location, url);
+      if (target.origin !== base.origin || target.pathname !== base.pathname) {
+        throw new Error(`Invalid legacy alias redirect at ${url.href}: ${target.href}`);
+      }
+      response = await fetcher(target.href, { redirect: 'error', signal: AbortSignal.timeout(25000) });
+    }
+    const type = response.headers.get('content-type')?.split(';')[0];
+    if (!response.ok || type !== 'text/html' || await response.text() !== html) {
+      throw new Error(`Invalid legacy alias at ${url.href}: ${response.status} ${type}`);
+    }
+  }
+  return { base: base.href, assets: assets.length, aliases: aliases.length };
 }
 
 export async function smokeRetainedPages(baseUrl, fetcher = fetch) {
@@ -66,7 +84,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     try {
       const result = await smokeStatic(base, title);
       const retained = await smokeRetainedPages(base);
-      console.log(`Static application verified: ${result.base} (${result.assets} JS/CSS assets, ${retained.pages} retained files)`);
+      console.log(`Static application verified: ${result.base} (${result.assets} JS/CSS assets, ${retained.pages} retained files, ${result.aliases} legacy aliases)`);
       break;
     } catch (error) {
       if (attempt === 3) throw error;
