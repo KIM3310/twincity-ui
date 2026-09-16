@@ -1,4 +1,4 @@
 name = "twincity-ui"
 compatibility_date = "2026-05-03"
-pages_build_output_dir = "./pages-redirect"
+pages_build_output_dir = "./dist"
 send_metrics = false

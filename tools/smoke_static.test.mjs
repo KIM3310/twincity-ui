@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { smokeStatic } from './smoke_static.mjs';
+import { smokeStatic, smokeRetainedPages } from './smoke_static.mjs';
+import { readFile } from 'node:fs/promises';
+import { retainedPages } from './static_pages.mjs';
 
 const base = 'https://example.test/project/';
 const html = '<title>Preview</title><div id="root"></div><script type="module" src="./assets/app.js"></script><link rel="stylesheet" href="./assets/app.css">';
@@ -38,4 +40,28 @@ test('rejects an unbuilt HTML shell and assets outside the deployment base', asy
 test('recognizes uppercase script and stylesheet tags and attribute names', async () => {
   const mixed = html.replace('<script type="module" src=', '<SCRIPT TYPE="module" SRC=').replace('</script>', '</SCRIPT>').replace('<link rel=', '<LINK REL=').replace(' href=', ' HREF=');
   assert.equal((await smokeStatic(base, 'Preview', fixture({ [base]: [mixed, 'text/html'] }))).assets, 2);
+});
+
+async function retainedFixture(overrides = {}) {
+  const responses = Object.fromEntries(await Promise.all(retainedPages.map(async ({ file, route, types }) => [
+    new URL(route, base).href,
+    [await readFile(new URL(`../pages-redirect/${file}`, import.meta.url)), types[0]],
+  ])));
+  return fixture({ ...responses, ...overrides });
+}
+
+test('verifies the identity and content type of retained policy and discovery files', async () => {
+  assert.deepEqual(await smokeRetainedPages(base, await retainedFixture()), { pages: 12 });
+});
+test('rejects SPA fallbacks for robots, sitemap, and policy routes', async () => {
+  for (const route of ['robots.txt', 'sitemap.xml', 'privacy/', 'terms/']) {
+    await assert.rejects(smokeRetainedPages(base, await retainedFixture({
+      [new URL(route, base).href]: [html, 'text/html'],
+    })), /Invalid retained page|Retained content mismatch/);
+  }
+});
+test('rejects wrong policy content even when the HTTP type is correct', async () => {
+  await assert.rejects(smokeRetainedPages(base, await retainedFixture({
+    [new URL('privacy/', base).href]: ['<html>A different policy</html>', 'text/html'],
+  })), /Retained content mismatch/);
 });
